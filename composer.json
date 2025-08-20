@@ -1,9 +1,15 @@
-
 {
-  "name": "tmt/customer-crm",
-  "type": "wordpress-plugin",
-  "autoload": {
-    "psr-4": { "TMT\\CRM\\": "src/" }
-  },
-  "require": {}
+    "name": "le-thanh-nha/tmt-customer-crm",
+    "autoload": {
+        "psr-4": {
+            "TMT\\CRM\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Minh Triet",
+            "email": "minhtriet@maytinhdian.com"
+        }
+    ],
+    "require": {}
 }

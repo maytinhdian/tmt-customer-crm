@@ -4,9 +4,9 @@ namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Presentation\REST\Routes;
-use TMT\CRM\Infrastructure\Integration\WooCommerce_Sync;
-use TMT\CRM\Infrastructure\Persistence\{WPDB_Company_Repository, WPDB_Quotation_Repository, WPDB_Invoice_Repository, WPDB_Debt_Repository, WPDB_Payment_Repository};
-use TMT\CRM\Application\Services\{Company_Service, Quotation_Service, Invoice_Service, Payment_Service};
+use TMT\CRM\Infrastructure\Integration\WooCommerceSync;
+use TMT\CRM\Infrastructure\Persistence\{WpdbCompanyRepository, WpdbQuotationRepository, WpdbInvoiceRepository, WpdbDebtRepository, WpdbPaymentRepository};
+use TMT\CRM\Application\Services\{CompanyService, QuotationService, InvoiceService, PaymentService};
 
 final class Hooks
 {
@@ -17,7 +17,7 @@ final class Hooks
         add_action('rest_api_init', [Routes::class, 'register']);
 
         // Tích hợp Woo (nếu có)
-        add_action('woocommerce_thankyou', [WooCommerce_Sync::class, 'sync_after_order']);
+        add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
 
         // Enqueue assets admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
@@ -30,17 +30,17 @@ final class Hooks
 
                 global $wpdb;
         // Repo
-        Container::set('company-repo', fn() => new WPDB_Company_Repository($wpdb));
-        Container::set('quotation-repo', fn() => new WPDB_Quotation_Repository($wpdb));
-        Container::set('invoice-repo', fn() => new WPDB_Invoice_Repository($wpdb));
-        Container::set('debt-repo', fn() => new WPDB_Debt_Repository($wpdb));
-        Container::set('payment-repo', fn() => new WPDB_Payment_Repository($wpdb));
+        Container::set('company-repo', fn() => new WpdbCompanyRepository($wpdb));
+        Container::set('quotation-repo', fn() => new WpdbQuotationRepository($wpdb));
+        Container::set('invoice-repo', fn() => new WpdbInvoiceRepository($wpdb));
+        Container::set('debt-repo', fn() => new WpdbDebtRepository($wpdb));
+        Container::set('payment-repo', fn() => new WpdbPaymentRepository($wpdb));
 
         // Services
-        Container::set('company-service', fn() => new Company_Service(Container::get('company-repo')));
-        Container::set('quotation-service', fn() => new Quotation_Service(Container::get('quotation-repo')));
-        Container::set('invoice-service', fn() => new Invoice_Service(Container::get('invoice-repo')));
-        Container::set('payment-service', fn() => new Payment_Service(Container::get('payment-repo'), Container::get('invoice-repo')));
+        Container::set('company-service', fn() => new CompanyService(Container::get('company-repo')));
+        Container::set('quotation-service', fn() => new QuotationService(Container::get('quotation-repo')));
+        Container::set('invoice-service', fn() => new InvoiceService(Container::get('invoice-repo')));
+        Container::set('payment-service', fn() => new PaymentService(Container::get('payment-repo'), Container::get('invoice-repo')));
     }
 
     public static function enqueue_admin(): void
