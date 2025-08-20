@@ -1,0 +1,15 @@
+<?php
+namespace TMT\CRM\Domain\Entities;
+
+final class Customer {
+    public function __construct(
+        public ?int $id,
+        public string $full_name,
+        public string $phone,
+        public string $email,
+        public ?int $company_id = null,
+        public ?string $address = null,
+        public ?string $tags = null,
+        public ?string $note = null,
+    ) {}
+}

@@ -1,0 +1,9 @@
+
+{
+  "name": "tmt/customer-crm",
+  "type": "wordpress-plugin",
+  "autoload": {
+    "psr-4": { "TMT\\CRM\\": "src/" }
+  },
+  "require": {}
+}
