@@ -49,6 +49,15 @@ add_action('plugins_loaded', function () {
             (new \TMT\CRM\Infrastructure\Migrations\Installer())->run();
         }
         update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
+        // Tạo bảng
+        \TMT\CRM\Shared\Container::get('company_repo')->install();
+
+
+        // Map capability tối thiểu cho admin
+        $role = get_role('administrator');
+        if ($role && !$role->has_cap('manage_tmt_crm_companies')) {
+            $role->add_cap('manage_tmt_crm_companies');
+        }
     }
 
     // Khởi động hệ thống sau khi đảm bảo schema OK

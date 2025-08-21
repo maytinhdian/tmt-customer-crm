@@ -22,6 +22,7 @@ final class CustomerRoleService
         if (!get_role('tmt_crm_manager')) {
             add_role(
                 'tmt_crm_manager',
+                'manage_tmt_crm_companies',
                 'CRM Manager',
                 array_merge(['read' => true], Capability::fullSet()) // 👈 thêm read
             );
@@ -39,6 +40,7 @@ final class CustomerRoleService
         if (!get_role('tmt_crm_staff')) {
             add_role(
                 'tmt_crm_staff',
+                'manage_tmt_crm_companies',
                 'CRM Staff',
                 array_merge(['read' => true], Capability::staffSet()) // 👈 thêm read
             );

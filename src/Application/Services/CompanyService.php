@@ -1,49 +1,63 @@
 <?php
-// src/Application/Services/company-service.php
+
 namespace TMT\CRM\Application\Services;
 
 
 use TMT\CRM\Application\DTO\CompanyDTO;
-use TMT\CRM\Domain\Entities\Company;
-use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface as Repo;
+use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface;
+use WP_Error;
 
 
-final class CompanyService
+/**
+ * Nơi đặt rule nghiệp vụ + validate + chống trùng
+ */
+class CompanyService
 {
-    public function __construct(private Repo $repo) {}
+    public function __construct(private CompanyRepositoryInterface $repo) {}
 
 
-    public function create(CompanyDTO $d): int
+    /** Tạo mới, trả về ID hoặc WP_Error */
+    public function create(CompanyDto $dto): int|WP_Error
     {
-        $e = new Company(
-            id: null,
-            name: $d->name,
-            tax_code: $d->tax_code,
-            address: $d->address,
-            contact_person: $d->contact_person,
-            phone: $d->phone,
-            email: $d->email
-        );
-        return $this->repo->create($e);
+        $e = $this->validate($dto);
+        if (is_wp_error($e)) return $e;
+
+
+        $dup = $this->repo->find_duplicate(null, $dto->name, $dto->taxCode, $dto->phone, $dto->email);
+        if ($dup) {
+            return new WP_Error('duplicate_company', 'Trùng MST/điện thoại/email hoặc tên công ty.');
+        }
+        return $this->repo->insert($dto);
     }
 
 
-    public function update(int $id, CompanyDTO $d): bool
+    /** Cập nhật, trả về bool hoặc WP_Error */
+    public function update(CompanyDto $dto): bool|WP_Error
     {
-        $e = $this->repo->find_by_id($id);
-        if (!$e) return false;
-        $e->name = $d->name;
-        $e->tax_code = $d->tax_code;
-        $e->address = $d->address;
-        $e->contact_person = $d->contact_person;
-        $e->phone = $d->phone;
-        $e->email = $d->email;
-        return $this->repo->update($e);
+        if (!$dto->id) return new WP_Error('invalid_id', 'Thiếu ID công ty.');
+        $e = $this->validate($dto);
+        if (is_wp_error($e)) return $e;
+
+
+        $dup = $this->repo->find_duplicate($dto->id, $dto->name, $dto->taxCode, $dto->phone, $dto->email);
+        if ($dup) {
+            return new WP_Error('duplicate_company', 'Trùng MST/điện thoại/email hoặc tên công ty.');
+        }
+        return $this->repo->update($dto);
     }
 
 
-    public function find(int $id): ?Company
+    /**
+     * Validate dữ liệu công ty.
+     *
+     * @param CompanyDTO $dto
+     * @return true|\WP_Error  Trả về true nếu hợp lệ, hoặc \WP_Error khi lỗi.
+     */
+    private function validate(CompanyDTO $dto)
     {
-        return $this->repo->find_by_id($id);
+        if ($dto->name === '') return new WP_Error('invalid_name', 'Tên công ty bắt buộc.');
+        if ($dto->email && !is_email($dto->email)) return new WP_Error('invalid_email', 'Email không hợp lệ.');
+        if ($dto->website && !filter_var($dto->website, FILTER_VALIDATE_URL)) return new WP_Error('invalid_website', 'Website không hợp lệ.');
+        return true;
     }
 }

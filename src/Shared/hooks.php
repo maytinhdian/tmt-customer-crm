@@ -4,35 +4,19 @@ namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Presentation\Admin\CustomerScreen;
-// use TMT\CRM\Presentation\REST\Routes;
-// use TMT\CRM\Infrastructure\Integration\WooCommerceSync;
 
-
-//====== Persistence: chỉ giữ Customer Repo ======
-/*** WpdbCompanyRepository,
-    WpdbQuotationRepository,
-    WpdbInvoiceRepository,
-    WpdbDebtRepository,
-    WpdbPaymentRepository,
- */
-
-
-// ====== Application Services: chỉ giữ Customer Service ======
-/****
- *     CompanyService,
-    QuotationService,
-    InvoiceService,
-    PaymentService,
- */
+// use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface;
 
 use TMT\CRM\Infrastructure\Persistence\{
 
-    WpdbCustomerRepository
+    WpdbCustomerRepository,
+    WpdbCompanyRepository
 };
 
 use TMT\CRM\Application\Services\{
 
-    CustomerService
+    CustomerService,
+    CompanyService
 };
 
 final class Hooks
@@ -46,6 +30,10 @@ final class Hooks
 
         // WooCommerce integration (nếu có)
         // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
+
+
+        add_action('admin_init', [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'boot']);
+        add_action('admin_init', [\TMT\CRM\Presentation\Admin\CompanyScreen::class, 'boot']);
 
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
@@ -70,7 +58,7 @@ final class Hooks
         global $wpdb;
 
         // Repositories
-        // Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
+        Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
         // Container::set('quotation-repo', fn() => new WpdbQuotationRepository($wpdb));
         // Container::set('invoice-repo',   fn() => new WpdbInvoiceRepository($wpdb));
         // Container::set('debt-repo',      fn() => new WpdbDebtRepository($wpdb));
@@ -78,7 +66,7 @@ final class Hooks
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb)); // ← NEW
 
         // Services
-        // Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo')));
+        Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo')));
         // Container::set('quotation-service', fn() => new QuotationService(Container::get('quotation-repo')));
         // Container::set('invoice-service',   fn() => new InvoiceService(Container::get('invoice-repo')));
         // Container::set('payment-service',   fn() => new PaymentService(Container::get('payment-repo'), Container::get('invoice-repo')));

@@ -1,107 +1,133 @@
 <?php
+
 namespace TMT\CRM\Presentation\Admin;
 
 use TMT\CRM\Shared\Container;
-use TMT\CRM\Application\DTO\CustomerDTO;
 use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Presentation\Admin\ListTable\CustomerListTable;
+use TMT\CRM\Application\DTO\CustomerDTO;
 
 defined('ABSPATH') || exit;
 
-/**
- * CustomerScreen
- *
- * Điều phối một submenu duy nhất "Customers":
- * - List: admin.php?page=tmt-crm-customers
- * - Add : admin.php?page=tmt-crm-customers&action=add
- * - Edit: admin.php?page=tmt-crm-customers&action=edit&id=123
- *
- * Submit qua admin-post:
- * - Save  : admin-post.php?action=tmt_crm_customer_save
- * - Delete: admin-post.php?action=tmt_crm_customer_delete&id=123&_wpnonce=...
- *
- * Quyền (capabilities):
- * - Xem danh sách: Capability::MANAGE
- * - Tạo mới      : Capability::CREATE
- * - Sửa          : Capability::EDIT
- * - Xoá          : Capability::DELETE
- */
 final class CustomerScreen
 {
-    /** Đăng ký admin_post handlers (gọi trong Hooks::register) */
     public static function boot(): void
     {
         add_action('admin_post_tmt_crm_customer_save',   [self::class, 'handle_save']);
         add_action('admin_post_tmt_crm_customer_delete', [self::class, 'handle_delete']);
     }
 
-    /** Bộ định tuyến view theo query string */
+    /**
+     * Được gọi từ Menu::register() khi load trang customers
+     * để hiển thị Screen Options (per-page)
+     */
+    public static function on_load_customers(): void
+    {
+        if (!current_user_can(Capability::MANAGE)) {
+            return;
+        }
+        add_screen_option('per_page', [
+            'label'   => __('Số khách hàng mỗi trang', 'tmt-crm'),
+            'default' => 20,
+            'option'  => 'tmt_crm_customers_per_page',
+        ]);
+    }
+
+    /** Lưu giá trị Screen Options per-page */
+    public static function save_screen_option($status, $option, $value)
+    {
+        if ('tmt_crm_customers_per_page' === $option) {
+            return (int) $value;
+        }
+        return $status;
+    }
+
+    /** Router view */
     public static function dispatch(): void
     {
-        // Chặn truy cập nếu không có quyền xem module CRM
         if (!current_user_can(Capability::MANAGE)) {
             wp_die(__('Bạn không có quyền truy cập danh sách khách hàng.', 'tmt-crm'));
         }
 
         $action = isset($_GET['action']) ? sanitize_key($_GET['action']) : 'list';
 
-        switch ($action) {
-            case 'add':
-                // Kiểm tra quyền tạo trước khi render form
-                if (!current_user_can(Capability::CREATE)) {
-                    wp_die(__('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
-                }
-                self::render_form();
-                break;
-
-            case 'edit':
-                // Kiểm tra quyền sửa trước khi render form
-                if (!current_user_can(Capability::EDIT)) {
-                    wp_die(__('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
-                }
-                $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
-                self::render_form($id);
-                break;
-
-            default:
-                self::render_list();
+        if ($action === 'add') {
+            if (!current_user_can(Capability::CREATE)) wp_die(__('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
+            self::render_form();
+            return;
         }
+
+        if ($action === 'edit') {
+            if (!current_user_can(Capability::EDIT)) wp_die(__('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+            $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
+            self::render_form($id);
+            return;
+        }
+
+        self::render_list();
     }
 
-    /** List View */
+    /** LIST VIEW: dùng CustomerListTable + bulk delete */
     public static function render_list(): void
     {
-        $svc      = Container::get('customer-service');
-        $page     = max(1, (int)($_GET['paged'] ?? 1));
-        $per_page = 20;
+        $table = new CustomerListTable();
 
-        $filters = [
-            'keyword'  => sanitize_text_field($_GET['s'] ?? ''),
-            'type'     => sanitize_key($_GET['type'] ?? ''),
-            'owner_id' => isset($_GET['owner']) ? absint($_GET['owner']) : null,
-        ];
+        // Bulk delete
+        if (current_user_can(Capability::DELETE) && $table->current_action() === 'bulk-delete') {
+            check_admin_referer('bulk-customers');
 
-        $data      = $svc->list_customers($page, $per_page, $filters);
-        $customers = $data['items'] ?? [];
-        $total     = (int)($data['total'] ?? 0);
-
-        $message = '';
-        if (isset($_GET['created'])) $message = 'created';
-        elseif (isset($_GET['updated'])) $message = 'updated';
-        elseif (isset($_GET['deleted'])) $message = 'deleted';
-        elseif (isset($_GET['error']))   $message = 'error';
-
-        $base_url = admin_url('admin.php?page=tmt-crm-customers');
-
-        // include template
-        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/customers-list.php';
-        if (file_exists($tpl)) {
-            /** @var array $filters */
-            include $tpl;
-        } else {
-            echo '<div class="error"><p>Template customers-list.php không tồn tại.</p></div>';
+            $ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
+            $ids = array_values(array_filter(array_map('absint', $ids)));
+            if (!empty($ids)) {
+                $svc = Container::get('customer-service');
+                foreach ($ids as $id) {
+                    try {
+                        $svc->delete($id);
+                    } catch (\Throwable $e) {
+                    }
+                }
+                wp_safe_redirect(add_query_arg('deleted', count($ids), admin_url('admin.php?page=tmt-crm-customers')));
+                exit;
+            }
         }
+
+        // Nạp dữ liệu + phân trang
+        $table->prepare_items();
+
+        // Notices
+        if (isset($_GET['created'])) echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo khách hàng.', 'tmt-crm') . '</p></div>';
+        if (isset($_GET['updated'])) echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật khách hàng.', 'tmt-crm') . '</p></div>';
+        if (isset($_GET['deleted'])) echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s khách hàng.', 'tmt-crm'), (int)$_GET['deleted']) . '</p></div>';
+        if (isset($_GET['error']) && !empty($_GET['msg'])) {
+            echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash($_GET['msg'])) . '</p></div>';
+        }
+
+        // Link “Thêm mới”
+        $add_url = add_query_arg(['page' => 'tmt-crm-customers', 'action' => 'add'], admin_url('admin.php'));
+?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline"><?php esc_html_e('Danh sách khách hàng', 'tmt-crm'); ?></h1>
+            <?php if (current_user_can(Capability::CREATE)) : ?>
+                <a href="<?php echo esc_url($add_url); ?>" class="page-title-action"><?php esc_html_e('Thêm mới', 'tmt-crm'); ?></a>
+            <?php endif; ?>
+            <hr class="wp-header-end" />
+
+            <form method="get">
+                <input type="hidden" name="page" value="tmt-crm-customers" />
+                <?php
+                // Ô search native
+                $table->search_box(__('Tìm kiếm khách hàng', 'tmt-crm'), 'customer');
+                // Bảng
+                $table->display();
+                // Nonce cho bulk
+                wp_nonce_field('bulk-customers');
+                ?>
+            </form>
+        </div>
+<?php
     }
 
+    /* Giữ nguyên render_form(), handle_save(), handle_delete() của bạn */
     /** Form View (Add/Edit) */
     public static function render_form(int $id = 0): void
     {
@@ -111,7 +137,7 @@ final class CustomerScreen
         if ($id > 0) {
             $customer = $svc->get_by_id($id); // CustomerDTO|null
             if (!$customer) {
-                echo '<div class="error"><p>'.esc_html__('Không tìm thấy khách hàng.', 'tmt-crm').'</p></div>';
+                echo '<div class="error"><p>' . esc_html__('Không tìm thấy khách hàng.', 'tmt-crm') . '</p></div>';
                 return;
             }
         }
@@ -141,7 +167,7 @@ final class CustomerScreen
         }
 
         // Kiểm nonce
-        $nonce_name = $id > 0 ? 'tmt_crm_customer_update_'.$id : 'tmt_crm_customer_create';
+        $nonce_name = $id > 0 ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], $nonce_name)) {
             wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
         }
@@ -200,7 +226,7 @@ final class CustomerScreen
             wp_die(__('Thiếu ID.', 'tmt-crm'));
         }
 
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'tmt_crm_customer_delete_'.$id)) {
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'tmt_crm_customer_delete_' . $id)) {
             wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
         }
 
