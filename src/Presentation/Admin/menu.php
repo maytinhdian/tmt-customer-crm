@@ -38,15 +38,11 @@ final class Menu
             [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'dispatch']
         );
 
-
-        // Screen Options (per-page)
-        add_action('load-' . self::$customers_hook, [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'on_load_customers']);
-        add_filter('set-screen-option', [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'save_screen_option'], 10, 3);
-
         // Screen Options cho Customers
         add_action('load-' . self::$customers_hook, [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'save_screen_option'], 10, 3);
 
+        
         // --- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(
             'tmt-crm',

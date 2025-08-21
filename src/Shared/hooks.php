@@ -59,17 +59,10 @@ final class Hooks
 
         // Repositories
         Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
-        // Container::set('quotation-repo', fn() => new WpdbQuotationRepository($wpdb));
-        // Container::set('invoice-repo',   fn() => new WpdbInvoiceRepository($wpdb));
-        // Container::set('debt-repo',      fn() => new WpdbDebtRepository($wpdb));
-        // Container::set('payment-repo',   fn() => new WpdbPaymentRepository($wpdb));
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb)); // ← NEW
 
         // Services
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo')));
-        // Container::set('quotation-service', fn() => new QuotationService(Container::get('quotation-repo')));
-        // Container::set('invoice-service',   fn() => new InvoiceService(Container::get('invoice-repo')));
-        // Container::set('payment-service',   fn() => new PaymentService(Container::get('payment-repo'), Container::get('invoice-repo')));
         Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'))); // ← NEW
     }
 

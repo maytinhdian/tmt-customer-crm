@@ -1,4 +1,5 @@
 <?php
+
 namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use TMT\CRM\Shared\Container;
@@ -45,6 +46,7 @@ final class CustomerListTable extends \WP_List_Table
         return [
             'id'   => ['id', false],
             'name' => ['name', false],
+            'company'=>['name',false]
         ];
     }
 
@@ -120,7 +122,7 @@ final class CustomerListTable extends \WP_List_Table
         $current_page = $this->get_pagenum();
         $orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : '';
         $order   = isset($_GET['order']) ? strtoupper(sanitize_text_field($_GET['order'])) : 'DESC';
-        if (!in_array($order, ['ASC','DESC'], true)) $order = 'DESC';
+        if (!in_array($order, ['ASC', 'DESC'], true)) $order = 'DESC';
 
         $filters = [
             'keyword'  => sanitize_text_field($_GET['s'] ?? ''),
@@ -135,14 +137,27 @@ final class CustomerListTable extends \WP_List_Table
         $items = $data['items'] ?? [];
         $this->total = (int)($data['total'] ?? 0);
 
-        // Chuẩn hoá về array cho dễ render
+        // Chuẩn hoá về array cho dễ render (an toàn kiểu)
         $this->items_data = array_map(function ($c) {
+            if (is_array($c)) {
+                return [
+                    'id'      => (int)   ($c['id'] ?? 0),
+                    'name'    => (string)($c['name'] ?? ''),
+                    'email'   => (string)($c['email'] ?? ''),
+                    'phone'   => (string)($c['phone'] ?? ''),
+                    // fallback company_name nếu service trả tên công ty theo key khác
+                    'company' => (string)($c['company'] ?? $c['company_name'] ?? ''),
+                ];
+            }
+
+            // Mặc định: CustomerDTO (object)
             return [
-                'id'      => (int) ($c->id ?? $c['id'] ?? 0),
-                'name'    => (string)($c->name ?? $c['name'] ?? ''),
-                'email'   => (string)($c->email ?? $c['email'] ?? ''),
-                'phone'   => (string)($c->phone ?? $c['phone'] ?? ''),
-                'company' => (string)($c->company ?? $c['company'] ?? ''),
+                'id'      => (int)   ($c->id ?? 0),
+                'name'    => (string)($c->name ?? ''),
+                'email'   => (string)($c->email ?? ''),
+                'phone'   => (string)($c->phone ?? ''),
+                // fallback company_name nếu DTO dùng thuộc tính khác
+                'company' => (string)($c->company ?? $c->company_name ?? ''),
             ];
         }, $items);
 

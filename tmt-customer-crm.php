@@ -13,6 +13,13 @@ if (!defined('ABSPATH')) {
 
 use TMT\CRM\Infrastructure\Security\CustomerRoleService;
 
+/** ====== 1) Hằng số cơ bản ====== */
+define('TMT_CRM_FILE', __FILE__);
+define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
+define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
+define('TMT_CRM_DB_VERSION', '1.0.0'); // tăng số này khi đổi schema
+
+
 /** ====== 0) Autoload an toàn ====== */
 $composer_autoload = __DIR__ . '/vendor/autoload.php';
 if (file_exists($composer_autoload)) {
@@ -24,16 +31,13 @@ if (file_exists($composer_autoload)) {
     }
 }
 
-/** ====== 1) Hằng số cơ bản ====== */
-define('TMT_CRM_FILE', __FILE__);
-define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
-define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
-define('TMT_CRM_DB_VERSION', '1.0.0'); // tăng số này khi đổi schema
-
 /** ====== 2) Đăng ký activation: tạo bảng + lưu version ====== */
 register_activation_hook(TMT_CRM_FILE, function () {
+    /** @var \wpdb $wpdb */
+    global $wpdb;
+
     if (class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
-        (new \TMT\CRM\Infrastructure\Migrations\Installer())->run();
+        (new \TMT\CRM\Infrastructure\Migrations\Installer($wpdb))->run();
     }
     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
 
@@ -49,10 +53,7 @@ add_action('plugins_loaded', function () {
             (new \TMT\CRM\Infrastructure\Migrations\Installer())->run();
         }
         update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
-        // Tạo bảng
-        \TMT\CRM\Shared\Container::get('company_repo')->install();
-
-
+    
         // Map capability tối thiểu cho admin
         $role = get_role('administrator');
         if ($role && !$role->has_cap('manage_tmt_crm_companies')) {
@@ -63,9 +64,6 @@ add_action('plugins_loaded', function () {
     // Khởi động hệ thống sau khi đảm bảo schema OK
     if (class_exists(\TMT\CRM\Shared\Hooks::class)) {
         \TMT\CRM\Shared\Hooks::register();
-
-        // Nếu bạn đang chạy chế độ "Customer-only", nhớ bật boot screen:
-        // \TMT\CRM\Presentation\Admin\CustomerScreen::boot();
     }
 });
 
