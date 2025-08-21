@@ -8,14 +8,14 @@ final class Routes
     {
         register_rest_route('tmt-crm/v1', '/customers', [
             'methods'  => 'GET',
-            'callback' => [Customer_Controller::class, 'index'],
+            'callback' => [CustomerController::class, 'index'],
             'permission_callback' => function () {
                 return current_user_can('manage_options');
             }
         ]);
         register_rest_route('tmt-crm/v1', '/customers', [
             'methods'  => 'POST',
-            'callback' => [Customer_Controller::class, 'store'],
+            'callback' => [CustomerController::class, 'store'],
             'permission_callback' => function () {
                 return current_user_can('manage_options');
             }
@@ -23,19 +23,19 @@ final class Routes
         // Invoices
         register_rest_route('tmt-crm/v1', '/invoices', [
             'methods' => 'POST',
-            'callback' => [Invoice_Controller::class, 'store'],
+            'callback' => [InvoiceController::class, 'store'],
             'permission_callback' => fn() => current_user_can('manage_options')
         ]);
         register_rest_route('tmt-crm/v1', '/invoices/(?P<id>\\d+)/payments', [
             'methods' => 'POST',
-            'callback' => [Invoice_Controller::class, 'add_payment'],
+            'callback' => [InvoiceController::class, 'add_payment'],
             'permission_callback' => fn() => current_user_can('manage_options')
         ]);
 
         // Payments (liệt kê theo invoice)
         register_rest_route('tmt-crm/v1', '/payments/by-invoice/(?P<id>\\d+)', [
             'methods' => 'GET',
-            'callback' => [Payment_Controller::class, 'index_by_invoice'],
+            'callback' => [PaymentController::class, 'index_by_invoice'],
             'permission_callback' => fn() => current_user_can('manage_options')
         ]);
     }

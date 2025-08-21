@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use TMT\CRM\Infrastructure\Security\CustomerRoleService;
+
 /** ====== 0) Autoload an toàn ====== */
 $composer_autoload = __DIR__ . '/vendor/autoload.php';
 if (file_exists($composer_autoload)) {
@@ -34,6 +36,9 @@ register_activation_hook(TMT_CRM_FILE, function () {
         (new \TMT\CRM\Infrastructure\Migrations\Installer())->run();
     }
     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
+
+    // Cài quyền + roles
+    CustomerRoleService::install();
 });
 
 /** ====== 3) Auto-upgrade DB khi plugin load ====== */
@@ -53,4 +58,14 @@ add_action('plugins_loaded', function () {
         // Nếu bạn đang chạy chế độ "Customer-only", nhớ bật boot screen:
         // \TMT\CRM\Presentation\Admin\CustomerScreen::boot();
     }
+});
+
+// 1) Không chặn admin cho role CRM
+add_filter('woocommerce_prevent_admin_access', function ($prevent_access) {
+    if (!is_user_logged_in()) return $prevent_access;
+    $u = wp_get_current_user();
+    if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array)$u->roles)) {
+        return false; // cho phép vào wp-admin
+    }
+    return $prevent_access;
 });
