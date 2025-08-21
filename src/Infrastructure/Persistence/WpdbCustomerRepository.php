@@ -1,71 +1,192 @@
 <?php
+
 namespace TMT\CRM\Infrastructure\Persistence;
 
 use wpdb;
-use TMT\CRM\Domain\Entities\Customer;
+use TMT\CRM\Application\DTO\CustomerDTO;
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
 
-final class WpdbCustomerRepository implements CustomerRepositoryInterface {
-    public function __construct(private wpdb $db) {}
-    private function table(): string { return $this->db->prefix . 'crm_customers'; }
+/**
+ * Repository: wpdb-based cho bảng customers.
+ * - Map hàng DB <-> CustomerDTO
+ * - Phân trang + filter an toàn (prepare)
+ * - Ghi nhận NULL đúng chuẩn (format động)
+ */
+final class WpdbCustomerRepository implements CustomerRepositoryInterface
+{
+    private wpdb $db;
+    private string $table;
 
-    public function create(Customer $c): int {
-        $this->db->insert($this->table(), [
-            'full_name' => $c->full_name,
-            'phone'     => $c->phone,
-            'email'     => $c->email,
-            'company_id'=> $c->company_id,
-            'address'   => $c->address,
-            'tags'      => $c->tags,
-            'note'      => $c->note,
-            'created_at'=> current_time('mysql'),
-        ], ['%s','%s','%s','%d','%s','%s','%s','%s']);
-        return (int) $this->db->insert_id;
+    public function __construct(wpdb $db, string $table_name = '')
+    {
+        $this->db    = $db;
+        $this->table = $table_name ?: ($db->prefix . 'tmt_crm_customers');
     }
 
-    public function update(Customer $c): bool {
-        return (bool) $this->db->update($this->table(), [
-            'full_name' => $c->full_name,
-            'phone'     => $c->phone,
-            'email'     => $c->email,
-            'company_id'=> $c->company_id,
-            'address'   => $c->address,
-            'tags'      => $c->tags,
-            'note'      => $c->note,
-        ], ['id' => $c->id], ['%s','%s','%s','%d','%s','%s','%s'], ['%d']);
+    public function find_by_id(int $id): ?CustomerDTO
+    {
+        $sql = "SELECT * FROM {$this->table} WHERE id = %d";
+        $row = $this->db->get_row($this->db->prepare($sql, $id), ARRAY_A);
+
+        return $row ? $this->map_row_to_dto($row) : null;
     }
 
-    public function find_by_id(int $id): ?Customer {
-        $row = $this->db->get_row($this->db->prepare(
-            "SELECT * FROM {$this->table()} WHERE id = %d", $id
-        ));
-        if (!$row) return null;
-        return new Customer((int)$row->id, $row->full_name, $row->phone, $row->email, (int)$row->company_id, $row->address, $row->tags, $row->note);
+    /** @return CustomerDTO[] */
+    public function list_paginated(int $page, int $per_page, array $filters = []): array
+    {
+        $offset = max(0, ($page - 1) * $per_page);
+
+        [$where_sql, $params] = $this->build_where($filters);
+        $sql = "SELECT * FROM {$this->table} {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+        $params[] = $per_page;
+        $params[] = $offset;
+
+        $rows = $this->db->get_results($this->db->prepare($sql, $params), ARRAY_A) ?: [];
+
+        return array_map([$this, 'map_row_to_dto'], $rows);
     }
 
-    public function find_by_email_or_phone(string $email, string $phone): ?Customer {
-        $row = $this->db->get_row($this->db->prepare(
-            "SELECT * FROM {$this->table()} WHERE email = %s OR phone = %s LIMIT 1", $email, $phone
-        ));
-        if (!$row) return null;
-        return new Customer((int)$row->id, $row->full_name, $row->phone, $row->email, (int)$row->company_id, $row->address, $row->tags, $row->note);
+    public function count_all(array $filters = []): int
+    {
+        [$where_sql, $params] = $this->build_where($filters);
+        $sql = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
+
+        if (!empty($params)) {
+            return (int)$this->db->get_var($this->db->prepare($sql, $params));
+        }
+        return (int)$this->db->get_var($sql);
     }
 
-    public function search(string $keyword, int $paged = 1, int $per_page = 20): array {
-        $offset = ($paged - 1) * $per_page;
-        $kw = '%' . $this->db->esc_like($keyword) . '%';
-        $items = $this->db->get_results($this->db->prepare(
-            "SELECT * FROM {$this->table()} WHERE full_name LIKE %s OR phone LIKE %s OR email LIKE %s ORDER BY id DESC LIMIT %d OFFSET %d",
-            $kw, $kw, $kw, $per_page, $offset
-        ));
-        $total = (int) $this->db->get_var($this->db->prepare(
-            "SELECT COUNT(*) FROM {$this->table()} WHERE full_name LIKE %s OR phone LIKE %s OR email LIKE %s",
-            $kw, $kw, $kw
-        ));
-        return [$items, $total];
+    public function create(CustomerDTO $dto): int
+    {
+        $now = current_time('mysql'); // local time
+
+        $data = [
+            'name'       => $dto->name,
+            'email'      => $dto->email,
+            'phone'      => $dto->phone,
+            'company'    => $dto->company,
+            'address'    => $dto->address,
+            'note'       => $dto->note,
+            'type'       => $dto->type,
+            'owner_id'   => $dto->owner_id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        [$filtered, $format] = $this->normalize_for_db($data);
+
+        $this->db->insert($this->table, $filtered, $format);
+        return (int)$this->db->insert_id;
     }
 
-    public function delete(int $id): bool {
-        return (bool) $this->db->delete($this->table(), ['id' => $id], ['%d']);
+    public function update(CustomerDTO $dto): bool
+    {
+        if (!$dto->id) return false;
+
+        $data = [
+            'name'       => $dto->name,
+            'email'      => $dto->email,
+            'phone'      => $dto->phone,
+            'company'    => $dto->company,
+            'address'    => $dto->address,
+            'note'       => $dto->note,
+            'type'       => $dto->type,
+            'owner_id'   => $dto->owner_id,
+            'updated_at' => current_time('mysql'),
+        ];
+
+        [$filtered, $format] = $this->normalize_for_db($data);
+
+        return (bool)$this->db->update(
+            $this->table,
+            $filtered,
+            ['id' => (int)$dto->id],
+            $format,
+            ['%d']
+        );
+    }
+
+    public function delete(int $id): bool
+    {
+        return (bool)$this->db->delete($this->table, ['id' => $id], ['%d']);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────────────
+
+    private function map_row_to_dto(array $row): CustomerDTO
+    {
+        return new CustomerDTO(
+            (int)($row['id'] ?? 0),
+            (string)($row['name'] ?? ''),
+            $row['email']      ?? null,
+            $row['phone']      ?? null,
+            $row['company']    ?? null,
+            $row['address']    ?? null,
+            $row['note']       ?? null,
+            $row['type']       ?? null,
+            isset($row['owner_id']) ? (int)$row['owner_id'] : null,
+            $row['created_at'] ?? null,
+            $row['updated_at'] ?? null
+        );
+    }
+
+    /**
+     * Xây WHERE an toàn từ filters.
+     * @return array{0:string,1:array} [where_sql, params]
+     */
+    private function build_where(array $filters): array
+    {
+        $clauses = [];
+        $params  = [];
+
+        if (!empty($filters['keyword'])) {
+            $kw = '%' . $this->db->esc_like($filters['keyword']) . '%';
+            $clauses[] = "(name LIKE %s OR email LIKE %s OR phone LIKE %s OR company LIKE %s)";
+            array_push($params, $kw, $kw, $kw, $kw);
+        }
+
+        if (!empty($filters['type'])) {
+            $clauses[] = "type = %s";
+            $params[]  = $filters['type'];
+        }
+
+        if (!empty($filters['owner_id'])) {
+            $clauses[] = "owner_id = %d";
+            $params[]  = (int)$filters['owner_id'];
+        }
+
+        $where_sql = $clauses ? 'WHERE ' . implode(' AND ', $clauses) : '';
+        return [$where_sql, $params];
+    }
+
+    /**
+     * Biến mảng data thành [data, format] cho wpdb:
+     * - BỎ QUA key có giá trị NULL để DB set NULL đúng nghĩa.
+     * - Tự suy luận format (%s/%d) theo kiểu PHP của value còn lại.
+     */
+    private function normalize_for_db(array $data): array
+    {
+        $filtered = [];
+        $format   = [];
+
+        foreach ($data as $key => $value) {
+            if ($value === null) {
+                // Bỏ qua key này để DB ghi NULL (nếu cột cho phép)
+                continue;
+            }
+            $filtered[$key] = $value;
+
+            // format: int -> %d, else -> %s
+            if (is_int($value)) {
+                $format[] = '%d';
+            } else {
+                $format[] = '%s';
+            }
+        }
+
+        return [$filtered, $format];
     }
 }

@@ -4,101 +4,151 @@ namespace TMT\CRM\Infrastructure\Migrations;
 
 use wpdb;
 
+defined('ABSPATH') || exit;
+
+/**
+ * Installer / Migrator cho module Customers
+ * - Tạo bảng mới: {$wpdb->prefix}tmt_crm_customers
+ * - Di trú dữ liệu từ bảng cũ {$wpdb->prefix}crm_customers (nếu có)
+ * - Thêm FULLTEXT (nếu DB hỗ trợ)
+ */
 final class Installer
 {
-    public function __construct(private ?wpdb $db = null)
+    private wpdb $db;
+    private string $new_table;
+    private string $legacy_table;
+
+    public function __construct(?wpdb $db = null)
     {
         global $wpdb;
-        $this->db = $this->db ?: $wpdb;
+        $this->db          = $db ?: $wpdb;
+        $this->new_table   = $this->db->prefix . 'tmt_crm_customers';
+        $this->legacy_table = $this->db->prefix . 'crm_customers';
     }
 
+    /** Gọi trong register_activation_hook hoặc routine nâng cấp */
     public function run(): void
     {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $this->create_new_table();
+        $this->migrate_legacy_customers();
+        $this->maybe_add_fulltext_index();
+    }
+
+    /** Tạo bảng mới đúng theo Repository hiện tại */
+    private function create_new_table(): void
+    {
         $charset = $this->db->get_charset_collate();
 
-        // Customers
-        $sql_customers = "CREATE TABLE {$this->db->prefix}crm_customers (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            full_name VARCHAR(255) NOT NULL,
-            phone VARCHAR(50) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            company_id BIGINT UNSIGNED NULL,
-            address TEXT NULL,
-            tags TEXT NULL,
-            note TEXT NULL,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
-
-        // Companies
-        $sql_companies = "CREATE TABLE {$this->db->prefix}crm_companies (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            name VARCHAR(255) NOT NULL,
-            tax_code VARCHAR(50) NULL,
-            address TEXT NULL,
-            contact_person VARCHAR(255) NULL,
+        // dbDelta-friendly: từng dòng, KEY đặt tên, types rõ ràng.
+        $sql = "CREATE TABLE {$this->new_table} (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            name VARCHAR(191) NOT NULL,
+            email VARCHAR(191) NULL,
             phone VARCHAR(50) NULL,
-            email VARCHAR(255) NULL,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
-
-        // Quotations
-        $sql_quotations = "CREATE TABLE {$this->db->prefix}crm_quotations (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            customer_id BIGINT UNSIGNED NOT NULL,
-            total DECIMAL(15,2) NOT NULL,
-            status VARCHAR(50) NOT NULL,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
-
-        // Invoices
-        $sql_invoices = "CREATE TABLE {$this->db->prefix}crm_invoices (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            quotation_id BIGINT UNSIGNED NULL,
-            customer_id BIGINT UNSIGNED NOT NULL,
-            total DECIMAL(15,2) NOT NULL,
-            paid DECIMAL(15,2) NOT NULL DEFAULT 0,
-            status VARCHAR(50) NOT NULL,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
-
-        // Debts
-        $sql_debts = "CREATE TABLE {$this->db->prefix}crm_debts (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            invoice_id BIGINT UNSIGNED NOT NULL,
-            amount DECIMAL(15,2) NOT NULL,
-            due_date DATETIME NOT NULL,
-            paid TINYINT(1) DEFAULT 0,
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
-
-        // payments (NEW)
-        $sql_payments = "CREATE TABLE {$this->db->prefix}crm_payments (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            invoice_id BIGINT UNSIGNED NOT NULL,
-            amount DECIMAL(15,2) NOT NULL,
+            company VARCHAR(191) NULL,
+            address TEXT NULL,
             note TEXT NULL,
-            paid_at DATETIME NOT NULL,
+            type VARCHAR(50) NULL,
+            owner_id BIGINT(20) UNSIGNED NULL,
             created_at DATETIME NOT NULL,
-            PRIMARY KEY (id)
-        ) $charset;";
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY type (type),
+            KEY owner_id (owner_id),
+            KEY name_idx (name),
+            KEY email_idx (email),
+            KEY phone_idx (phone),
+            KEY company_idx (company)
+        ) {$charset};";
 
+        \dbDelta($sql);
+    }
 
-        dbDelta($sql_customers);
-        dbDelta($sql_companies);
-        dbDelta($sql_quotations);
-        dbDelta($sql_invoices);
-        dbDelta($sql_debts);
-        dbDelta($sql_payments);
+    /**
+     * Di trú dữ liệu từ bảng cũ (nếu tồn tại) sang bảng mới.
+     * Map:
+     * - full_name  -> name
+     * - email, phone, address, note giữ nguyên nếu có
+     * - company_id -> bỏ (schema mới dùng 'company' là tên tự do)
+     * - tags       -> bỏ
+     * - updated_at -> nếu null, set = created_at
+     */
+    private function migrate_legacy_customers(): void
+    {
+        // Nếu không có bảng cũ thì bỏ qua
+        $legacy_exists = $this->table_exists($this->legacy_table);
+        if (!$legacy_exists) {
+            return;
+        }
+
+        // Tránh migrate trùng nhiều lần: nếu bảng mới đã có dữ liệu thì thôi
+        $new_has_rows = (int)$this->db->get_var("SELECT COUNT(1) FROM {$this->new_table}") > 0;
+        if ($new_has_rows) {
+            return;
+        }
+
+        // Kiểm tra cột của bảng cũ có đúng kỳ vọng không
+        $cols = $this->db->get_col("SHOW COLUMNS FROM {$this->legacy_table}", 0);
+        $needed = ['id', 'full_name', 'phone', 'email', 'address', 'note', 'created_at', 'updated_at'];
+        foreach ($needed as $col) {
+            if (!in_array($col, $cols, true)) {
+                // Bảng cũ không đúng schema kỳ vọng → không migrate để an toàn
+                return;
+            }
+        }
+
+        // Chuyển dữ liệu: company để NULL, type/owner_id để NULL.
+        // updated_at nếu NULL → dùng created_at.
+        $sql = "
+            INSERT INTO {$this->new_table}
+                (id, name, email, phone, company, address, note, type, owner_id, created_at, updated_at)
+            SELECT
+                id,
+                full_name AS name,
+                NULLIF(email, '') AS email,
+                NULLIF(phone, '') AS phone,
+                NULL,                        -- company (schema cũ: company_id) → bỏ
+                NULLIF(address, '') AS address,
+                NULLIF(note, '') AS note,
+                NULL,                        -- type
+                NULL,                        -- owner_id
+                created_at,
+                COALESCE(updated_at, created_at) AS updated_at
+            FROM {$this->legacy_table};
+        ";
+
+        // Nếu fail thì bỏ qua (không gây fatal)
+        @$this->db->query($sql);
+    }
+
+    /** Thêm FULLTEXT nếu engine hỗ trợ */
+    private function maybe_add_fulltext_index(): void
+    {
+        // Kiểm tra đã có FULLTEXT chưa
+        $has = $this->db->get_var($this->db->prepare(
+            "SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND INDEX_TYPE = 'FULLTEXT'",
+            \DB_NAME,
+            $this->new_table
+        ));
+        if ($has) return;
+
+        // Thử thêm FULLTEXT (InnoDB MySQL 5.6+)
+        $sql = "ALTER TABLE {$this->new_table}
+                ADD FULLTEXT KEY tmt_crm_customers_ft (name, email, phone, company)";
+        @$this->db->query($sql);
+    }
+
+    private function table_exists(string $table): bool
+    {
+        $table = esc_sql($table);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return (bool) $this->db->get_var($this->db->prepare(
+            "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+            \DB_NAME,
+            $table
+        ));
     }
 }
