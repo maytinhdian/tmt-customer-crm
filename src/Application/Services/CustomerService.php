@@ -19,15 +19,40 @@ class CustomerService
         return $this->repo->find_by_id($id);
     }
 
-    /**
-     * @return array{items: CustomerDTO[], total: int, page: int, per_page: int}
-     */
-    public function list_customers(int $page = 1, int $per_page = 20, array $filters = []): array
-    {
-        $items = $this->repo->list_paginated($page, $per_page, $filters);
-        $total = $this->repo->count_all($filters);
 
-        return compact('items', 'total', 'page', 'per_page');
+
+    /**
+     * @return array{items: array<int, mixed>, total: int}
+     */
+    public function list_customers(int $page, int $perPage, array $filters = []): array
+    {
+        $page    = max(1, $page);
+        $perPage = max(1, $perPage);
+
+        // Whitelist orderby để chống SQL injection
+        $allowedOrderby = ['id', 'name', 'email', 'phone', 'company'];
+        $orderby = $filters['orderby'] ?? 'id';
+        if (!in_array($orderby, $allowedOrderby, true)) {
+            $orderby = 'id';
+        }
+
+        $order = strtoupper($filters['order'] ?? 'DESC');
+        $order = ($order === 'ASC') ? 'ASC' : 'DESC';
+
+        $args = [
+            'keyword'  => (string)($filters['keyword'] ?? ''),
+            'type'     => (string)($filters['type'] ?? ''),
+            'owner_id' => $filters['owner_id'] ?? null,
+            'orderby'  => $orderby,
+            'order'    => $order,
+            'limit'    => $perPage,
+            'offset'   => ($page - 1) * $perPage,
+        ];
+
+        $items    = $this->repo->list_paginated($page, $args['limit'], $args);
+        $total    = $this->repo->count_all($args);
+
+        return ['items' => $items, 'total' => (int)$total];
     }
 
     public function create(CustomerDTO $dto): int
@@ -59,12 +84,9 @@ class CustomerService
         if ($dto->email && !is_email($dto->email)) {
             throw new \InvalidArgumentException('Email không hợp lệ.');
         }
-        if ($dto->phone && !preg_match('/^[0-9+\-\s()]{6,20}$/', $dto->phone)) {
+        $re = '/^(?:\+?84|0)(?:3[2-9]|5[25689]|7[06-9]|8[1-9]|9[0-46-9])\d{7}$/';
+        if ($dto->phone && !preg_match($re, $dto->phone)) {
             throw new \InvalidArgumentException('Số điện thoại không hợp lệ.');
         }
     }
 }
-
-
-
-

@@ -145,7 +145,7 @@ final class CustomerScreen
             <?php endif; ?>
             <hr class="wp-header-end" />
 
-            <form method="get">
+            <form method="post">
                 <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE_SLUG); ?>" />
                 <?php
                 // Ô search native

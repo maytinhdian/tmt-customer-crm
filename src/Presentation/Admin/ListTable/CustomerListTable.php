@@ -46,7 +46,7 @@ final class CustomerListTable extends \WP_List_Table
         return [
             'id'   => ['id', false],
             'name' => ['name', false],
-            'company'=>['name',false]
+            'company'=>['company',false]
         ];
     }
 
