@@ -9,6 +9,7 @@ use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\ListTable\CustomerListTable;
 use TMT\CRM\Application\DTO\CustomerDTO;
 
+
 defined('ABSPATH') || exit;
 
 /**
@@ -98,26 +99,29 @@ final class CustomerScreen
     {
         $table = new CustomerListTable();
 
+
         // Bulk delete (nếu list-table submit)
         if (current_user_can(Capability::DELETE) && $table->current_action() === 'bulk-delete') {
             check_admin_referer('bulk-customers');
 
-            $ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
-            $ids = array_values(array_filter(array_map('absint', $ids)));
-
+            $ids = $table->get_selected_ids_for_bulk_delete();
             if (!empty($ids)) {
                 $svc = Container::get('customer-service');
                 foreach ($ids as $id) {
                     try {
                         $svc->delete($id);
                     } catch (\Throwable $e) {
-                        // nuốt lỗi từng item để tiếp tục xóa các item khác
+                        // log lại để truy vết, vẫn tiếp tục các item khác
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log('[tmt-crm] bulk delete failed id=' . $id . ' msg=' . $e->getMessage());
+                        }
                     }
                 }
                 wp_safe_redirect(self::url(['deleted' => count($ids)]));
                 exit;
             }
         }
+
 
         // Nạp dữ liệu + phân trang
         $table->prepare_items();

@@ -72,6 +72,16 @@ class CustomerService
         return $this->repo->delete($id);
     }
 
+    public function list_paginated(int $page, int $per_page, array $filters = []): array
+    {
+        return $this->repo->list_paginated($page, $per_page, $filters);
+    }
+
+    public function count_all(array $filters = []): int
+    {
+        return $this->repo->count_all($filters);
+    }
+
     private function validate(CustomerDTO $dto, bool $is_update): void
     {
         if ($is_update && !$dto->id) {

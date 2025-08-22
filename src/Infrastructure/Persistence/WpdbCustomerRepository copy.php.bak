@@ -9,16 +9,13 @@ use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
 /**
  * Repository: wpdb-based cho bảng customers.
  * - Map hàng DB <-> CustomerDTO
- * - Phân trang + filter + sort an toàn (prepare)
+ * - Phân trang + filter an toàn (prepare)
  * - Ghi nhận NULL đúng chuẩn (format động)
  */
 final class WpdbCustomerRepository implements CustomerRepositoryInterface
 {
     private wpdb $db;
     private string $table;
-
-    /** Chỉ cho phép sort theo các cột này */
-    private static array $sortable_fields = ['id', 'name', 'email', 'phone', 'type', 'created_at'];
 
     public function __construct(wpdb $db, string $table_name = '')
     {
@@ -41,8 +38,9 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
 
         [$where_sql, $params] = $this->build_where($filters);
 
-        // 👉 xử lý sort động
-        $order_by = in_array($filters['orderby'] ?? '', self::$sortable_fields, true) ? $filters['orderby'] : 'id';
+        // 🧠 Xử lý sort
+        $allowed_fields = ['id', 'name', 'email', 'phone', 'type', 'created_at'];  // tuỳ bạn mở rộng
+        $order_by = in_array($filters['orderby'] ?? '', $allowed_fields, true) ? $filters['orderby'] : 'id';
         $order    = strtolower($filters['order'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
 
         $sql = "SELECT * FROM {$this->table} {$where_sql} ORDER BY `$order_by` $order LIMIT %d OFFSET %d";
@@ -53,6 +51,7 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
 
         return array_map([$this, 'map_row_to_dto'], $rows);
     }
+
 
     public function count_all(array $filters = []): int
     {
@@ -67,7 +66,7 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
 
     public function create(CustomerDTO $dto): int
     {
-        $now = current_time('mysql');
+        $now = current_time('mysql'); // local time
 
         $data = [
             'name'       => $dto->name,
@@ -181,10 +180,18 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         $format   = [];
 
         foreach ($data as $key => $value) {
-            if ($value === null) continue;
-
+            if ($value === null) {
+                // Bỏ qua key này để DB ghi NULL (nếu cột cho phép)
+                continue;
+            }
             $filtered[$key] = $value;
-            $format[] = is_int($value) ? '%d' : '%s';
+
+            // format: int -> %d, else -> %s
+            if (is_int($value)) {
+                $format[] = '%d';
+            } else {
+                $format[] = '%s';
+            }
         }
 
         return [$filtered, $format];
