@@ -30,7 +30,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
         <table class="form-table" role="presentation">
             <tbody>
                 <tr>
-                    <th scope="row"><label for="tmt-company-name"><?php esc_html_e('Tên công ty', 'tmt-crm'); ?> <span class="description">*</span></label></th>
+                    <th scope="row"><label for="tmt-company-name"><?php esc_html_e('Tên công ty', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="name" type="text" id="tmt-company-name" class="regular-text" required
                             value="<?php echo isset($company->name) ? esc_attr($company->name) : ''; ?>">

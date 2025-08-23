@@ -12,11 +12,13 @@ final class Installer
 
     private wpdb $db;
     private string $table_customers;
+    private string $table_companies;
 
     private function __construct(wpdb $db)
     {
         $this->db              = $db;
         $this->table_customers = $db->prefix . 'tmt_crm_customers';
+        $this->table_companies = $db->prefix . 'tmt_crm_companies';
     }
 
     /**
@@ -32,6 +34,8 @@ final class Installer
         }
 
         $self->create_or_update_customers_table();
+        $self->create_or_update_companies_table();
+
         $self->drop_legacy_table(); // ⚠️ cẩn trọng: phá hủy bảng cũ nếu còn
 
         update_option(self::OPTION_DB_VERSION, $targetVersion, true);
@@ -67,6 +71,34 @@ final class Installer
             KEY email_idx (email),
             KEY phone_idx (phone),
             KEY company_idx (company(191))
+        ) {$collate};";
+
+        \dbDelta($sql);
+    }
+
+
+    /** Tạo/đồng bộ bảng companies (bắt buộc: name, tax_code, address) */
+    private function create_or_update_companies_table(): void
+    {
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $collate = $this->db->get_charset_collate();
+
+        $sql = "CREATE TABLE {$this->table_companies} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            name VARCHAR(255) NOT NULL,          
+            tax_code VARCHAR(50) NOT NULL,      
+            phone VARCHAR(50) NULL,
+            email VARCHAR(191) NULL,
+            address TEXT NOT NULL,              
+            website VARCHAR(255) NULL,
+            note TEXT NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_tax_code (tax_code),
+            KEY idx_name (name(191)),
+            KEY idx_email (email)
         ) {$collate};";
 
         \dbDelta($sql);

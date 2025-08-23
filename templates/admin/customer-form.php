@@ -11,6 +11,8 @@ $is_edit   = $customer && !empty($customer->id);
 $id        = $is_edit ? (int)$customer->id : 0;
 $title_txt = $is_edit ? __('Chỉnh sửa khách hàng', 'tmt-crm') : __('Thêm khách hàng mới', 'tmt-crm');
 $nonce     = $is_edit ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
+$id = $customer?->id ?? null;
+$owner_id_selected = $customer?->owner_id ?? null;
 
 // Helper lấy field an toàn
 $val = function ($prop, $default = '') use ($customer) {
@@ -61,9 +63,21 @@ $val = function ($prop, $default = '') use ($customer) {
                         </select>
                     </td>
                 </tr>
+                <!-- Người phụ trách: hiển thị tên, lưu ID -->
                 <tr>
-                    <th><label for="owner_id"><?php _e('Người phụ trách (ID)', 'tmt-crm'); ?></label></th>
-                    <td><input type="number" id="owner_id" name="owner_id" class="regular-text" value="<?php echo esc_attr($customer->owner_id ?? ''); ?>"></td>
+                    <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
+                    <td>
+                        <select id="owner_id" name="owner_id" class="regular-text">
+                            <option value=""><?php echo esc_html__('— Chọn nhân viên phụ trách —', 'tmt-crm'); ?></option>
+                            <?php foreach ($owner_choices as $uid => $label): ?>
+                                <option value="<?php echo esc_attr((string)$uid); ?>"
+                                    <?php selected($owner_id_selected, $uid); ?>>
+                                    <?php echo esc_html($label); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description"><?php _e('Label hiển thị tên, DB lưu ID.', 'tmt-crm'); ?></p>
+                    </td>
                 </tr>
                 <tr>
                     <th><label for="note"><?php _e('Ghi chú', 'tmt-crm'); ?></label></th>

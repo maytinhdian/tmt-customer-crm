@@ -3,9 +3,9 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Presentation\Admin\CustomerScreen;
+use TMT\CRM\Presentation\Admin\{CustomerScreen,CompanyScreen};
 
-// use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface;
+
 
 use TMT\CRM\Infrastructure\Persistence\{
 
@@ -32,14 +32,14 @@ final class Hooks
         // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
 
 
-        add_action('admin_init', [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'boot']);
-        add_action('admin_init', [\TMT\CRM\Presentation\Admin\CompanyScreen::class, 'boot']);
+        add_action('admin_init', [CustomerScreen::class, 'boot']);
+        add_action('admin_init', [CompanyScreen::class, 'boot']);
 
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
 
         // Đăng ký CustomerScreen (menu con, handlers admin_post...)
-        CustomerScreen::boot();
+        // CustomerScreen::boot();
     }
 
     public static function init(): void

@@ -16,7 +16,7 @@ use TMT\CRM\Infrastructure\Security\CustomerRoleService;
 define('TMT_CRM_FILE', __FILE__);
 define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
 define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
-define('TMT_CRM_DB_VERSION', '1.2.0'); // chỉ định 1 chỗ duy nhất
+define('TMT_CRM_DB_VERSION', '1.2.4'); // chỉ định 1 chỗ duy nhất
 
 // 0) Autoload
 $composer_autoload = __DIR__ . '/vendor/autoload.php';

@@ -9,7 +9,6 @@ use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\ListTable\CustomerListTable;
 use TMT\CRM\Application\DTO\CustomerDTO;
 
-
 defined('ABSPATH') || exit;
 
 /**
@@ -27,18 +26,14 @@ final class CustomerScreen
     /** Tên option Screen Options: per-page */
     public const OPTION_PER_PAGE = 'tmt_crm_customers_per_page';
 
-    /**
-     * Đăng ký các handler admin_post (submit form)
-     */
+    /** Đăng ký các handler admin_post (submit form) */
     public static function boot(): void
     {
         add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
     }
 
-    /**
-     * Được gọi khi load trang Customers để in Screen Options (per-page)
-     */
+    /** Được gọi khi load trang Customers để in Screen Options (per-page) */
     public static function on_load_customers(): void
     {
         if (!current_user_can(Capability::MANAGE)) {
@@ -67,9 +62,7 @@ final class CustomerScreen
         return $status;
     }
 
-    /**
-     * Router view theo tham số ?action=...
-     */
+    /** Router view theo tham số ?action=... */
     public static function dispatch(): void
     {
         self::ensure_capability(Capability::MANAGE, __('Bạn không có quyền truy cập danh sách khách hàng.', 'tmt-crm'));
@@ -92,13 +85,10 @@ final class CustomerScreen
         self::render_list();
     }
 
-    /**
-     * LIST VIEW: dùng CustomerListTable + bulk delete
-     */
+    /** LIST VIEW: dùng CustomerListTable + bulk delete */
     public static function render_list(): void
     {
         $table = new CustomerListTable();
-
 
         // Bulk delete (nếu list-table submit)
         if (current_user_can(Capability::DELETE) && $table->current_action() === 'bulk-delete') {
@@ -111,7 +101,6 @@ final class CustomerScreen
                     try {
                         $svc->delete($id);
                     } catch (\Throwable $e) {
-                        // log lại để truy vết, vẫn tiếp tục các item khác
                         if (defined('WP_DEBUG') && WP_DEBUG) {
                             error_log('[tmt-crm] bulk delete failed id=' . $id . ' msg=' . $e->getMessage());
                         }
@@ -121,7 +110,6 @@ final class CustomerScreen
                 exit;
             }
         }
-
 
         // Nạp dữ liệu + phân trang
         $table->prepare_items();
@@ -140,8 +128,7 @@ final class CustomerScreen
             echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
         }
 
-        $add_url = self::url(['action' => 'add']);
-?>
+        $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
             <h1 class="wp-heading-inline"><?php esc_html_e('Danh sách khách hàng', 'tmt-crm'); ?></h1>
             <?php if (current_user_can(Capability::CREATE)) : ?>
@@ -152,11 +139,8 @@ final class CustomerScreen
             <form method="post">
                 <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE_SLUG); ?>" />
                 <?php
-                // Ô search native
                 $table->search_box(__('Tìm kiếm khách hàng', 'tmt-crm'), 'customer');
-                // Bảng
                 $table->display();
-                // Nonce cho bulk
                 wp_nonce_field('bulk-customers');
                 ?>
             </form>
@@ -164,9 +148,7 @@ final class CustomerScreen
 <?php
     }
 
-    /**
-     * FORM VIEW: Add/Edit
-     */
+    /** FORM VIEW: Add/Edit */
     public static function render_form(int $id = 0): void
     {
         $svc = Container::get('customer-service');
@@ -181,18 +163,24 @@ final class CustomerScreen
             }
         }
 
+        // Tính nonce theo ngữ cảnh
+        $nonce_name = $id > 0 ? ('tmt_crm_customer_update_' . $id) : 'tmt_crm_customer_create';
+
+        // Lấy danh sách user (ID => display_name) để render select Người phụ trách
+        $owner_choices = self::get_user_choices();
+
         $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/customer-form.php';
         if (file_exists($tpl)) {
             /** @var CustomerDTO|null $customer */
+            /** @var string $nonce_name */
+            /** @var array<int,string> $owner_choices */
             include $tpl;
         } else {
             echo '<div class="notice notice-error"><p>' . esc_html__('Template customer-form.php không tồn tại.', 'tmt-crm') . '</p></div>';
         }
     }
 
-    /**
-     * Handler: Save (Create/Update)
-     */
+    /** Handler: Save (Create/Update) */
     public static function handle_save(): void
     {
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
@@ -218,19 +206,20 @@ final class CustomerScreen
         $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
         $note     = sanitize_textarea_field(wp_unslash($_POST['note'] ?? ''));
         $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
-        $owner_id = isset($_POST['owner_id']) ? absint($_POST['owner_id']) : 0;
+        // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
+        $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0;
 
         // Tạo DTO (created_at/updated_at để repo tự set)
         $dto = new CustomerDTO(
-            $id ?: null,            // ?int $id
-            $name,                  // string $name
-            $email ?: null,         // ?string $email
-            $phone ?: null,         // ?string $phone
-            $company ?: null,       // ?string $company
-            $address ?: null,       // ?string $address
-            $note ?: null,          // ?string $note
-            $type ?: null,          // ?string $type
-            $owner_id ?: null       // ?int $owner_id
+            $id ?: null,
+            $name,
+            $email ?: null,
+            $phone ?: null,
+            $company ?: null,
+            $address ?: null,
+            $note ?: null,
+            $type ?: null,
+            $owner_id ?: null
         );
 
         $svc = Container::get('customer-service');
@@ -247,13 +236,13 @@ final class CustomerScreen
             self::redirect(self::url([
                 'error' => 1,
                 'msg'   => rawurlencode($e->getMessage()),
+                'action' => $id > 0 ? 'edit' : 'add',
+                'id'     => $id ?: null,
             ]));
         }
     }
 
-    /**
-     * Handler: Delete (single)
-     */
+    /** Handler: Delete (single) */
     public static function handle_delete(): void
     {
         self::ensure_capability(Capability::DELETE, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
@@ -282,9 +271,7 @@ final class CustomerScreen
 
     /* ===================== Helpers ===================== */
 
-    /**
-     * Build URL admin.php?page=tmt-crm-customers + $args
-     */
+    /** Build URL admin.php?page=tmt-crm-customers + $args */
     private static function url(array $args = []): string
     {
         $base = admin_url('admin.php');
@@ -292,9 +279,7 @@ final class CustomerScreen
         return add_query_arg($args, $base);
     }
 
-    /**
-     * Kiểm tra quyền, nếu không đủ -> die với thông báo
-     */
+    /** Kiểm tra quyền, nếu không đủ -> die với thông báo */
     private static function ensure_capability(string $capability, string $message): void
     {
         if (!current_user_can($capability)) {
@@ -302,12 +287,31 @@ final class CustomerScreen
         }
     }
 
-    /**
-     * Redirect & exit
-     */
+    /** Redirect & exit */
     private static function redirect(string $url): void
     {
         wp_safe_redirect($url);
         exit;
+    }
+
+    /**
+     * Lấy danh sách user (ID => display_name) để render field Người phụ trách.
+     * Có thể giới hạn theo vai trò tuỳ nghiệp vụ.
+     * @return array<int,string>
+     */
+    private static function get_user_choices(): array
+    {
+        $users = get_users([
+            'role__in' => ['administrator', 'editor', 'author', 'shop_manager'],
+            'orderby'  => 'display_name',
+            'order'    => 'ASC',
+            'fields'   => ['ID', 'display_name'],
+        ]);
+
+        $out = [];
+        foreach ($users as $u) {
+            $out[(int)$u->ID] = (string)$u->display_name;
+        }
+        return $out;
     }
 }
