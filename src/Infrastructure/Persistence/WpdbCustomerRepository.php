@@ -65,6 +65,42 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         return (int)$this->db->get_var($sql);
     }
 
+    //Tìm số điện thoại hay email trùng
+    public function find_by_email_or_phone(?string $email = null, ?string $phone = null, ?int $exclude_id = null): ?CustomerDTO
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'tmt_crm_customers';
+
+        $where = [];
+        $params = [];
+
+        if ($email) {
+            $where[] = 'email = %s';
+            $params[] = $email;
+        }
+
+        if ($phone) {
+            $where[] = 'phone = %s';
+            $params[] = $phone;
+        }
+
+        if (empty($where)) return null;
+
+        $sql = "SELECT * FROM $table WHERE (" . implode(' OR ', $where) . ")";
+
+        if ($exclude_id) {
+            $sql .= " AND id != %d";
+            $params[] = $exclude_id;
+        }
+
+        $sql .= " LIMIT 1";
+
+        $row = $wpdb->get_row($wpdb->prepare($sql, ...$params), ARRAY_A);
+
+        return $row ? CustomerDTO::from_array($row) : null;
+    }
+
+
     public function create(CustomerDTO $dto): int
     {
         $now = current_time('mysql');

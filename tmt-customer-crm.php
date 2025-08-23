@@ -5,74 +5,70 @@
  * Description: CRM quản lý khách hàng cho WordPress/WooCommerce.
  * Version: 0.1.0
  * Author: TMT Việt Nam
+ *
+ * Ghi chú: Đây là bootstrap (file chính)
  */
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+if (!defined('ABSPATH')) exit;
 
 use TMT\CRM\Infrastructure\Security\CustomerRoleService;
 
-/** ====== 1) Hằng số cơ bản ====== */
 define('TMT_CRM_FILE', __FILE__);
 define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
 define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
-define('TMT_CRM_DB_VERSION', '1.0.0'); // tăng số này khi đổi schema
+define('TMT_CRM_DB_VERSION', '1.2.0'); // chỉ định 1 chỗ duy nhất
 
-
-/** ====== 0) Autoload an toàn ====== */
+// 0) Autoload
 $composer_autoload = __DIR__ . '/vendor/autoload.php';
 if (file_exists($composer_autoload)) {
     require $composer_autoload;
-} else {
-    // Không bắt buộc, nhưng cảnh báo dev trong môi trường local
-    if (defined('WP_DEBUG') && WP_DEBUG) {
-        error_log('[TMT CRM] vendor/autoload.php not found. Run "composer install".');
-    }
+} elseif (defined('WP_DEBUG') && WP_DEBUG) {
+    error_log('[TMT CRM] vendor/autoload.php not found. Run "composer install".');
 }
 
-/** ====== 2) Đăng ký activation: tạo bảng + lưu version ====== */
+// 1) Activation: chạy migrate + set version + roles
 register_activation_hook(TMT_CRM_FILE, function () {
     /** @var \wpdb $wpdb */
     global $wpdb;
 
     if (class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
-        (new \TMT\CRM\Infrastructure\Migrations\Installer($wpdb))->run();
+        \TMT\CRM\Infrastructure\Migrations\Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
     }
-    update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
+    update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
 
-    // Cài quyền + roles
     CustomerRoleService::install();
 });
 
-/** ====== 3) Auto-upgrade DB khi plugin load ====== */
+// 2) Auto-upgrade khi plugin load (so sánh version & migrate)
 add_action('plugins_loaded', function () {
-    $installed_ver = get_option('tmt_crm_db_version');
-    if ($installed_ver !== TMT_CRM_DB_VERSION) {
-        if (class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
-            (new \TMT\CRM\Infrastructure\Migrations\Installer())->run();
-        }
-        update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION);
-    
-        // Map capability tối thiểu cho admin
-        $role = get_role('administrator');
-        if ($role && !$role->has_cap('manage_tmt_crm_companies')) {
-            $role->add_cap('manage_tmt_crm_companies');
+    /** @var \wpdb $wpdb */
+    global $wpdb;
+
+    $installed_ver = (string) get_option('tmt_crm_db_version', '');
+    if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
+        \TMT\CRM\Infrastructure\Migrations\Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
+        update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
+
+        // đảm bảo admin có capability tối thiểu
+        if ($role = get_role('administrator')) {
+            if (!$role->has_cap('manage_tmt_crm_companies')) {
+                $role->add_cap('manage_tmt_crm_companies');
+            }
         }
     }
 
-    // Khởi động hệ thống sau khi đảm bảo schema OK
+    // Khởi động hệ thống sau khi schema OK
     if (class_exists(\TMT\CRM\Shared\Hooks::class)) {
         \TMT\CRM\Shared\Hooks::register();
     }
 });
 
-// 1) Không chặn admin cho role CRM
+// Không chặn admin cho role CRM
 add_filter('woocommerce_prevent_admin_access', function ($prevent_access) {
     if (!is_user_logged_in()) return $prevent_access;
     $u = wp_get_current_user();
-    if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array)$u->roles)) {
-        return false; // cho phép vào wp-admin
+    if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array) $u->roles)) {
+        return false;
     }
     return $prevent_access;
 });

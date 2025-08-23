@@ -41,6 +41,7 @@ final class CustomerListTable extends \WP_List_Table
             'email'   => __('Email', 'tmt-crm'),
             'phone'   => __('Điện thoại', 'tmt-crm'),
             'company' => __('Công ty', 'tmt-crm'),
+            'owner'   => __('Người phụ trách', 'tmt-crm'), // ⬅️ thêm cột mới
         ];
     }
 
@@ -146,22 +147,15 @@ final class CustomerListTable extends \WP_List_Table
         $this->total = (int)($data['total'] ?? 0);
 
         $this->items_data = array_map(function ($c): array {
-            if (is_array($c)) {
-                return [
-                    'id'      => (int)   ($c['id'] ?? 0),
-                    'name'    => (string)($c['name'] ?? ''),
-                    'email'   => (string)($c['email'] ?? ''),
-                    'phone'   => (string)($c['phone'] ?? ''),
-                    'company' => (string)($c['company'] ?? $c['company_name'] ?? ''),
-                ];
-            }
             // object (DTO)
+            $ownerId = (int)($c->owner_id ?? 0);
             return [
                 'id'      => (int)   ($c->id ?? 0),
                 'name'    => (string)($c->name ?? ''),
                 'email'   => (string)($c->email ?? ''),
                 'phone'   => (string)($c->phone ?? ''),
                 'company' => (string)($c->company ?? $c->company_name ?? ''),
+                'owner'    => $ownerId ? get_the_author_meta('display_name', $ownerId) : '',
             ];
         }, $items);
 
@@ -178,64 +172,6 @@ final class CustomerListTable extends \WP_List_Table
             'per_page'    => $this->per_page,
             'total_pages' => (int) ceil($this->total / $this->per_page),
         ]);
-
-        // Whitelist orderby
-        // $orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : '';
-        // $order   = isset($_GET['order']) ? strtoupper(sanitize_text_field($_GET['order'])) : 'DESC';
-        // if (!in_array($order, ['ASC', 'DESC'], true)) $order = 'DESC';
-
-        // $filters = [
-        //     'keyword'  => sanitize_text_field($_GET['s'] ?? ''),
-        //     'type'     => sanitize_key($_GET['type'] ?? ''),
-        //     'owner_id' => isset($_GET['owner']) ? absint($_GET['owner']) : null,
-        //     // nếu repo hỗ trợ sort, truyền xuống:
-        //     'orderby'  => $orderby ?: null,
-        //     'order'    => $order ?: null,
-        // ];
-
-        // $data = $svc->list_customers($current_page, $this->per_page, $filters);
-        // $items = $data['items'] ?? [];
-        // $this->total = (int)($data['total'] ?? 0);
-
-        // // Chuẩn hoá về array cho dễ render (an toàn kiểu)
-        // $this->items_data = array_map(function ($c) {
-        //     if (is_array($c)) {
-        //         return [
-        //             'id'      => (int)   ($c['id'] ?? 0),
-        //             'name'    => (string)($c['name'] ?? ''),
-        //             'email'   => (string)($c['email'] ?? ''),
-        //             'phone'   => (string)($c['phone'] ?? ''),
-        //             // fallback company_name nếu service trả tên công ty theo key khác
-        //             'company' => (string)($c['company'] ?? $c['company_name'] ?? ''),
-        //         ];
-        //     }
-
-        //     // Mặc định: CustomerDTO (object)
-        //     return [
-        //         'id'      => (int)   ($c->id ?? 0),
-        //         'name'    => (string)($c->name ?? ''),
-        //         'email'   => (string)($c->email ?? ''),
-        //         'phone'   => (string)($c->phone ?? ''),
-        //         // fallback company_name nếu DTO dùng thuộc tính khác
-        //         'company' => (string)($c->company ?? $c->company_name ?? ''),
-        //     ];
-        // }, $items);
-
-        // $this->_column_headers = [
-        //     $this->get_columns(),
-        //     [], // hidden
-        //     $this->get_sortable_columns(),
-        // ];
-
-        // $this->items = $this->items_data;
-
-        // $this->set_pagination_args([
-        //     'total_items' => $this->total,
-        //     'per_page'    => $this->per_page,
-        //     'total_pages' => (int) ceil($this->total / $this->per_page),
-        // ]);
-
-
     }
 
     /**

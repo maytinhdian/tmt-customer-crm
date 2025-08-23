@@ -98,5 +98,17 @@ class CustomerService
         if ($dto->phone && !preg_match($re, $dto->phone)) {
             throw new \InvalidArgumentException('Số điện thoại không hợp lệ.');
         }
+        // ✅ Kiểm tra trùng email hoặc phone
+        if ($dto->email || $dto->phone) {
+            $dup = $this->repo->find_by_email_or_phone(
+                $dto->email,
+                $dto->phone,
+                $is_update ? (int)$dto->id : null
+            );
+
+            if ($dup) {
+                throw new \RuntimeException('Email hoặc số điện thoại đã tồn tại.');
+            }
+        }
     }
 }

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Application\DTO;
 
+use TMT\CRM\Shared\Traits\AsArrayTrait;
+
 final class CustomerDTO implements \JsonSerializable
 {
+     use AsArrayTrait;
+     
     /** Khóa chính */
     public ?int $id = null;
 
@@ -56,26 +60,6 @@ final class CustomerDTO implements \JsonSerializable
         $this->updated_at = $updated_at;
     }
 
-    /**
-     * Chuẩn hoá về mảng để đẩy ra Presentation/REST.
-     * (snake-case đúng quy ước của bạn)
-     */
-    public function to_array(): array
-    {
-        return [
-            'id'         => $this->id !== null ? (int) $this->id : 0,
-            'name'       => (string) $this->name,
-            'email'      => (string) ($this->email ?? ''),
-            'phone'      => (string) ($this->phone ?? ''),
-            'company'    => (string) ($this->company ?? ''),
-            'address'    => (string) ($this->address ?? ''),
-            'note'       => (string) ($this->note ?? ''),
-            'type'       => (string) ($this->type ?? ''),
-            'owner_id'   => $this->owner_id !== null ? (int) $this->owner_id : null,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
-    }
 
     /**
      * Hỗ trợ json_encode($dto)
