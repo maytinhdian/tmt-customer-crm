@@ -58,25 +58,18 @@ final class Installer
         // Tránh warning "Undefined array key 'index_type'" trong một số bản WP + MariaDB khi key không chuẩn hóa.
         $sql = "CREATE TABLE {$this->table_customers} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            type VARCHAR(20) NOT NULL DEFAULT 'individual',
             owner_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             name VARCHAR(255) NOT NULL,
             email VARCHAR(191) NULL,
-            phone VARCHAR(50) NULL,
-            company VARCHAR(255) NULL,
-            vat_code VARCHAR(50) NULL,
+            phone VARCHAR(50) NULL,         
             address TEXT NULL,
             note TEXT NULL,
-            status VARCHAR(20) NOT NULL DEFAULT 'active',
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY  (id),
-            KEY type      (type),
             KEY owner_id  (owner_id),
             KEY name_idx  (name(191)),
-            KEY email_idx (email),
-            KEY phone_idx (phone),
-            KEY company_idx (company(191))
+            KEY email_idx (email)
         ) {$collate};";
 
         \dbDelta($sql);

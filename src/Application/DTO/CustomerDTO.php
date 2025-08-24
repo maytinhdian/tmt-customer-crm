@@ -18,12 +18,8 @@ final class CustomerDTO implements \JsonSerializable
 
     public ?string $email = null;
     public ?string $phone = null;
-    public ?string $company = null;
     public ?string $address = null;
     public ?string $note = null;
-
-    /** 'individual' | 'company' | 'partner' | ... */
-    public ?string $type = null;
 
     /** User phụ trách (WP user id) */
     public ?int $owner_id = null;
@@ -39,10 +35,8 @@ final class CustomerDTO implements \JsonSerializable
         string $name = '',
         ?string $email = null,
         ?string $phone = null,
-        ?string $company = null,
         ?string $address = null,
         ?string $note = null,
-        ?string $type = null,
         ?int $owner_id = null,
         ?string $created_at = null,
         ?string $updated_at = null
@@ -51,10 +45,8 @@ final class CustomerDTO implements \JsonSerializable
         $this->name       = $name;
         $this->email      = $email;
         $this->phone      = $phone;
-        $this->company    = $company;
         $this->address    = $address;
-        $this->note       = $note;
-        $this->type       = $type;
+        $this->note       = $note;      
         $this->owner_id   = $owner_id;
         $this->created_at = $created_at;
         $this->updated_at = $updated_at;
@@ -79,15 +71,9 @@ final class CustomerDTO implements \JsonSerializable
             id: isset($data['id']) ? (int) $data['id'] : null,
             name: (string) ($data['name'] ?? ''),
             email: isset($data['email']) ? (string) $data['email'] : null,
-            phone: isset($data['phone']) ? (string) $data['phone'] : null,
-            company: array_key_exists('company', $data)
-                ? ($data['company'] !== null ? (string) $data['company'] : null)
-                : (array_key_exists('company_name', $data)
-                    ? ($data['company_name'] !== null ? (string) $data['company_name'] : null)
-                    : null),
+            phone: isset($data['phone']) ? (string) $data['phone'] : null,         
             address: isset($data['address']) ? (string) $data['address'] : null,
             note: isset($data['note']) ? (string) $data['note'] : null,
-            type: isset($data['type']) ? (string) $data['type'] : null,
             owner_id: isset($data['owner_id']) ? (int) $data['owner_id'] : null,
             created_at: isset($data['created_at']) ? (string) $data['created_at'] : null,
             updated_at: isset($data['updated_at']) ? (string) $data['updated_at'] : null

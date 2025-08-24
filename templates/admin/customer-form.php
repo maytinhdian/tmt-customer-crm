@@ -42,26 +42,10 @@ $val = function ($prop, $default = '') use ($customer) {
                     <th><label for="phone"><?php _e('Số điện thoại', 'tmt-crm'); ?></label></th>
                     <td><input type="text" id="phone" name="phone" class="regular-text" value="<?php echo $val('phone'); ?>"></td>
                 </tr>
-                <tr>
-                    <th><label for="company"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
-                    <td><input type="text" id="company" name="company" class="regular-text" value="<?php echo $val('company'); ?>"></td>
-                </tr>
+               
                 <tr>
                     <th><label for="address"><?php _e('Địa chỉ', 'tmt-crm'); ?></label></th>
                     <td><input type="text" id="address" name="address" class="regular-text" value="<?php echo esc_attr($customer->address ?? ''); ?>"></td>
-                </tr>
-
-                <tr>
-                    <th><label for="type"><?php _e('Loại khách hàng', 'tmt-crm'); ?></label></th>
-                    <td>
-                        <select id="type" name="type">
-                            <?php $type = $customer->type ?? ''; ?>
-                            <option value=""><?php esc_html_e('— Chọn —', 'tmt-crm'); ?></option>
-                            <option value="individual" <?php selected($type, 'individual'); ?>><?php esc_html_e('Cá nhân', 'tmt-crm'); ?></option>
-                            <option value="company" <?php selected($type, 'company'); ?>><?php esc_html_e('Công ty', 'tmt-crm'); ?></option>
-                            <option value="partner" <?php selected($type, 'partner'); ?>><?php esc_html_e('Đối tác', 'tmt-crm'); ?></option>
-                        </select>
-                    </td>
                 </tr>
                 <!-- Người phụ trách: hiển thị tên, lưu ID -->
                 <tr>

@@ -109,10 +109,8 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
             'name'       => $dto->name,
             'email'      => $dto->email,
             'phone'      => $dto->phone,
-            'company'    => $dto->company,
             'address'    => $dto->address,
             'note'       => $dto->note,
-            'type'       => $dto->type,
             'owner_id'   => $dto->owner_id,
             'created_at' => $now,
             'updated_at' => $now,
@@ -132,10 +130,8 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
             'name'       => $dto->name,
             'email'      => $dto->email,
             'phone'      => $dto->phone,
-            'company'    => $dto->company,
             'address'    => $dto->address,
             'note'       => $dto->note,
-            'type'       => $dto->type,
             'owner_id'   => $dto->owner_id,
             'updated_at' => current_time('mysql'),
         ];
@@ -167,10 +163,8 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
             (string)($row['name'] ?? ''),
             $row['email']      ?? null,
             $row['phone']      ?? null,
-            $row['company']    ?? null,
             $row['address']    ?? null,
             $row['note']       ?? null,
-            $row['type']       ?? null,
             isset($row['owner_id']) ? (int)$row['owner_id'] : null,
             $row['created_at'] ?? null,
             $row['updated_at'] ?? null
@@ -188,13 +182,8 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
 
         if (!empty($filters['keyword'])) {
             $kw = '%' . $this->db->esc_like($filters['keyword']) . '%';
-            $clauses[] = "(name LIKE %s OR email LIKE %s OR phone LIKE %s OR company LIKE %s)";
+            $clauses[] = "(name LIKE %s OR email LIKE %s OR phone LIKE %s OR address LIKE %s)";
             array_push($params, $kw, $kw, $kw, $kw);
-        }
-
-        if (!empty($filters['type'])) {
-            $clauses[] = "type = %s";
-            $params[]  = $filters['type'];
         }
 
         if (!empty($filters['owner_id'])) {

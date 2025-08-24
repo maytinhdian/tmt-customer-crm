@@ -89,9 +89,11 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                 <tr>
                     <th scope="row"><label for="tmt-company-note"><?php esc_html_e('Ghi chú', 'tmt-crm'); ?></label></th>
                     <td>
-                        <textarea name="note" id="tmt-company-note" class="large-text code" rows="4"><?php
-                                                                                                        echo isset($company->note) ? esc_textarea($company->note) : '';
-                                                                                                        ?></textarea>
+                        <textarea name="note" id="tmt-company-note" class="large-text code" rows="4">
+                            <?php
+                            echo isset($company->note) ? esc_textarea($company->note) : '';
+                            ?>
+                        </textarea>
                     </td>
                 </tr>
 
@@ -107,6 +109,13 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                             'show_option_none'  => __('— Không chọn —', 'tmt-crm'),
                             'option_none_value' => 0,
                         ]);
+                        // Chỉ hiển thị box vai trò khi đã có company_id (trang Edit).
+                        if (!empty($company?->id)) {
+                            \TMT\CRM\Presentation\Admin\Company\Form\CompanyRolesBox::render((int)$company->id);
+                        } else {
+                            echo '<p class="description">Lưu công ty trước, sau đó bạn có thể gán liên hệ theo vai trò.</p>';
+                        }
+
                         ?>
                     </td>
                 </tr>

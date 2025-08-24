@@ -40,7 +40,7 @@ final class CustomerListTable extends \WP_List_Table
             'name'    => __('Tên khách hàng', 'tmt-crm'),
             'email'   => __('Email', 'tmt-crm'),
             'phone'   => __('Điện thoại', 'tmt-crm'),
-            'company' => __('Công ty', 'tmt-crm'),
+            'updated_at' => __('Ngày chỉnh sửa', 'tmt-crm'), // ⬅️ thêm cột mới
             'owner'   => __('Người phụ trách', 'tmt-crm'), // ⬅️ thêm cột mới
         ];
     }
@@ -50,7 +50,8 @@ final class CustomerListTable extends \WP_List_Table
         return [
             'id'   => ['id', false],
             'name' => ['name', false],
-            'company' => ['company', false]
+            'phone' => ['phone', false],
+            'updated_at' => ['updated_at', false], // ⬅️ thêm sort
         ];
     }
 
@@ -64,7 +65,25 @@ final class CustomerListTable extends \WP_List_Table
 
     public function column_default($item, $column_name)
     {
-        return esc_html($item[$column_name] ?? '');
+        // return esc_html($item[$column_name] ?? '');
+        switch ($column_name) {
+            case 'id':
+            case 'name':
+            case 'email':
+            case 'phone':
+            case 'owner':
+                if (!empty($item['owner_id'])) {
+                    $user = get_user_by('id', (int)$item['owner_id']);
+                    return $user ? esc_html($user->display_name) : __('(không rõ)', 'tmt-crm');
+                }
+                return __('(chưa gán)', 'tmt-crm');
+            case 'updated_at':
+                return !empty($item['updated_at'])
+                    ? esc_html(mysql2date('d/m/Y H:i', $item['updated_at']))
+                    : '';
+            default:
+                return print_r($item, true);
+        }
     }
 
     public function column_name($item): string
@@ -154,7 +173,6 @@ final class CustomerListTable extends \WP_List_Table
                 'name'    => (string)($c->name ?? ''),
                 'email'   => (string)($c->email ?? ''),
                 'phone'   => (string)($c->phone ?? ''),
-                'company' => (string)($c->company ?? $c->company_name ?? ''),
                 'owner'    => $ownerId ? get_the_author_meta('display_name', $ownerId) : '',
             ];
         }, $items);

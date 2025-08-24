@@ -202,9 +202,7 @@ final class CustomerScreen
         $name     = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
         $email    = sanitize_email(wp_unslash($_POST['email'] ?? ''));
         $phone    = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
-        $company  = sanitize_text_field(wp_unslash($_POST['company'] ?? ''));
         $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
-        $note     = sanitize_textarea_field(wp_unslash($_POST['note'] ?? ''));
         $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
         // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
         $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0;
@@ -215,9 +213,7 @@ final class CustomerScreen
             $name,
             $email ?: null,
             $phone ?: null,
-            $company ?: null,
             $address ?: null,
-            $note ?: null,
             $type ?: null,
             $owner_id ?: null
         );

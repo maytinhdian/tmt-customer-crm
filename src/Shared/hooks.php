@@ -66,13 +66,20 @@ final class Hooks
         Container::set('company-contact-role-repo',  fn() => new WpdbCompanyContactRoleRepository($wpdb));
 
         // Services
-        Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo')));
+        Container::set('company-service',   fn() => new CompanyService(
+            Container::get('company-repo'),
+            Container::get('company-contact-role-repo'),
+            Container::get('employment-repo'),
+            Container::get('customer-repo')
+        ));
         Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo')));
+
         Container::set('employment-service',  fn() => new EmploymentService(
             Container::get('employment-repo'),
             Container::get('company-repo'),
             Container::get('customer-repo')
         ));
+        
         Container::set('company-contact-role-service',  fn() => new CompanyContactRoleService(
             Container::get('company-contact-role-repo'),
             Container::get('employment-repo'),

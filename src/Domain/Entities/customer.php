@@ -7,9 +7,7 @@ final class Customer {
         public string $full_name,
         public string $phone,
         public string $email,
-        public ?int $company_id = null,
         public ?string $address = null,
-        public ?string $tags = null,
         public ?string $note = null,
     ) {}
 }
