@@ -11,12 +11,14 @@
 
 if (!defined('ABSPATH')) exit;
 
-use TMT\CRM\Infrastructure\Security\CustomerRoleService;
+use \TMT\CRM\Infrastructure\Migrations\Installer;
+use TMT\CRM\Infrastructure\Security\SecurityBootstrap;
+use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
 define('TMT_CRM_FILE', __FILE__);
 define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
 define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
-define('TMT_CRM_DB_VERSION', '1.2.2'); // chỉ định 1 chỗ duy nhất
+define('TMT_CRM_DB_VERSION', '1.2.4'); // chỉ định 1 chỗ duy nhất
 
 // 0) Autoload
 $composer_autoload = __DIR__ . '/vendor/autoload.php';
@@ -32,11 +34,9 @@ register_activation_hook(TMT_CRM_FILE, function () {
     global $wpdb;
 
     if (class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
-        \TMT\CRM\Infrastructure\Migrations\Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
+        Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
     }
     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
-
-    CustomerRoleService::install();
 });
 
 // 2) Auto-upgrade khi plugin load (so sánh version & migrate)
@@ -45,17 +45,14 @@ add_action('plugins_loaded', function () {
     global $wpdb;
 
     $installed_ver = (string) get_option('tmt_crm_db_version', '');
-    if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
-        \TMT\CRM\Infrastructure\Migrations\Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
-        update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
 
-        // đảm bảo admin có capability tối thiểu
-        if ($role = get_role('administrator')) {
-            if (!$role->has_cap('manage_tmt_crm_companies')) {
-                $role->add_cap('manage_tmt_crm_companies');
-            }
-        }
+    if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(Installer::class)) {
+        Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
+        update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
     }
+
+    // bật Role packs + map_meta_cap (own/any, DIP)
+    SecurityBootstrap::init();
 
     // Khởi động hệ thống sau khi schema OK
     if (class_exists(\TMT\CRM\Shared\Hooks::class)) {
@@ -72,3 +69,9 @@ add_filter('woocommerce_prevent_admin_access', function ($prevent_access) {
     }
     return $prevent_access;
 });
+
+// Admin-post handlers (chạy khi submit form)
+add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
+add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
+add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
+add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);

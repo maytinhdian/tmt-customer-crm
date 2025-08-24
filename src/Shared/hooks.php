@@ -10,15 +10,15 @@ use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
-    WpdbEmploymentRepository,
-    WpdbCompanyContactRoleRepository
+    WpdbCompanyContactRepository,
+    WpdbEmploymentHistoryRepository
 };
 
 use TMT\CRM\Application\Services\{
     CustomerService,
     CompanyService,
-    EmploymentService,
-    CompanyContactRoleService
+    CompanyContactService,
+    EmploymentHistoryService
 };
 
 final class Hooks
@@ -40,8 +40,6 @@ final class Hooks
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
 
-        // Đăng ký CustomerScreen (menu con, handlers admin_post...)
-        // CustomerScreen::boot();
     }
 
     public static function init(): void
@@ -62,30 +60,17 @@ final class Hooks
         // Repositories
         Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
-        Container::set('employment-repo',  fn() => new WpdbEmploymentRepository($wpdb));
-        Container::set('company-contact-role-repo',  fn() => new WpdbCompanyContactRoleRepository($wpdb));
+        Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
+        Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
 
         // Services
         Container::set('company-service',   fn() => new CompanyService(
             Container::get('company-repo'),
-            Container::get('company-contact-role-repo'),
-            Container::get('employment-repo'),
-            Container::get('customer-repo')
+            Container::get('company-contact-repo')
         ));
-        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo')));
-
-        Container::set('employment-service',  fn() => new EmploymentService(
-            Container::get('employment-repo'),
-            Container::get('company-repo'),
-            Container::get('customer-repo')
-        ));
-        
-        Container::set('company-contact-role-service',  fn() => new CompanyContactRoleService(
-            Container::get('company-contact-role-repo'),
-            Container::get('employment-repo'),
-            Container::get('company-repo'),
-            Container::get('customer-repo')
-        ));
+        Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo')));
+        Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
+        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
     }
 
     public static function enqueue_admin(): void

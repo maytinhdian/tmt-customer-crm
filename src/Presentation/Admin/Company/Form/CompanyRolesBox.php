@@ -11,7 +11,7 @@ final class CompanyRolesBox
     /** Render trong trang Add/Edit Company */
     public static function render(int $company_id): void
     {
-        $employment_repo = Container::get('employment-repo');
+        $employment_repo = Container::get('employment-history-repo');
         $customer_repo   = Container::get('customer-repo');
         $svc             = Container::get('company-service');
 

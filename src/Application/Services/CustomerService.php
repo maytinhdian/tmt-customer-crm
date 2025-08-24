@@ -3,20 +3,23 @@
 namespace TMT\CRM\Application\Services;
 
 use TMT\CRM\Application\DTO\CustomerDTO;
+use TMT\CRM\Application\DTO\EmploymentHistoryDTO;
+
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
+use \TMT\CRM\Domain\Repositories\EmploymentHistoryRepositoryInterface;
 
 class CustomerService
 {
-    private CustomerRepositoryInterface $repo;
+    // private CustomerRepositoryInterface $repo;
 
-    public function __construct(CustomerRepositoryInterface $repo)
-    {
-        $this->repo = $repo;
-    }
+    public function __construct(
+        private CustomerRepositoryInterface $customer_repo,
+        private EmploymentHistoryRepositoryInterface $history_repo
+    ) {}
 
     public function get_by_id(int $id): ?CustomerDTO
     {
-        return $this->repo->find_by_id($id);
+        return $this->customer_repo->find_by_id($id);
     }
 
 
@@ -49,8 +52,8 @@ class CustomerService
             'offset'   => ($page - 1) * $perPage,
         ];
 
-        $items    = $this->repo->list_paginated($page, $args['limit'], $args);
-        $total    = $this->repo->count_all($args);
+        $items    = $this->customer_repo->list_paginated($page, $args['limit'], $args);
+        $total    = $this->customer_repo->count_all($args);
 
         return ['items' => $items, 'total' => (int)$total];
     }
@@ -58,28 +61,33 @@ class CustomerService
     public function create(CustomerDTO $dto): int
     {
         $this->validate($dto, false);
-        return $this->repo->create($dto);
+        return $this->customer_repo->create($dto);
     }
 
     public function update(CustomerDTO $dto): bool
     {
         $this->validate($dto, true);
-        return $this->repo->update($dto);
+        return $this->customer_repo->update($dto);
     }
 
     public function delete(int $id): bool
     {
-        return $this->repo->delete($id);
+        return $this->customer_repo->delete($id);
     }
 
     public function list_paginated(int $page, int $per_page, array $filters = []): array
     {
-        return $this->repo->list_paginated($page, $per_page, $filters);
+        return $this->customer_repo->list_paginated($page, $per_page, $filters);
     }
 
     public function count_all(array $filters = []): int
     {
-        return $this->repo->count_all($filters);
+        return $this->customer_repo->count_all($filters);
+    }
+
+    public function get_current_company(int $customer_id): ?EmploymentHistoryDTO
+    {
+        return $this->history_repo->find_current_company_of_customer($customer_id);
     }
 
     private function validate(CustomerDTO $dto, bool $is_update): void
@@ -100,7 +108,7 @@ class CustomerService
         }
         // ✅ Kiểm tra trùng email hoặc phone
         if ($dto->email || $dto->phone) {
-            $dup = $this->repo->find_by_email_or_phone(
+            $dup = $this->customer_repo->find_by_email_or_phone(
                 $dto->email,
                 $dto->phone,
                 $is_update ? (int)$dto->id : null

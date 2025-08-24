@@ -65,26 +65,42 @@ final class CustomerListTable extends \WP_List_Table
 
     public function column_default($item, $column_name)
     {
-        // return esc_html($item[$column_name] ?? '');
         switch ($column_name) {
             case 'id':
+                return (int)($item['id'] ?? 0);
+
             case 'name':
+                return esc_html($item['name'] ?? '');
+
             case 'email':
+                $email = trim((string)($item['email'] ?? ''));
+                return $email !== '' ? '<a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a>' : '<span class="tmtcrm-muted">(chưa gán)</span>';
+
             case 'phone':
+                $phone = trim((string)($item['phone'] ?? ''));
+                return $phone !== '' ? esc_html($phone) : '<span class="tmtcrm-muted">(chưa gán)</span>';
+
             case 'owner':
-                if (!empty($item['owner_id'])) {
-                    $user = get_user_by('id', (int)$item['owner_id']);
-                    return $user ? esc_html($user->display_name) : __('(không rõ)', 'tmt-crm');
+                // Ưu tiên chuỗi đã render sẵn trong items_data['owner']; fallback sang owner_id
+                if (!empty($item['owner'])) {
+                    return esc_html($item['owner']);
                 }
-                return __('(chưa gán)', 'tmt-crm');
+                if (!empty($item['owner_id'])) {
+                    $u = get_user_by('id', (int)$item['owner_id']);
+                    return $u ? esc_html($u->display_name ?: $u->user_login) : '<span class="tmtcrm-muted">(không rõ)</span>';
+                }
+                return '<span class="tmtcrm-muted">(chưa gán)</span>';
+
             case 'updated_at':
-                return !empty($item['updated_at'])
-                    ? esc_html(mysql2date('d/m/Y H:i', $item['updated_at']))
-                    : '';
+                $ts = $item['updated_at'] ?? '';
+                return $ts ? esc_html(mysql2date('d/m/Y H:i', $ts)) : '<span class="tmtcrm-muted">(chưa gán)</span>';
+
             default:
-                return print_r($item, true);
+                // Debug an toàn
+                return esc_html(print_r($item, true));
         }
     }
+
 
     public function column_name($item): string
     {
@@ -93,7 +109,7 @@ final class CustomerListTable extends \WP_List_Table
 
         $actions = [];
 
-        if (current_user_can(Capability::EDIT)) {
+        if (current_user_can(Capability::CUSTOMER_UPDATE_ANY, $id)) {
             $edit_url = add_query_arg([
                 'page'   => 'tmt-crm-customers',
                 'action' => 'edit',
@@ -103,7 +119,7 @@ final class CustomerListTable extends \WP_List_Table
             $actions['edit'] = sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Sửa', 'tmt-crm'));
         }
 
-        if (current_user_can(Capability::DELETE)) {
+        if (current_user_can(Capability::CUSTOMER_DELETE, $id)) {
             $del_url = wp_nonce_url(
                 add_query_arg([
                     'action' => 'tmt_crm_customer_delete',
@@ -125,7 +141,7 @@ final class CustomerListTable extends \WP_List_Table
     public function get_bulk_actions(): array
     {
         $actions = [];
-        if (current_user_can(Capability::DELETE)) {
+        if (current_user_can(Capability::CUSTOMER_DELETE)) {
             $actions['bulk-delete'] = __('Xoá đã chọn', 'tmt-crm');
         }
         return $actions;
@@ -174,6 +190,7 @@ final class CustomerListTable extends \WP_List_Table
                 'email'   => (string)($c->email ?? ''),
                 'phone'   => (string)($c->phone ?? ''),
                 'owner'    => $ownerId ? get_the_author_meta('display_name', $ownerId) : '',
+                'updated_at' => (string)($c->updated_at ?? ''), // ← thêm
             ];
         }, $items);
 

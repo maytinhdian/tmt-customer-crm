@@ -8,7 +8,7 @@ defined('ABSPATH') || exit;
 
 final class Menu
 {
-    
+
     /** Hook id của màn hình Customers */
     private static string $customers_hook = '';
 
@@ -20,7 +20,7 @@ final class Menu
         add_menu_page(
             __('CRM', 'tmt-crm'),
             __('CRM', 'tmt-crm'),
-            Capability::MANAGE,               // Cha & con cùng cap
+            Capability::CUSTOMER_READ,               // Cha & con cùng cap
             'tmt-crm',
             [self::class, 'render_dashboard'],
             'dashicons-groups',
@@ -33,7 +33,7 @@ final class Menu
             'tmt-crm',
             __('Customers', 'tmt-crm'),
             __('Customers', 'tmt-crm'),
-            Capability::MANAGE,
+            Capability::CUSTOMER_READ,
             'tmt-crm-customers',
             [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'dispatch']
         );
@@ -42,13 +42,13 @@ final class Menu
         add_action('load-' . self::$customers_hook, [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [\TMT\CRM\Presentation\Admin\CustomerScreen::class, 'save_screen_option'], 10, 3);
 
-        
+
         // --- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(
             'tmt-crm',
             __('Companies', 'tmt-crm'),
             __('Companies', 'tmt-crm'),
-            Capability::MANAGE,
+            Capability::COMPANY_READ,
             'tmt-crm-companies',
             [\TMT\CRM\Presentation\Admin\CompanyScreen::class, 'dispatch'] // TODO: tạo class này
         );

@@ -146,6 +146,17 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
             ['%d']
         );
     }
+    public function get_owner_id(int $id): ?int
+    {
+        $sql = "SELECT owner_id FROM {$this->table} WHERE id = %d";
+        $val = $this->db->get_var($this->db->prepare($sql, $id));
+
+        if ($val === null) {
+            return null;
+        }
+        $owner_id = (int) $val;
+        return $owner_id > 0 ? $owner_id : null;
+    }
 
     public function delete(int $id): bool
     {

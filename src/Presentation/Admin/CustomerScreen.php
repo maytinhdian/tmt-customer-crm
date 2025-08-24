@@ -36,7 +36,7 @@ final class CustomerScreen
     /** Được gọi khi load trang Customers để in Screen Options (per-page) */
     public static function on_load_customers(): void
     {
-        if (!current_user_can(Capability::MANAGE)) {
+        if (!current_user_can(Capability::CUSTOMER_READ)) {
             return;
         }
 
@@ -65,18 +65,18 @@ final class CustomerScreen
     /** Router view theo tham số ?action=... */
     public static function dispatch(): void
     {
-        self::ensure_capability(Capability::MANAGE, __('Bạn không có quyền truy cập danh sách khách hàng.', 'tmt-crm'));
+        self::ensure_capability(Capability::CUSTOMER_READ, __('Bạn không có quyền truy cập danh sách khách hàng.', 'tmt-crm'));
 
         $action = isset($_GET['action']) ? sanitize_key((string) $_GET['action']) : 'list';
 
         if ($action === 'add') {
-            self::ensure_capability(Capability::CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
             self::render_form();
             return;
         }
 
         if ($action === 'edit') {
-            self::ensure_capability(Capability::EDIT, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_UPDATE, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
             $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
             self::render_form($id);
             return;
@@ -91,7 +91,7 @@ final class CustomerScreen
         $table = new CustomerListTable();
 
         // Bulk delete (nếu list-table submit)
-        if (current_user_can(Capability::DELETE) && $table->current_action() === 'bulk-delete') {
+        if (current_user_can(Capability::CUSTOMER_DELETE) && $table->current_action() === 'bulk-delete') {
             check_admin_referer('bulk-customers');
 
             $ids = $table->get_selected_ids_for_bulk_delete();
@@ -131,7 +131,7 @@ final class CustomerScreen
         $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
             <h1 class="wp-heading-inline"><?php esc_html_e('Danh sách khách hàng', 'tmt-crm'); ?></h1>
-            <?php if (current_user_can(Capability::CREATE)) : ?>
+            <?php if (current_user_can(Capability::CUSTOMER_CREATE)) : ?>
                 <a href="<?php echo esc_url($add_url); ?>" class="page-title-action"><?php esc_html_e('Thêm mới', 'tmt-crm'); ?></a>
             <?php endif; ?>
             <hr class="wp-header-end" />
@@ -187,9 +187,9 @@ final class CustomerScreen
 
         // Phân quyền theo ngữ cảnh: tạo hay cập nhật
         if ($id > 0) {
-            self::ensure_capability(Capability::EDIT, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_UPDATE, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
         } else {
-            self::ensure_capability(Capability::CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
         }
 
         // Kiểm nonce
@@ -241,7 +241,7 @@ final class CustomerScreen
     /** Handler: Delete (single) */
     public static function handle_delete(): void
     {
-        self::ensure_capability(Capability::DELETE, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
+        self::ensure_capability(Capability::CUSTOMER_DELETE, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
 
         $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
         if ($id <= 0) {

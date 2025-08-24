@@ -36,7 +36,7 @@ final class CompanyScreen
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
     public static function on_load_companies(): void
     {
-        if (!current_user_can(Capability::MANAGE)) {
+        if (!current_user_can(Capability::COMPANY_CREATE)) {
             return;
         }
 
@@ -65,18 +65,18 @@ final class CompanyScreen
     /** Router view theo tham số ?action=... */
     public static function dispatch(): void
     {
-        self::ensure_capability(Capability::MANAGE, __('Bạn không có quyền truy cập danh sách công ty.', 'tmt-crm'));
+        self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền truy cập danh sách công ty.', 'tmt-crm'));
 
         $action = isset($_GET['action']) ? sanitize_key((string) $_GET['action']) : 'list';
 
         if ($action === 'add') {
-            self::ensure_capability(Capability::CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
+            self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
             self::render_form();
             return;
         }
 
         if ($action === 'edit') {
-            self::ensure_capability(Capability::EDIT, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
+            self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
             $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
             self::render_form($id);
             return;
@@ -91,7 +91,7 @@ final class CompanyScreen
         $table = new CompanyListTable();
 
         // Bulk delete (nếu list-table submit)
-        if (current_user_can(Capability::DELETE) && $table->current_action() === 'bulk-delete') {
+        if (current_user_can(Capability::COMPANY_DELETE) && $table->current_action() === 'bulk-delete') {
             check_admin_referer('bulk-companies');
 
             // Giống CustomerListTable: CompanyListTable nên có method này.
@@ -135,7 +135,7 @@ final class CompanyScreen
         $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
             <h1 class="wp-heading-inline"><?php esc_html_e('Danh sách công ty', 'tmt-crm'); ?></h1>
-            <?php if (current_user_can(Capability::CREATE)) : ?>
+            <?php if (current_user_can(Capability::COMPANY_CREATE)) : ?>
                 <a href="<?php echo esc_url($add_url); ?>" class="page-title-action"><?php esc_html_e('Thêm mới', 'tmt-crm'); ?></a>
             <?php endif; ?>
             <hr class="wp-header-end" />
@@ -149,7 +149,7 @@ final class CompanyScreen
                 ?>
             </form>
         </div>
-    <?php
+<?php
     }
 
     /** FORM VIEW: Add/Edit */
@@ -169,7 +169,7 @@ final class CompanyScreen
 
         // Tính nonce theo ngữ cảnh
         $nonce_name = $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create';
-
+        $company_id = (int) ($id ?? 0);
         $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company-form.php';
         if (file_exists($tpl)) {
             /** @var CompanyDTO|null $company */
@@ -187,9 +187,9 @@ final class CompanyScreen
 
         // Phân quyền theo ngữ cảnh: tạo hay cập nhật
         if ($id > 0) {
-            self::ensure_capability(Capability::EDIT, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
+            self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
         } else {
-            self::ensure_capability(Capability::CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
+            self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
         }
 
         // Kiểm nonce
@@ -217,7 +217,7 @@ final class CompanyScreen
                 self::redirect(self::url(['updated' => 1]));
             } else {
                 $new_id = $svc->create($data);
-                self::redirect(self::url(['created' => 1] ));
+                self::redirect(self::url(['created' => 1]));
             }
         } catch (\Throwable $e) {
             self::redirect(self::url([
@@ -230,7 +230,7 @@ final class CompanyScreen
     /** Handler: Delete (single) */
     public static function handle_delete(): void
     {
-        self::ensure_capability(Capability::DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
+        self::ensure_capability(Capability::COMPANY_DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
 
         $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
         if ($id <= 0) {
