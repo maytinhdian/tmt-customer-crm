@@ -3,20 +3,22 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Presentation\Admin\{CustomerScreen,CompanyScreen};
+use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
 
 
 
 use TMT\CRM\Infrastructure\Persistence\{
-
     WpdbCustomerRepository,
-    WpdbCompanyRepository
+    WpdbCompanyRepository,
+    WpdbEmploymentRepository,
+    WpdbCompanyContactRoleRepository
 };
 
 use TMT\CRM\Application\Services\{
-
     CustomerService,
-    CompanyService
+    CompanyService,
+    EmploymentService,
+    CompanyContactRoleService
 };
 
 final class Hooks
@@ -59,11 +61,24 @@ final class Hooks
 
         // Repositories
         Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
-        Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb)); // ← NEW
+        Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
+        Container::set('employment-repo',  fn() => new WpdbEmploymentRepository($wpdb));
+        Container::set('company-contact-role-repo',  fn() => new WpdbCompanyContactRoleRepository($wpdb));
 
         // Services
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo')));
-        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'))); // ← NEW
+        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo')));
+        Container::set('employment-service',  fn() => new EmploymentService(
+            Container::get('employment-repo'),
+            Container::get('company-repo'),
+            Container::get('customer-repo')
+        ));
+        Container::set('company-contact-role-service',  fn() => new CompanyContactRoleService(
+            Container::get('company-contact-role-repo'),
+            Container::get('employment-repo'),
+            Container::get('company-repo'),
+            Container::get('customer-repo')
+        ));
     }
 
     public static function enqueue_admin(): void
