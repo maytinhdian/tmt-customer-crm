@@ -8,7 +8,6 @@ use TMT\CRM\Shared\Container;
 use TMT\CRM\Domain\ValueObject\CompanyContactRole;
 use TMT\CRM\Application\Services\CompanyContactService;
 use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
-// (Tuỳ codebase của bạn) nếu có lớp Capability riêng, dùng nó:
 use TMT\CRM\Infrastructure\Security\Capability; // có thể bỏ nếu bạn chưa có
 
 defined('ABSPATH') || exit;
@@ -25,15 +24,20 @@ defined('ABSPATH') || exit;
  */
 final class CompanyContactsBox
 {
+    /** Slug trang customers trên admin.php?page=... */
+    public const PAGE_SLUG = 'tmt-crm-company-contacts';
+
     /** Render box trong form công ty */
     public static function render(int $company_id): void
     {
-        // Quyền
-        if (!current_user_can('manage_tmt_crm_companies')) {
-            echo '<p><em>Bạn không có quyền xem mục này.</em></p>';
-            return;
+        // Quyền xem/list Company
+        if (! current_user_can(Capability::COMPANY_READ)) {
+            wp_die(
+                '<p><em>' . esc_html__('Bạn không có quyền xem mục này.', 'tmt-crm') . '</em></p>',
+                esc_html__('Truy cập bị từ chối', 'tmt-crm'),
+                ['response' => 403]
+            );
         }
-
         /** @var CompanyContactRepositoryInterface $repo */
         $repo = Container::get('company-contact-repo');
         $roles = CompanyContactRole::all();
@@ -158,8 +162,31 @@ final class CompanyContactsBox
         exit;
     }
 
-    /** ====== Helpers ====== */
 
+    /* ===================== Helpers ===================== */
+
+    /** Build URL admin.php?page=tmt-crm-customers + $args */
+    private static function url(array $args = []): string
+    {
+        $base = admin_url('admin.php');
+        $args = array_merge(['page' => self::PAGE_SLUG], $args);
+        return add_query_arg($args, $base);
+    }
+
+    /** Kiểm tra quyền, nếu không đủ -> die với thông báo */
+    private static function ensure_capability(string $capability, string $message): void
+    {
+        if (!current_user_can($capability)) {
+            wp_die($message);
+        }
+    }
+
+    /** Redirect & exit */
+    private static function redirect(string $url): void
+    {
+        wp_safe_redirect($url);
+        exit;
+    }
     private static function guard_cap_nonce(string $nonce_action): void
     {
         if (!current_user_can('manage_tmt_crm_companies')) {

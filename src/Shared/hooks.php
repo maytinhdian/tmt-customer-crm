@@ -4,8 +4,9 @@ namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
-use TMT\CRM\Infrastructure\Persistence\WpdbUserRepository;
+use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
+use TMT\CRM\Infrastructure\Persistence\WpdbUserRepository;
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
@@ -41,9 +42,15 @@ final class Hooks
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\UserAjaxController::bootstrap();
 
+
+        // Admin-post handlers (chạy khi submit form)
+        add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
+        add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
+        add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
+        add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
+
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
-
     }
 
     public static function init(): void
@@ -86,22 +93,5 @@ final class Hooks
 
         wp_enqueue_style('tmt-crm-admin', TMT_CRM_URL . 'assets/css/admin.css', [], $ver);
         wp_enqueue_script('tmt-crm-admin', TMT_CRM_URL . 'assets/js/admin.js', ['jquery'], $ver, true);
-
-        //Enqueue Select2 
-        // wp_enqueue_style('tmt-select2', TMT_CRM_URL . 'assets/vendor/select2/select2.min.css', [], '4.1.0');
-        // wp_enqueue_script('tmt-select2', TMT_CRM_URL . 'assets/vendor/select2/select2.full.min.js', ['jquery'], '4.1.0', true);
-
-        // Script khởi tạo riêng cho plugin
-        // wp_register_script('tmt-crm-select2-init', TMT_CRM_URL . 'assets/js/select2-init.js', ['jquery', 'tmt-select2'], '0.1.0', true);
-        // wp_localize_script('tmt-crm-select2-init', 'TMTCRM_Select2', [
-        //     'ajax_url' => admin_url('admin-ajax.php'),
-        //     'nonce'    => wp_create_nonce('tmt_crm_select2_nonce'),
-        //     'i18n'     => [
-        //         'placeholder_company' => __('— Chọn công ty —', 'tmt-crm'),
-        //         'placeholder_owner'   => __('— Chọn người phụ trách —', 'tmt-crm'),
-        //         'searching'           => __('Đang tìm...', 'tmt-crm'),
-        //         'no_results'          => __('Không có kết quả', 'tmt-crm'),
-        //     ],
-        // ]);
     }
 }
