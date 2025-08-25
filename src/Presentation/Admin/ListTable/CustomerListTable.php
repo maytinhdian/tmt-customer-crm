@@ -138,6 +138,18 @@ final class CustomerListTable extends \WP_List_Table
         return sprintf('<strong>%s</strong> %s', $txt, $this->row_actions($actions));
     }
 
+    public function column_owner($item): string
+    {
+        $owner_id = (int)($item['owner_id'] ?? 0);
+        if ($owner_id <= 0) {
+            return '—';
+        }
+
+        $labels = \TMT\CRM\Shared\Container::get('user-repo')->get_assignable_owners();
+        return esc_html($labels[$owner_id] ?? ('#' . $owner_id));
+    }
+
+
     public function get_bulk_actions(): array
     {
         $actions = [];

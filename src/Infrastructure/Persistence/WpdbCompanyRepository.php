@@ -148,6 +148,27 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return (bool)$ok;
     }
 
+    public function search_for_select(string $keyword, int $page, int $per_page = 20): array
+    {
+        $kw = '%' . $this->db->esc_like($keyword) . '%';
+        $offset = max(0, ($page - 1) * $per_page);
+
+        $sql  = "SELECT SQL_CALC_FOUND_ROWS id, name FROM {$this->table}
+                 WHERE name LIKE %s ORDER BY name ASC LIMIT %d OFFSET %d";
+        $rows = $this->db->get_results($this->db->prepare($sql, $kw, $per_page, $offset), ARRAY_A);
+        $total = (int) $this->db->get_var('SELECT FOUND_ROWS()');
+
+        return ['items' => $rows ?: [], 'total' => $total];
+    }
+
+    public function find_name_by_id(int $id): ?string
+    {
+        $sql = "SELECT name FROM {$this->table} WHERE id = %d";
+        $val = $this->db->get_var($this->db->prepare($sql, $id));
+        return $val !== null ? (string)$val : null;
+    }
+
+    /******Helper**** */
     private function map_row_to_dto(array $row): CompanyDTO
     {
         return new CompanyDTO(

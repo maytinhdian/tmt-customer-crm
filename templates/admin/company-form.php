@@ -126,11 +126,11 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
         $company_id = $id ?? 0;
         CompanyContactsBox::render((int)$company_id);
         ?>
-        <?php if ($is_edit ? current_user_can(Capability::EDIT) : current_user_can(Capability::CREATE)) : ?>
+        <?php if ($is_edit ? current_user_can(Capability::COMPANY_UPDATE) : current_user_can(Capability::COMPANY_UPDATE)) : ?>
             <?php submit_button($is_edit ? __('Cập nhật', 'tmt-crm') : __('Tạo mới', 'tmt-crm')); ?>
         <?php endif; ?>
 
-        <?php if ($is_edit && current_user_can(Capability::DELETE)) : ?>
+        <?php if ($is_edit && current_user_can(Capability::COMPANY_DELETE)) : ?>
             <?php
             $del_url = wp_nonce_url(
                 add_query_arg([

@@ -4,8 +4,7 @@ namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
-
-
+use TMT\CRM\Infrastructure\Persistence\WpdbUserRepository;
 
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
@@ -37,6 +36,11 @@ final class Hooks
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
 
+        //Select2 AJAX Controller 
+        \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
+        \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
+        \TMT\CRM\Presentation\Admin\Ajax\UserAjaxController::bootstrap();
+
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
 
@@ -62,6 +66,7 @@ final class Hooks
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
+        Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
 
         // Services
         Container::set('company-service',   fn() => new CompanyService(
@@ -81,5 +86,22 @@ final class Hooks
 
         wp_enqueue_style('tmt-crm-admin', TMT_CRM_URL . 'assets/css/admin.css', [], $ver);
         wp_enqueue_script('tmt-crm-admin', TMT_CRM_URL . 'assets/js/admin.js', ['jquery'], $ver, true);
+
+        //Enqueue Select2 
+        // wp_enqueue_style('tmt-select2', TMT_CRM_URL . 'assets/vendor/select2/select2.min.css', [], '4.1.0');
+        // wp_enqueue_script('tmt-select2', TMT_CRM_URL . 'assets/vendor/select2/select2.full.min.js', ['jquery'], '4.1.0', true);
+
+        // Script khởi tạo riêng cho plugin
+        // wp_register_script('tmt-crm-select2-init', TMT_CRM_URL . 'assets/js/select2-init.js', ['jquery', 'tmt-select2'], '0.1.0', true);
+        // wp_localize_script('tmt-crm-select2-init', 'TMTCRM_Select2', [
+        //     'ajax_url' => admin_url('admin-ajax.php'),
+        //     'nonce'    => wp_create_nonce('tmt_crm_select2_nonce'),
+        //     'i18n'     => [
+        //         'placeholder_company' => __('— Chọn công ty —', 'tmt-crm'),
+        //         'placeholder_owner'   => __('— Chọn người phụ trách —', 'tmt-crm'),
+        //         'searching'           => __('Đang tìm...', 'tmt-crm'),
+        //         'no_results'          => __('Không có kết quả', 'tmt-crm'),
+        //     ],
+        // ]);
     }
 }

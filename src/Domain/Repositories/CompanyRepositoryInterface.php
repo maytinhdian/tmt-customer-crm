@@ -22,4 +22,11 @@ interface CompanyRepositoryInterface
     public function insert(CompanyDTO $dto): int;   // return new ID
     public function update(CompanyDTO $dto): bool;
     public function delete(int $id): bool;
+    /**
+     * Tìm kiếm công ty cho Select2 (phân trang đơn giản)
+     * @return array{items: array<array{id:int,name:string}>, total:int}
+     */
+    public function search_for_select(string $keyword, int $page, int $per_page = 20): array;
+
+    public function find_name_by_id(int $id): ?string;
 }

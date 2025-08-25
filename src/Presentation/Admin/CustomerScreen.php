@@ -76,7 +76,7 @@ final class CustomerScreen
         }
 
         if ($action === 'edit') {
-            self::ensure_capability(Capability::CUSTOMER_UPDATE, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_UPDATE_ANY, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
             $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
             self::render_form($id);
             return;
@@ -154,6 +154,15 @@ final class CustomerScreen
         $svc = Container::get('customer-service');
         $customer = null;
 
+        /** @var \TMT\CRM\Domain\Repositories\UserRepositoryInterface $user_repo */
+        $user_repo = Container::get('user-repo');
+
+        // ✅ Lấy danh sách người phụ trách
+        $owner_choices = $user_repo->get_assignable_owners();
+
+        // ✅ Giá trị mặc định
+        $owner_id_selected = (int)($customer->owner_id ?? get_current_user_id());
+
         if ($id > 0) {
             /** @var CustomerDTO|null $customer */
             $customer = $svc->get_by_id($id);
@@ -162,12 +171,6 @@ final class CustomerScreen
                 return;
             }
         }
-
-        // Tính nonce theo ngữ cảnh
-        $nonce_name = $id > 0 ? ('tmt_crm_customer_update_' . $id) : 'tmt_crm_customer_create';
-
-        // Lấy danh sách user (ID => display_name) để render select Người phụ trách
-        $owner_choices = self::get_user_choices();
 
         $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/customer-form.php';
         if (file_exists($tpl)) {
@@ -187,7 +190,7 @@ final class CustomerScreen
 
         // Phân quyền theo ngữ cảnh: tạo hay cập nhật
         if ($id > 0) {
-            self::ensure_capability(Capability::CUSTOMER_UPDATE, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+            self::ensure_capability(Capability::CUSTOMER_UPDATE_ANY, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
         } else {
             self::ensure_capability(Capability::CUSTOMER_CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
         }
@@ -241,7 +244,7 @@ final class CustomerScreen
     /** Handler: Delete (single) */
     public static function handle_delete(): void
     {
-        self::ensure_capability(Capability::CUSTOMER_DELETE, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
+        self::ensure_capability(Capability::CUSTOMER_DELETE_ANY, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
 
         $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
         if ($id <= 0) {
@@ -289,24 +292,21 @@ final class CustomerScreen
         wp_safe_redirect($url);
         exit;
     }
-
-    /**
-     * Lấy danh sách user (ID => display_name) để render field Người phụ trách.
-     * Có thể giới hạn theo vai trò tuỳ nghiệp vụ.
-     * @return array<int,string>
-     */
-    private static function get_user_choices(): array
+    /***Lấy danh sách user đã đăng ký */
+    private static function get_owner_choices(): array
     {
         $users = get_users([
-            'role__in' => ['administrator', 'editor', 'author', 'shop_manager'],
-            'orderby'  => 'display_name',
-            'order'    => 'ASC',
-            'fields'   => ['ID', 'display_name'],
+            'fields'  => ['ID', 'display_name', 'user_login'],
+            'orderby' => 'display_name',
+            'order'   => 'ASC',
         ]);
 
         $out = [];
         foreach ($users as $u) {
-            $out[(int)$u->ID] = (string)$u->display_name;
+            // Nếu cần lọc theo quyền:
+            // if (!user_can($u->ID, \TMT\CRM\Infrastructure\Security\Capability::CUSTOMER_UPDATE)) continue;
+
+            $out[(int)$u->ID] = $u->display_name ?: $u->user_login;
         }
         return $out;
     }

@@ -11,8 +11,9 @@ $is_edit   = $customer && !empty($customer->id);
 $id        = $is_edit ? (int)$customer->id : 0;
 $title_txt = $is_edit ? __('Chỉnh sửa khách hàng', 'tmt-crm') : __('Thêm khách hàng mới', 'tmt-crm');
 $nonce     = $is_edit ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
-$id = $customer?->id ?? null;
-$owner_id_selected = $customer?->owner_id ?? null;
+
+$owner_choices     = isset($owner_choices) && is_array($owner_choices) ? $owner_choices : [];
+$owner_id_selected = isset($owner_id_selected) ? (int)$owner_id_selected : 0;
 
 // Helper lấy field an toàn
 $val = function ($prop, $default = '') use ($customer) {
@@ -42,11 +43,35 @@ $val = function ($prop, $default = '') use ($customer) {
                     <th><label for="phone"><?php _e('Số điện thoại', 'tmt-crm'); ?></label></th>
                     <td><input type="text" id="phone" name="phone" class="regular-text" value="<?php echo $val('phone'); ?>"></td>
                 </tr>
-               
+
                 <tr>
                     <th><label for="address"><?php _e('Địa chỉ', 'tmt-crm'); ?></label></th>
                     <td><input type="text" id="address" name="address" class="regular-text" value="<?php echo esc_attr($customer->address ?? ''); ?>"></td>
                 </tr>
+                <!---------------Select2 Demo---------------------->
+                <tr>
+                    <th scope="row"><label for="company_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
+                    <td>
+                        <select id="company_id" name="company_id" class="regular-text"
+                            data-initial-id="<?php echo esc_attr((string)($company_id_selected ?? 0)); ?>">
+                            <?php if (!empty($company_id_selected)): ?>
+                                <!-- Không cần option tĩnh nếu dùng ensureInitialValue(); để rỗng -->
+                            <?php endif; ?>
+                        </select>
+                        <p class="description"><?php _e('Gõ để tìm công ty.', 'tmt-crm'); ?></p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
+                    <td>
+                        <select id="owner_id" name="owner_id" class="regular-text"
+                            data-initial-id="<?php echo esc_attr((string)($owner_id_selected ?? 0)); ?>">
+                        </select>
+                        <p class="description"><?php _e('Gõ để tìm nhân viên.', 'tmt-crm'); ?></p>
+                    </td>
+                </tr>
+
                 <!-- Người phụ trách: hiển thị tên, lưu ID -->
                 <tr>
                     <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
