@@ -7,15 +7,13 @@
  */
 defined('ABSPATH') || exit;
 
-use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
-
 $is_edit   = $customer && !empty($customer->id);
 $id        = $is_edit ? (int)$customer->id : 0;
 $title_txt = $is_edit ? __('Chỉnh sửa khách hàng', 'tmt-crm') : __('Thêm khách hàng mới', 'tmt-crm');
 $nonce     = $is_edit ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
 
-$owner_choices     = isset($owner_choices) && is_array($owner_choices) ? $owner_choices : [];
-$owner_id_selected = isset($owner_id_selected) ? (int)$owner_id_selected : 0;
+// $owner_choices     = isset($owner_choices) && is_array($owner_choices) ? $owner_choices : [];
+
 
 // Helper lấy field an toàn
 $val = function ($prop, $default = '') use ($customer) {
@@ -50,55 +48,20 @@ $val = function ($prop, $default = '') use ($customer) {
                     <th><label for="address"><?php _e('Địa chỉ', 'tmt-crm'); ?></label></th>
                     <td><input type="text" id="address" name="address" class="regular-text" value="<?php echo esc_attr($customer->address ?? ''); ?>"></td>
                 </tr>
-                <!---------------Select2 Demo---------------------->
-                <tr>
-                    <th scope="row"><label for="company_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
-                    <td>
-                        <select id="company_id" name="company_id" class="regular-text"
-                            data-initial-id="<?php echo esc_attr((string)($company_id_selected ?? 0)); ?>">
-                            <?php if (!empty($company_id_selected)): ?>
-                                <!-- Không cần option tĩnh nếu dùng ensureInitialValue(); để rỗng -->
-                            <?php endif; ?>
-                        </select>
-                        <p class="description"><?php _e('Gõ để tìm công ty.', 'tmt-crm'); ?></p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
-                    <td>
-                        <select id="owner_id" name="owner_id" class="regular-text"
-                            data-initial-id="<?php echo esc_attr((string)($owner_id_selected ?? 0)); ?>">
-                        </select>
-                        <p class="description"><?php _e('Gõ để tìm nhân viên.', 'tmt-crm'); ?></p>
-                    </td>
-                </tr>
 
                 <!-- Người phụ trách: hiển thị tên, lưu ID -->
                 <tr>
                     <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
                     <td>
-                        <select id="owner_id" name="owner_id" class="regular-text">
-                            <option value=""><?php echo esc_html__('— Chọn nhân viên phụ trách —', 'tmt-crm'); ?></option>
-                            <?php foreach ($owner_choices as $uid => $label): ?>
-                                <option value="<?php echo esc_attr((string)$uid); ?>"
-                                    <?php selected($owner_id_selected, $uid); ?>>
-                                    <?php echo esc_html($label); ?>
-                                </option>
-                            <?php endforeach; ?>
+                        <select id="owner_id" name="owner_id" class="regular-text"
+                            data-initial-id="<?php echo esc_attr((string)$owner_id_selected); ?>">
                         </select>
-                        <p class="description"><?php _e('Label hiển thị tên, DB lưu ID.', 'tmt-crm'); ?></p>
+                        <p class="description"><?php _e('Gõ để tìm người dùng.', 'tmt-crm'); ?></p>
                     </td>
                 </tr>
                 <tr>
                     <th><label for="note"><?php _e('Ghi chú', 'tmt-crm'); ?></label></th>
                     <td><textarea id="note" name="note" rows="4" class="large-text"><?php echo esc_textarea($customer->note ?? ''); ?></textarea></td>
-                </tr>
-                <tr>
-                    <?
-                    $company_id = $id ?? 0;
-                    CompanyContactsBox::render((int)$company_id);
-                    ?>
                 </tr>
             </tbody>
         </table>

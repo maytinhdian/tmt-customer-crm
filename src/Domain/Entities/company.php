@@ -12,6 +12,8 @@ class Company
         public ?string $website,
         public ?string $address,
         public ?string $note,
+        public ?int $owner_id,
+        public ?string $representer,
         public string $createdAt,
         public string $updatedAt
     ) {}

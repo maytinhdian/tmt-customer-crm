@@ -9,6 +9,7 @@ use TMT\CRM\Shared\Traits\AsArrayTrait;
 final class CompanyDTO implements \JsonSerializable
 {
     use AsArrayTrait;
+
     public ?int $id;
     public string $name;           // bắt buộc
     public string $tax_code;       // bắt buộc
@@ -17,6 +18,8 @@ final class CompanyDTO implements \JsonSerializable
     public ?string $email;
     public ?string $website;
     public ?string $note;
+    public ?int $owner_id;       // ⬅️ mới
+    public ?string $representer; // ⬅️ mới
     public ?string $created_at;
     public ?string $updated_at;
 
@@ -29,6 +32,8 @@ final class CompanyDTO implements \JsonSerializable
         ?string $email = null,
         ?string $website = null,
         ?string $note = null,
+        ?int $owner_id = null,
+        ?string $representer = null,
         ?string $created_at = null,
         ?string $updated_at = null
     ) {
@@ -40,6 +45,8 @@ final class CompanyDTO implements \JsonSerializable
         $this->email      = $this->nn($email);
         $this->website    = $this->nn($website);
         $this->note       = $this->nn($note);
+        $this->owner_id = $owner_id;
+        $this->representer = $representer;
         $this->created_at = $created_at;
         $this->updated_at = $updated_at;
     }
@@ -69,6 +76,8 @@ final class CompanyDTO implements \JsonSerializable
             email: isset($data['email']) ? (string)$data['email'] : null,
             website: isset($data['website']) ? (string)$data['website'] : null,
             note: isset($data['note']) ? (string)$data['note'] : null,
+            owner_id: isset($data['owner_id']) ? (int)$data['owner_id'] : null,
+            representer: isset($data['representer']) ? (string)$data['representer'] : null,
             created_at: isset($data['created_at']) ? (string)$data['created_at'] : null,
             updated_at: isset($data['updated_at']) ? (string)$data['updated_at'] : null
         );

@@ -109,11 +109,13 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             'email'      => $dto->email,
             'website'    => $dto->website,
             'note'       => $dto->note,
+            'owner_id'    => $dto->owner_id,     // ⬅️
+            'representer' => $dto->representer,  // ⬅️
             'created_at' => current_time('mysql'),
             'updated_at' => current_time('mysql'),
         ];
 
-        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $ok = $this->db->insert($this->table, $data, $format);
@@ -132,9 +134,11 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             'email'      => $dto->email,
             'website'    => $dto->website,
             'note'       => $dto->note,
+            'owner_id'    => $dto->owner_id,     // ⬅️
+            'representer' => $dto->representer,  // ⬅️
             'updated_at' => current_time('mysql'),
         ];
-        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $ok = $this->db->update($this->table, $data, ['id' => $dto->id], $format, ['%d']);
@@ -180,6 +184,8 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             $row['email']   ?? null,
             $row['website'] ?? null,
             $row['note']    ?? null,
+            isset($row['owner_id']) ? (int)$row['owner_id'] : null,     // ⬅️
+            $row['representer'] ?? null,                                 // ⬅️
             $row['created_at'] ?? null,
             $row['updated_at'] ?? null
         );

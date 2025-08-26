@@ -133,7 +133,9 @@ final class CompanyService
         $name     = trim((string)($data['name'] ?? ''));
         $tax_code = trim((string)($data['tax_code'] ?? ''));
         $address  = trim((string)($data['address'] ?? ''));
-
+        $owner_id = isset($data['owner_id']) ? (int)$data['owner_id'] : 0;
+        $owner_id = $owner_id > 0 ? $owner_id : null;
+        
         return new CompanyDTO(
             $id,
             $name,
@@ -142,7 +144,9 @@ final class CompanyService
             $this->nn($data['phone'] ?? null),
             $this->nn($data['email'] ?? null),
             $this->nn($data['website'] ?? null),
-            $this->nn($data['note'] ?? null)
+            $this->nn($data['note'] ?? null),
+            $this->$owner_id,                               // ⬅️
+            $this->nn($data['representer'] ?? null)       // ⬅️
         );
     }
 

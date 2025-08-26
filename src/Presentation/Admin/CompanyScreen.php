@@ -31,9 +31,8 @@ final class CompanyScreen
     {
         add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
-        
-        add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
 
+        add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
     }
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
@@ -174,10 +173,6 @@ final class CompanyScreen
         if (file_exists($tpl)) {
             /** @var CompanyDTO|null $company */
             /** @var string $nonce_name */
-            // Tính nonce theo ngữ cảnh
-            
-            $nonce_name = $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create';
-            $company_id = (int) ($id ?? 0);
             include $tpl;
         } else {
             echo '<div class="notice notice-error"><p>' . esc_html__('Template company-form.php không tồn tại.', 'tmt-crm') . '</p></div>';
@@ -203,6 +198,17 @@ final class CompanyScreen
         }
 
         // Sanitize input
+        $owner_id = isset($_POST['owner_id'])
+            ? absint(wp_unslash($_POST['owner_id']))
+            : 0;
+        $owner_id = $owner_id > 0 ? $owner_id : null;
+
+        // Nếu "representer" là tên người đại diện (text)
+        $representer = isset($_POST['representer'])
+            ? sanitize_text_field(wp_unslash($_POST['representer']))
+            : '';
+        $representer = ($representer !== '') ? $representer : null;
+        // Sanitize input
         $data = [
             'name'     => sanitize_text_field(wp_unslash($_POST['name'] ?? '')),
             'tax_code' => sanitize_text_field(wp_unslash($_POST['tax_code'] ?? '')),
@@ -211,6 +217,8 @@ final class CompanyScreen
             'email'    => sanitize_email(wp_unslash($_POST['email'] ?? '')),
             'website'  => esc_url_raw(wp_unslash($_POST['website'] ?? '')),
             'note'     => sanitize_textarea_field(wp_unslash($_POST['note'] ?? '')),
+            'owner_id'    => $owner_id,
+            'representer' => $representer,
         ];
 
         $svc = Container::get('company-service');

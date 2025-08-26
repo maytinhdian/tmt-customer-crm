@@ -207,8 +207,7 @@ final class CustomerScreen
         $phone    = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
         $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
         $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
-        // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
-        $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0;
+        $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0; // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
 
         // Tạo DTO (created_at/updated_at để repo tự set)
         $dto = new CustomerDTO(

@@ -45,7 +45,7 @@ final class CompanyContactsBox
         // Lấy tất cả contact đang active (có thể nhóm theo role ở template)
         $contacts = $repo->find_active_contacts_by_company($company_id, null);
 
-        $nonce = wp_create_nonce('tmt_crm_company_contacts');
+        // $nonce = wp_create_nonce('tmt_crm_company_contacts');
         $action_add = admin_url('admin-post.php?action=tmt_crm_company_add_contact');
         $action_end = admin_url('admin-post.php?action=tmt_crm_company_end_contact');
         $action_primary = admin_url('admin-post.php?action=tmt_crm_company_set_primary');
@@ -59,7 +59,7 @@ final class CompanyContactsBox
     /** POST: thêm/sửa liên hệ (assign) */
     public static function handle_add_contact(): void
     {
-        self::guard_cap_nonce('tmt_crm_company_contacts');
+        // self::guard_cap_nonce('tmt_crm_company_contacts');
 
         $company_id  = isset($_POST['company_id'])  ? absint($_POST['company_id']) : 0;
         $customer_id = isset($_POST['customer_id']) ? absint($_POST['customer_id']) : 0;

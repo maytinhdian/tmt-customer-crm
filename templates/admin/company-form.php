@@ -98,7 +98,18 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                         </textarea>
                     </td>
                 </tr>
-
+                <tr>
+                    <th scope="row"><label for="company_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
+                    <td>
+                        <select id="company_id" name="company_id" class="regular-text"
+                            data-initial-id="<?php echo esc_attr((string)($company_id_selected ?? 0)); ?>">
+                            <?php if (!empty($company_id_selected)): ?>
+                                <!-- Không cần option tĩnh nếu dùng ensureInitialValue(); để rỗng -->
+                            <?php endif; ?>
+                        </select>
+                        <p class="description"><?php _e('Gõ để tìm công ty.', 'tmt-crm'); ?></p>
+                    </td>
+                </tr>
                 <tr>
                     <th scope="row"><label for="tmt-company-owner"><?php esc_html_e('Người phụ trách', 'tmt-crm'); ?></label></th>
                     <td>
@@ -111,12 +122,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                             'show_option_none'  => __('— Không chọn —', 'tmt-crm'),
                             'option_none_value' => 0,
                         ]);
-                        // Chỉ hiển thị box vai trò khi đã có company_id (trang Edit).
-                        if (!empty($company?->id)) {
-                            \TMT\CRM\Presentation\Admin\Company\Form\CompanyRolesBox::render((int)$company->id);
-                        } else {
-                            echo '<p class="description">Lưu công ty trước, sau đó bạn có thể gán liên hệ theo vai trò.</p>';
-                        }
+
 
                         ?>
                     </td>
@@ -143,4 +149,14 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
             </a>
         <?php endif; ?>
     </form>
+    <?php
+    // Chỉ hiển thị box vai trò khi đã có company_id (trang Edit).
+    if (!empty($company?->id)) {
+        \TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox::render((int)$company->id);
+
+        // \TMT\CRM\Presentation\Admin\Company\Form\CompanyRolesBox::render((int)$company->id);
+    } else {
+        echo '<p class="description">Lưu công ty trước, sau đó bạn có thể gán liên hệ theo vai trò.</p>';
+    }
+    ?>
 </div>
