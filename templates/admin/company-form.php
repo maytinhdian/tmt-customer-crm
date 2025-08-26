@@ -98,35 +98,20 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                         </textarea>
                     </td>
                 </tr>
+                <?php
+                $owner_id_selected = isset($owner_id_selected)
+                    ? (int)$owner_id_selected
+                    : (isset($customer) ? (int)($customer->owner_id ?? 0) : 0);
+                ?>
                 <tr>
-                    <th scope="row"><label for="contact_customer_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
                     <td>
-                        <select id="contact_customer_id" name="contact_customer_id" class="regular-text"
-                            data-initial-id="<?php echo esc_attr((string)($company_id_selected ?? 0)); ?>">
-                            <?php if (!empty($company_id_selected)): ?>
-                                <!-- Không cần option tĩnh nếu dùng ensureInitialValue(); để rỗng -->
-                            <?php endif; ?>
+                        <select id="owner_id" name="owner_id" class="regular-text"
+                            data-initial-id="<?php echo esc_attr((string)$owner_id_selected); ?>">
                         </select>
-                        <p class="description"><?php _e('Gõ để tìm công ty.', 'tmt-crm'); ?></p>
+                        <p class="description"><?php _e('Chỉ hiển thị user có quyền tạo công ty.', 'tmt-crm'); ?></p>
                     </td>
-                <!-- </tr>
-                <tr>
-                    <th scope="row"><label for="tmt-company-owner"><?php // esc_html_e('Người phụ trách', 'tmt-crm'); ?></label></th>
-                    <td>
-                        <?php
-                        // Dropdown user (có thể filter role theo nhu cầu)
-                        wp_dropdown_users([
-                            'name'              => 'owner_id',
-                            'id'                => 'tmt-company-owner',
-                            'selected'          => isset($company->owner_id) ? (int) $company->owner_id : 0,
-                            'show_option_none'  => __('— Không chọn —', 'tmt-crm'),
-                            'option_none_value' => 0,
-                        ]);
-
-
-                        ?>
-                    </td>
-                </tr> -->
+                </tr>
             </tbody>
         </table>
 

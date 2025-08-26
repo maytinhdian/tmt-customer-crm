@@ -6,13 +6,16 @@ use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
 use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
-use TMT\CRM\Infrastructure\Persistence\WpdbUserRepository;
+
+
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
     WpdbCompanyContactRepository,
     WpdbEmploymentHistoryRepository
 };
+
+use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 
 use TMT\CRM\Application\Services\{
     CustomerService,
@@ -33,24 +36,24 @@ final class Hooks
         // WooCommerce integration (nếu có)
         // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
 
-        
-        
+
+
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
         // add_action('load-tmt_crm_companies' , [CompanyScreen::class, 'boot']);
-        
+
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
-        \TMT\CRM\Presentation\Admin\Ajax\UserAjaxController::bootstrap();
-        
-        
+        \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
+
+
         // Admin-post handlers (chạy khi submit form)
         add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
         add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
         add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
         add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
-        
+
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
 
@@ -85,7 +88,7 @@ final class Hooks
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
-        Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
+        Container::set('user-repo',  fn() => new WpdbUserRepository());
 
         // Services
         Container::set('company-service',   fn() => new CompanyService(

@@ -158,7 +158,7 @@ final class CustomerScreen
         $user_repo = Container::get('user-repo');
 
         // ✅ Lấy danh sách người phụ trách
-        $owner_choices = $user_repo->get_assignable_owners();
+        // $owner_choices = $user_repo->get_assignable_owners();
 
         // ✅ Giá trị mặc định
         $owner_id_selected = (int)($customer->owner_id ?? get_current_user_id());
@@ -291,22 +291,23 @@ final class CustomerScreen
         wp_safe_redirect($url);
         exit;
     }
-    /***Lấy danh sách user đã đăng ký */
-    private static function get_owner_choices(): array
-    {
-        $users = get_users([
-            'fields'  => ['ID', 'display_name', 'user_login'],
-            'orderby' => 'display_name',
-            'order'   => 'ASC',
-        ]);
 
-        $out = [];
-        foreach ($users as $u) {
-            // Nếu cần lọc theo quyền:
-            // if (!user_can($u->ID, \TMT\CRM\Infrastructure\Security\Capability::CUSTOMER_UPDATE)) continue;
+    // /***Lấy danh sách user đã đăng ký */
+    // private static function get_owner_choices(): array
+    // {
+    //     $users = get_users([
+    //         'fields'  => ['ID', 'display_name', 'user_login'],
+    //         'orderby' => 'display_name',
+    //         'order'   => 'ASC',
+    //     ]);
 
-            $out[(int)$u->ID] = $u->display_name ?: $u->user_login;
-        }
-        return $out;
-    }
+    //     $out = [];
+    //     foreach ($users as $u) {
+    //         // Nếu cần lọc theo quyền:
+    //         // if (!user_can($u->ID, \TMT\CRM\Infrastructure\Security\Capability::CUSTOMER_UPDATE)) continue;
+
+    //         $out[(int)$u->ID] = $u->display_name ?: $u->user_login;
+    //     }
+    //     return $out;
+    // }
 }

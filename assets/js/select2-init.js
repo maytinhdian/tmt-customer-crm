@@ -67,9 +67,10 @@
       ensureInitialValue($company, "tmt_crm_get_company_label");
     }
 
-    // Owner (user)
+    // Owner (user có quyền COMPANY_CREATE)
     const $owner = $("#owner_id");
     if ($owner.length) {
+      let lastXhr = null;
       $owner.select2({
         width: "100%",
         placeholder: TMTCRM_Select2.i18n.placeholder_owner,
@@ -81,10 +82,23 @@
             return TMTCRM_Select2.i18n.no_results;
           },
         },
-        ajax: buildAjax(TMTCRM_Select2.ajax_url, "tmt_crm_search_users"),
-        minimumInputLength: 1,
+        ajax: Object.assign(
+          buildAjax(TMTCRM_Select2.ajax_url, "tmt_crm_search_owners"),
+          {
+            transport: function (params, success, failure) {
+              if (lastXhr && lastXhr.readyState !== 4) lastXhr.abort();
+              lastXhr = $.ajax(params);
+              lastXhr.then(success).fail(failure);
+              return lastXhr;
+            },
+          }
+        ),
+        minimumInputLength: 2,
+        templateSelection: function (item) {
+          return item.text || item.id;
+        },
       });
-      ensureInitialValue($owner, "tmt_crm_get_user_label");
+      ensureInitialValue($owner, "tmt_crm_get_owner_label");
     }
 
     // Customer (CompanyContactBox)
