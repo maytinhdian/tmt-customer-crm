@@ -33,24 +33,36 @@ final class Hooks
         // WooCommerce integration (nếu có)
         // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
 
-
+        
+        
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
-
+        // add_action('load-tmt_crm_companies' , [CompanyScreen::class, 'boot']);
+        
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\UserAjaxController::bootstrap();
-
-
+        
+        
         // Admin-post handlers (chạy khi submit form)
         add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
         add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
         add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
         add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
-
+        
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
+
+        // Không chặn admin cho role CRM
+        add_filter('woocommerce_prevent_admin_access', function ($prevent_access) {
+            if (!is_user_logged_in()) return $prevent_access;
+            $u = wp_get_current_user();
+            if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array) $u->roles)) {
+                return false;
+            }
+            return $prevent_access;
+        });
     }
 
     public static function init(): void

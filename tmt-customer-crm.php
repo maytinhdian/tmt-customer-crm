@@ -32,7 +32,7 @@ register_activation_hook(TMT_CRM_FILE, function () {
     /** @var \wpdb $wpdb */
     global $wpdb;
 
-    if (class_exists(\TMT\CRM\Infrastructure\Migrations\Installer::class)) {
+    if (class_exists(Installer::class)) {
         Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
     }
     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
@@ -59,14 +59,6 @@ add_action('plugins_loaded', function () {
     }
 });
 
-// Không chặn admin cho role CRM
-add_filter('woocommerce_prevent_admin_access', function ($prevent_access) {
-    if (!is_user_logged_in()) return $prevent_access;
-    $u = wp_get_current_user();
-    if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array) $u->roles)) {
-        return false;
-    }
-    return $prevent_access;
-});
+
 
 

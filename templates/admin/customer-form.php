@@ -7,6 +7,8 @@
  */
 defined('ABSPATH') || exit;
 
+use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
+
 $is_edit   = $customer && !empty($customer->id);
 $id        = $is_edit ? (int)$customer->id : 0;
 $title_txt = $is_edit ? __('Chỉnh sửa khách hàng', 'tmt-crm') : __('Thêm khách hàng mới', 'tmt-crm');
@@ -91,6 +93,12 @@ $val = function ($prop, $default = '') use ($customer) {
                 <tr>
                     <th><label for="note"><?php _e('Ghi chú', 'tmt-crm'); ?></label></th>
                     <td><textarea id="note" name="note" rows="4" class="large-text"><?php echo esc_textarea($customer->note ?? ''); ?></textarea></td>
+                </tr>
+                <tr>
+                    <?
+                    $company_id = $id ?? 0;
+                    CompanyContactsBox::render((int)$company_id);
+                    ?>
                 </tr>
             </tbody>
         </table>

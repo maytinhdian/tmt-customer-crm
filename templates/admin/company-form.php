@@ -7,7 +7,7 @@ defined('ABSPATH') || exit;
 
 use TMT\CRM\Presentation\Admin\CompanyScreen;
 use TMT\CRM\Infrastructure\Security\Capability;
-use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
+
 
 $is_edit   = $company && !empty($company->id);
 $form_url  = admin_url('admin-post.php');
@@ -45,6 +45,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                         <input name="tax_code" type="text" id="tmt-company-tax-code" class="regular-text"
                             value="<?php echo isset($company->tax_code) ? esc_attr($company->tax_code) : ''; ?>">
                     </td>
+
                 </tr>
 
                 <tr>
@@ -122,10 +123,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                 </tr>
             </tbody>
         </table>
-        <?
-        $company_id = $id ?? 0;
-        CompanyContactsBox::render((int)$company_id);
-        ?>
+
         <?php if ($is_edit ? current_user_can(Capability::COMPANY_UPDATE) : current_user_can(Capability::COMPANY_UPDATE)) : ?>
             <?php submit_button($is_edit ? __('Cập nhật', 'tmt-crm') : __('Tạo mới', 'tmt-crm')); ?>
         <?php endif; ?>

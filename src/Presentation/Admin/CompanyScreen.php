@@ -31,6 +31,9 @@ final class CompanyScreen
     {
         add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
+        
+        add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
+
     }
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
@@ -167,13 +170,14 @@ final class CompanyScreen
             }
         }
 
-        // Tính nonce theo ngữ cảnh
-        $nonce_name = $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create';
-        $company_id = (int) ($id ?? 0);
         $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company-form.php';
         if (file_exists($tpl)) {
             /** @var CompanyDTO|null $company */
             /** @var string $nonce_name */
+            // Tính nonce theo ngữ cảnh
+            
+            $nonce_name = $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create';
+            $company_id = (int) ($id ?? 0);
             include $tpl;
         } else {
             echo '<div class="notice notice-error"><p>' . esc_html__('Template company-form.php không tồn tại.', 'tmt-crm') . '</p></div>';
