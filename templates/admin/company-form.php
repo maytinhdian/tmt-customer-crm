@@ -99,9 +99,9 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="company_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="contact_customer_id"><?php _e('Công ty', 'tmt-crm'); ?></label></th>
                     <td>
-                        <select id="company_id" name="company_id" class="regular-text"
+                        <select id="contact_customer_id" name="contact_customer_id" class="regular-text"
                             data-initial-id="<?php echo esc_attr((string)($company_id_selected ?? 0)); ?>">
                             <?php if (!empty($company_id_selected)): ?>
                                 <!-- Không cần option tĩnh nếu dùng ensureInitialValue(); để rỗng -->
@@ -109,9 +109,9 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                         </select>
                         <p class="description"><?php _e('Gõ để tìm công ty.', 'tmt-crm'); ?></p>
                     </td>
-                </tr>
+                <!-- </tr>
                 <tr>
-                    <th scope="row"><label for="tmt-company-owner"><?php esc_html_e('Người phụ trách', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="tmt-company-owner"><?php // esc_html_e('Người phụ trách', 'tmt-crm'); ?></label></th>
                     <td>
                         <?php
                         // Dropdown user (có thể filter role theo nhu cầu)
@@ -126,7 +126,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
 
                         ?>
                     </td>
-                </tr>
+                </tr> -->
             </tbody>
         </table>
 

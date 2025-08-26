@@ -30,7 +30,7 @@ defined('ABSPATH') || exit;
             <tr>
                 <th>Khách hàng</th>
                 <th>Role</th>
-                <th>Chức danh</th>
+                <th>Chức vụ</th>
                 <th>Hiệu lực</th>
                 <th>Chính</th>
                 <th>Thao tác</th>
@@ -39,7 +39,13 @@ defined('ABSPATH') || exit;
         <tbody>
             <?php if (!empty($contacts)): foreach ($contacts as $c): ?>
                     <tr>
-                        <td>#<?= (int)$c->customer_id; ?></td>
+                        <td>
+                            <?php
+                            $cid    = (int)($c->customer_id ?? 0);
+                            $label  = $customerLabels[$cid] ?? self::get_customer_label($cid);
+                            echo esc_html($label);
+                            ?>
+                        </td>
                         <td><?= esc_html($c->role); ?></td>
                         <td><?= esc_html($c->title ?? ''); ?></td>
                         <td>
@@ -85,10 +91,16 @@ defined('ABSPATH') || exit;
 
         <table class="form-table">
             <tr>
-                <th><label for="customer_id">Khách hàng (ID)</label></th>
+                <th scope="row">
+                    <label for="contact_customer_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label>
+                </th>
                 <td>
-                    <input type="number" name="customer_id" id="customer_id" class="regular-text" min="1" required>
-                    <p class="description">Bạn có thể thay input này bằng Select2 autocomplete sau.</p>
+                    <select id="contact_customer_id"
+                        name="customer_id"
+                        class="regular-text js-customer-select"
+                        data-initial-id="<?php echo esc_attr((string) $customer_id_selected); ?>">
+                    </select>
+                    <p class="description"><?php _e('Gõ để tìm khách hàng (Customer).', 'tmt-crm'); ?></p>
                 </td>
             </tr>
             <tr>
