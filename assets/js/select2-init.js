@@ -72,7 +72,7 @@
     if ($owner.length) {
       let lastXhr = null;
       $owner.select2({
-        width: "100%",
+        width: "50%",
         placeholder: TMTCRM_Select2.i18n.placeholder_owner,
         language: {
           searching: function () {

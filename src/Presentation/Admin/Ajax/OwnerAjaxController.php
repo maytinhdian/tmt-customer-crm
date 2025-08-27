@@ -14,6 +14,7 @@ final class OwnerAjaxController
     {
         add_action('wp_ajax_tmt_crm_search_owners', [self::class, 'search']);
         add_action('wp_ajax_tmt_crm_get_owner_label', [self::class, 'get_label']);
+
         // nếu cần dùng ở frontend cho khách chưa đăng nhập:
         // add_action('wp_ajax_nopriv_tmt_crm_search_owners', [self::class, 'search']);
         // add_action('wp_ajax_nopriv_tmt_crm_get_owner_label', [self::class, 'get_label']);
@@ -52,22 +53,6 @@ final class OwnerAjaxController
         ]);
     }
 
-    // public static function get_label(): void
-    // {
-    //     if (false === check_ajax_referer('tmt_crm_select2_nonce', 'nonce', false)) {
-    //         wp_send_json_error(['code' => 'bad_nonce'], 403);
-    //     }
-    //     $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-    //     if ($id <= 0) {
-    //         wp_send_json_success(['id' => 0, 'text' => '']);
-    //     }
-
-    //     /** @var UserRepositoryInterface $repo */
-    //     $repo  = Container::get('user-repo');
-    //     $label = (string)($repo->find_label_by_id($id) ?? '');
-
-    //     wp_send_json_success(['id' => $id, 'text' => $label]);
-    // }
     public static function get_label(): void
     {
         if (false === check_ajax_referer('tmt_crm_select2_nonce', 'nonce', false)) {

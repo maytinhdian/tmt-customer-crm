@@ -50,11 +50,16 @@ $val = function ($prop, $default = '') use ($customer) {
                 </tr>
 
                 <!-- Người phụ trách: hiển thị tên, lưu ID -->
+                <?php
+                /** @var \TMT\CRM\Application\DTO\CustomerDTO|null $customer */
+                $owner_id_selected = (int) ($customer->owner_id ?? 0); // ID người phụ trách đã lưu
+                ?>
                 <tr>
                     <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>
                     <td>
                         <select id="owner_id" name="owner_id" class="regular-text"
                             data-initial-id="<?php echo esc_attr((string)$owner_id_selected); ?>">
+                            <option value=""></option>
                         </select>
                         <p class="description"><?php _e('Gõ để tìm người dùng.', 'tmt-crm'); ?></p>
                     </td>
