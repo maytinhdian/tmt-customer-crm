@@ -33,6 +33,9 @@ final class CompanyScreen
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
 
         add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
+        add_filter('set-screen-option', function ($status, $option, $value) {
+            return ($option === 'tmt_crm_customers_per_page') ? (int)$value : $status;
+        }, 10, 3);
     }
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */

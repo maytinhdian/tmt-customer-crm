@@ -40,8 +40,7 @@ final class Hooks
 
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
-        // add_action('load-tmt_crm_companies' , [CompanyScreen::class, 'boot']);
-
+       
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();

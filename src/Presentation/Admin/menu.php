@@ -42,6 +42,10 @@ final class Menu
         add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
 
+        // // (Tuỳ chọn) log screen id để chắc ID khớp
+        // add_action('current_screen', function ($s) {
+        //     error_log('SCREEN: ' . $s->id);
+        // });
 
         // //-- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(

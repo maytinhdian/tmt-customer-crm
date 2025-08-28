@@ -40,8 +40,8 @@ final class CustomerListTable extends \WP_List_Table
             'name'    => __('Tên khách hàng', 'tmt-crm'),
             'email'   => __('Email', 'tmt-crm'),
             'phone'   => __('Điện thoại', 'tmt-crm'),
-            'updated_at' => __('Ngày chỉnh sửa', 'tmt-crm'), // ⬅️ thêm cột mới
-            'owner'   => __('Người phụ trách', 'tmt-crm'), // ⬅️ thêm cột mới
+            'updated_at' => __('Ngày chỉnh sửa', 'tmt-crm'),
+            'owner'   => __('Người phụ trách', 'tmt-crm'),
         ];
     }
 
@@ -51,7 +51,7 @@ final class CustomerListTable extends \WP_List_Table
             'id'   => ['id', false],
             'name' => ['name', false],
             'phone' => ['phone', false],
-            'updated_at' => ['updated_at', false], // ⬅️ thêm sort
+            'updated_at' => ['updated_at', false],
         ];
     }
 
@@ -138,31 +138,6 @@ final class CustomerListTable extends \WP_List_Table
         return sprintf('<strong>%s</strong> %s', $txt, $this->row_actions($actions));
     }
 
-    // public function column_owner($item): string
-    // {
-    //     $owner_id = (int)($item['owner_id'] ?? 0);
-    //     if ($owner_id <= 0) {
-    //         return '—';
-    //     }
-
-    //     $labels = \TMT\CRM\Shared\Container::get('user-repo')->find_label_by_id($owner_id);
-    //     return esc_html($labels[$owner_id] ?? ('#' . $owner_id));
-    // }
-    // public function column_owner($item): string
-    // {
-    //     $owner_id = (int)($item['owner_id'] ?? 0);
-
-    //     if ($owner_id > 0) {
-    //         $user = get_userdata($owner_id);
-    //         if ($user) {
-    //             return esc_html($user->display_name);
-    //         }
-    //     }
-
-    //     return '—';
-    // }
-
-
     public function get_bulk_actions(): array
     {
         $actions = [];
@@ -179,9 +154,15 @@ final class CustomerListTable extends \WP_List_Table
     {
         $svc = Container::get('customer-service');
 
+        // Lấy per-page từ Screen Options (KHÔNG đặt trong __construct vì lúc đó screen chưa sẵn)
+        $this->per_page = $this->get_items_per_page(
+            \TMT\CRM\Presentation\Admin\CustomerScreen::OPTION_PER_PAGE,
+            20
+        );
+
         // per_page từ Screen Options
-        $this->per_page = (int) get_user_meta(get_current_user_id(), CustomerScreen::OPTION_PER_PAGE, true);
-        if ($this->per_page <= 0) $this->per_page = 20;
+        // $this->per_page = (int) get_user_meta(get_current_user_id(), CustomerScreen::OPTION_PER_PAGE, true);
+        // if ($this->per_page <= 0) $this->per_page = 20;
 
         $current_page = $this->get_pagenum();
 
@@ -219,8 +200,12 @@ final class CustomerListTable extends \WP_List_Table
             ];
         }, $items);
 
+        $screen   = get_current_screen();
+        $hidden   = get_hidden_columns($screen); // ✅ cột bị ẩn theo user prefs
+
         $this->_column_headers = [
             $this->get_columns(),
+            $hidden,
             [],
             $this->get_sortable_columns(),
         ];
@@ -243,4 +228,24 @@ final class CustomerListTable extends \WP_List_Table
         $ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
         return array_values(array_filter(array_map('absint', $ids)));
     }
+    // public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
+    // {
+    //     // Thay ID cho đúng screen của bạn (log tạm bằng current_screen nếu cần)
+    //     if (
+    //         $screen->id === 'crm_page_tmt-crm-customers'
+    //         || $screen->id === 'crm_page_tmt-crm-customers'
+    //     ) {
+    //         // Ví dụ ẩn mặc định 2 cột:
+    //         $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
+    //     }
+    //     return $hidden;
+    // }
+    public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
+{
+    if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\CustomerScreen::PAGE_SLUG) {
+        $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
+    }
+    return $hidden;
+}
+
 }

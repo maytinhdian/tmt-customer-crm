@@ -33,6 +33,22 @@ final class CustomerScreen
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
     }
 
+    public static function render(): void
+    {
+        $table = new CustomerListTable();
+        $table->prepare_items();
+?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Khách hàng', 'tmt-crm'); ?></h1>
+            <form method="get">
+                <input type="hidden" name="page" value="tmt-crm-customers" />
+                <?php $table->display(); ?>
+            </form>
+        </div>
+    <?php
+    }
+
+
     /** Được gọi khi load trang Customers để in Screen Options (per-page) */
     public static function on_load_customers(): void
     {
@@ -45,8 +61,31 @@ final class CustomerScreen
             'default' => 20,
             'option'  => self::OPTION_PER_PAGE,
         ]);
+
+        // ✅ Báo cho Screen Options biết danh sách cột (để hiện checkbox Columns)
+        $screen = get_current_screen();
+        $table  = new CustomerListTable();
+        add_filter("manage_{$screen->id}_columns", static function () use ($table) {
+            $cols = $table->get_columns();
+            unset($cols['cb']); // không cho bật/tắt cột checkbox
+            return $cols;
+        });
+
+        // ✅ Ẩn/hiện cột theo mặc định cho screen này
+        add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
     }
 
+    public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
+    {
+        // ⚠️ Đổi đúng ID theo log current_screen của bạn
+        if (
+            $screen->id === 'crm_page_tmt-crm-customers'
+            || $screen->id === 'crm_page_tmt-crm-customers'
+        ) {
+            $hidden = array_unique(array_merge($hidden, ['id', 'owner_id']));
+        }
+        return $hidden;
+    }
     /**
      * Lưu giá trị Screen Options per-page
      * @param mixed  $status
@@ -57,9 +96,10 @@ final class CustomerScreen
     public static function save_screen_option($status, $option, $value)
     {
         if ($option === self::OPTION_PER_PAGE) {
-            return (int) $value;
+            $v = max(1, min(200, (int)$value)); // ép kiểu + ràng giới hạn an toàn
+            return $v; // PHẢI trả về giá trị muốn lưu
         }
-        return $status;
+        return $status; // giữ nguyên cho option khác
     }
 
     /** Router view theo tham số ?action=... */
@@ -156,9 +196,6 @@ final class CustomerScreen
 
         /** @var \TMT\CRM\Domain\Repositories\UserRepositoryInterface $user_repo */
         $user_repo = Container::get('user-repo');
-
-        // ✅ Lấy danh sách người phụ trách
-        // $owner_choices = $user_repo->get_assignable_owners();
 
         // ✅ Giá trị mặc định
         $owner_id_selected = (int)($customer->owner_id ?? get_current_user_id());
@@ -292,22 +329,4 @@ final class CustomerScreen
         exit;
     }
 
-    // /***Lấy danh sách user đã đăng ký */
-    // private static function get_owner_choices(): array
-    // {
-    //     $users = get_users([
-    //         'fields'  => ['ID', 'display_name', 'user_login'],
-    //         'orderby' => 'display_name',
-    //         'order'   => 'ASC',
-    //     ]);
-
-    //     $out = [];
-    //     foreach ($users as $u) {
-    //         // Nếu cần lọc theo quyền:
-    //         // if (!user_can($u->ID, \TMT\CRM\Infrastructure\Security\Capability::CUSTOMER_UPDATE)) continue;
-
-    //         $out[(int)$u->ID] = $u->display_name ?: $u->user_login;
-    //     }
-    //     return $out;
-    // }
 }
