@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Infrastructure\Security;
@@ -27,6 +28,13 @@ final class Capability
     public const COMPANY_UPDATE        = 'tmt_crm_company_update';
     public const COMPANY_DELETE        = 'tmt_crm_company_delete';
 
+    //Resource: Quote
+    public const QUOTE_READ   = 'tmt_crm_quotes_read';
+    public const QUOTE_CREATE = 'tmt_crm_quotes_create';
+    public const QUOTE_UPDATE = 'tmt_crm_quotes_update';
+    public const QUOTE_DELETE = 'tmt_crm_quotes_delete';
+
+
     // Settings / Admin
     public const SETTINGS_MANAGE       = 'tmt_crm_settings_manage';
 
@@ -51,6 +59,13 @@ final class Capability
             self::COMPANY_CREATE      => true,
             self::COMPANY_UPDATE      => true,
             self::COMPANY_DELETE      => true,
+
+            //Resource: Quote
+            self::QUOTE_READ   => true,
+            self::QUOTE_CREATE => true,
+            self::QUOTE_UPDATE => true,
+            self::QUOTE_DELETE => true,
+
 
             // Settings
             self::SETTINGS_MANAGE     => true,
@@ -77,6 +92,12 @@ final class Capability
             self::COMPANY_UPDATE      => false,
             self::COMPANY_DELETE      => false,
 
+            //Resource: Quote
+            self::QUOTE_READ   => true,
+            self::QUOTE_CREATE => true,
+            self::QUOTE_UPDATE => true,
+            self::QUOTE_DELETE => false,
+
             self::SETTINGS_MANAGE     => false,
         ];
     }
@@ -87,6 +108,7 @@ final class Capability
         return [
             self::CUSTOMER_READ   => true,
             self::COMPANY_READ    => true,
+            self::QUOTE_READ => true,
         ];
     }
 }

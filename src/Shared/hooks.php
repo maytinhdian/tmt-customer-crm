@@ -3,7 +3,7 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen};
+use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen,QuoteScreen};
 use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
 
@@ -12,7 +12,9 @@ use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
     WpdbCompanyContactRepository,
-    WpdbEmploymentHistoryRepository
+    WpdbEmploymentHistoryRepository,
+    WpdbSequenceRepository,
+    WpdbQuoteRepository
 };
 
 use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
@@ -21,7 +23,9 @@ use TMT\CRM\Application\Services\{
     CustomerService,
     CompanyService,
     CompanyContactService,
-    EmploymentHistoryService
+    EmploymentHistoryService,
+    NumberingService,
+    QuoteService
 };
 
 final class Hooks
@@ -40,7 +44,10 @@ final class Hooks
 
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
-       
+        add_action('admin_init', [QuoteScreen::class, 'boot']);
+      
+
+
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
@@ -89,6 +96,13 @@ final class Hooks
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository());
 
+        Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
+        Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
+        Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
+        Container::set('quote-service', fn() => new QuoteService(
+            Container::get('quote-repo'),
+            Container::get('numbering')
+        ));
         // Services
         Container::set('company-service',   fn() => new CompanyService(
             Container::get('company-repo'),

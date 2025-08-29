@@ -15,6 +15,9 @@ final class Menu
     /** Hook id của màn hình Companies (mới) */
     private static string $companies_hook = '';
 
+    /** Hook id của màn hình Companies (mới) */
+    private static string $quotes_hook = '';
+
     public static function register(): void
     {
         add_menu_page(
@@ -60,6 +63,16 @@ final class Menu
         // Screen Options cho Companies
         add_action('load-' . self::$companies_hook, [CompanyScreen::class, 'on_load_companies']);
         add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
+
+        // ===== MỚI: Báo giá / Đơn hàng / Hoá đơn =====
+        self::$quotes_hook = add_submenu_page(
+            'tmt-crm',
+            __('Báo giá', 'tmt-crm'),
+            __('Báo giá', 'tmt-crm'),
+            Capability::QUOTE_READ,
+            'tmt-crm-quotes',
+            [QuoteScreen::class, 'dispatch']
+        );
     }
 
     public static function render_dashboard(): void

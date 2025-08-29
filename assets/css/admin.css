@@ -2,3 +2,12 @@
   color: #777;
   font-style: italic;
 }
+/* Có thể tinh gọn vì đã dùng style sẵn của WP admin */
+#tmt-quote-items input {
+  min-width: 80px;
+}
+.tmt-line-total {
+  text-align: right;
+  min-width: 100px;
+  display: inline-block;
+}
