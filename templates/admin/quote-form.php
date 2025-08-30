@@ -1,5 +1,22 @@
 <?php
+
 use TMT\CRM\Presentation\Admin\QuoteScreen;
+use TMT\CRM\Application\Services\CustomerService; // ví dụ service lấy nhãn hiển thị
+use TMT\CRM\Shared\Container;
+
+/** Action submit */
+$action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
+
+// Lấy giá trị khi sửa (ưu tiên POST để sticky form)
+$customer_id   = (int) ($_POST['customer_id'] ?? ($quote->customer_id ?? 0));
+$customer_text = '';
+
+if ($customer_id > 0) {
+  // Lấy chuỗi hiển thị "Công ty ABC — Nguyễn Văn A" (tuỳ bạn định nghĩa)
+  /** @var CustomerService $svc */
+  $svc = Container::get('customer-service');
+  $customer_text = $svc->get_display_for_customer($customer_id); // trả về chuỗi tên công ty
+}
 /** Action submit */
 $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
 ?>
@@ -11,31 +28,52 @@ $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
 
     <table class="form-table" role="presentation">
       <tbody>
-      <tr>
-        <th><label for="customer_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label></th>
-        <td><input id="customer_id" name="customer_id" type="number" class="regular-text" required /></td>
-      </tr>
-      <tr>
-        <th><label for="company_id"><?php _e('Công ty (hoá đơn)', 'tmt-crm'); ?></label></th>
-        <td><input id="company_id" name="company_id" type="number" class="regular-text" /></td>
-      </tr>
-      <tr>
-        <th><label for="owner_id"><?php _e('Nhân viên phụ trách', 'tmt-crm'); ?></label></th>
-        <td><input id="owner_id" name="owner_id" type="number" class="regular-text" required /></td>
-      </tr>
-      <tr>
-        <th><label for="currency"><?php _e('Tiền tệ', 'tmt-crm'); ?></label></th>
-        <td>
-          <select id="currency" name="currency">
-            <option value="VND">VND</option>
-            <option value="USD">USD</option>
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <th><label for="note"><?php _e('Ghi chú', 'tmt-crm'); ?></label></th>
-        <td><textarea id="note" name="note" class="large-text" rows="3"></textarea></td>
-      </tr>
+        <tr>
+          <th><label for="customer_id"><?php _e('Khách hàng', 'tmt-crm'); ?>
+            </label></th>
+          <td><input id="customer_id" name="customer_id" type="number" class="regular-text" required /></td>
+        </tr>
+
+        <tr>
+          <th><label for="company_id"><?php _e('Công ty (hoá đơn)', 'tmt-crm'); ?></label></th>
+          <td><input id="company_id" name="company_id" type="number" class="regular-text" /></td>
+        </tr>
+        <tr>
+          <th><label for="company_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label></th>
+          <td>
+            <select id="company_id"
+              name="company_id"
+              class="tmt-select2-customer"
+              data-placeholder="<?php esc_attr_e('— Chọn công ty / khách hàng —', 'tmt-crm'); ?>"
+              style="width: 480px">
+              <?php if ($company_id && $customer_text): ?>
+                <option value="<?php echo (int) $company_id; ?>" selected>
+                  <?php echo esc_html($customer_text); ?>
+                </option>
+              <?php endif; ?>
+            </select>
+            <p class="description">
+              <?php esc_html_e('Gõ tối thiểu 1 ký tự để tìm; kết quả hiển thị theo tên công ty.', 'tmt-crm'); ?>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <th><label for="owner_id"><?php _e('Nhân viên phụ trách', 'tmt-crm'); ?></label></th>
+          <td><input id="owner_id" name="owner_id" type="number" class="regular-text" required /></td>
+        </tr>
+        <tr>
+          <th><label for="currency"><?php _e('Tiền tệ', 'tmt-crm'); ?></label></th>
+          <td>
+            <select id="currency" name="currency">
+              <option value="VND">VND</option>
+              <option value="USD">USD</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <th><label for="note"><?php _e('Ghi chú', 'tmt-crm'); ?></label></th>
+          <td><textarea id="note" name="note" class="large-text" rows="3"></textarea></td>
+        </tr>
       </tbody>
     </table>
 
@@ -71,10 +109,22 @@ $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
     <h3><?php _e('Tổng cộng', 'tmt-crm'); ?></h3>
     <table class="form-table">
       <tbody>
-        <tr><th>Subtotal</th><td><span id="tmt-subtotal">0</span></td></tr>
-        <tr><th><?php _e('Chiết khấu', 'tmt-crm'); ?></th><td><span id="tmt-discount-total">0</span></td></tr>
-        <tr><th>VAT</th><td><span id="tmt-tax-total">0</span></td></tr>
-        <tr><th><strong><?php _e('Grand total', 'tmt-crm'); ?></strong></th><td><strong id="tmt-grand-total">0</strong></td></tr>
+        <tr>
+          <th>Subtotal</th>
+          <td><span id="tmt-subtotal">0</span></td>
+        </tr>
+        <tr>
+          <th><?php _e('Chiết khấu', 'tmt-crm'); ?></th>
+          <td><span id="tmt-discount-total">0</span></td>
+        </tr>
+        <tr>
+          <th>VAT</th>
+          <td><span id="tmt-tax-total">0</span></td>
+        </tr>
+        <tr>
+          <th><strong><?php _e('Grand total', 'tmt-crm'); ?></strong></th>
+          <td><strong id="tmt-grand-total">0</strong></td>
+        </tr>
       </tbody>
     </table>
 

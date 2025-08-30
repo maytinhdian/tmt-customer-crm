@@ -30,6 +30,9 @@ final class Select2Assets
         // Script khởi tạo riêng cho plugin
         wp_register_script('tmt-crm-select2-init', $base . 'assets/js/select2-init.js', ['jquery', 'tmt-select2'], '0.1.0', true);
 
+
+
+
         // Localize dữ liệu chung cho Ajax
         wp_localize_script('tmt-crm-select2-init', 'TMTCRM_Select2', [
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -45,5 +48,12 @@ final class Select2Assets
         wp_enqueue_style('tmt-select2');
         wp_enqueue_script('tmt-select2');
         wp_enqueue_script('tmt-crm-select2-init');
+        wp_enqueue_script(
+            'tmt-quote-form',
+            plugins_url('assets/admin/js/quote-form.js', TMT_CRM_FILE),
+            ['jquery', 'tmt-select2'],
+            '1.1.0',
+            true
+        );
     }
 }

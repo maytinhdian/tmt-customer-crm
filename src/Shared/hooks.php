@@ -3,7 +3,7 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen,QuoteScreen};
+use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen, QuoteScreen};
 use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
 
@@ -14,7 +14,8 @@ use TMT\CRM\Infrastructure\Persistence\{
     WpdbCompanyContactRepository,
     WpdbEmploymentHistoryRepository,
     WpdbSequenceRepository,
-    WpdbQuoteRepository
+    WpdbQuoteRepository,
+    WpdbQuoteQueryRepository
 };
 
 use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
@@ -45,7 +46,7 @@ final class Hooks
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
         add_action('admin_init', [QuoteScreen::class, 'boot']);
-      
+
 
 
         //Select2 AJAX Controller 
@@ -95,7 +96,11 @@ final class Hooks
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository());
-
+        \TMT\CRM\Shared\Container::set(
+            'quote-query-repo',
+            fn() =>
+            new WpdbQuoteQueryRepository($GLOBALS['wpdb'])
+        );
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
         Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
         Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));

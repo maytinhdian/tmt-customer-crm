@@ -45,11 +45,6 @@ final class Menu
         add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
 
-        // // (Tuỳ chọn) log screen id để chắc ID khớp
-        // add_action('current_screen', function ($s) {
-        //     error_log('SCREEN: ' . $s->id);
-        // });
-
         // //-- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(
             'tmt-crm', // slug của menu cha
@@ -73,6 +68,14 @@ final class Menu
             'tmt-crm-quotes',
             [QuoteScreen::class, 'dispatch']
         );
+
+        // Screen Options cho Quotes 
+        add_action('load-' . self::$quotes_hook, [QuoteScreen::class, 'on_load_quotes']);
+
+        // // (Tuỳ chọn) log screen id để chắc ID khớp
+        // add_action('current_screen', function ($s) {
+        //     error_log('SCREEN: ' . $s->id);
+        // });
     }
 
     public static function render_dashboard(): void

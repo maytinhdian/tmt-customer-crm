@@ -228,18 +228,7 @@ final class CustomerListTable extends \WP_List_Table
         $ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
         return array_values(array_filter(array_map('absint', $ids)));
     }
-    // public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
-    // {
-    //     // Thay ID cho đúng screen của bạn (log tạm bằng current_screen nếu cần)
-    //     if (
-    //         $screen->id === 'crm_page_tmt-crm-customers'
-    //         || $screen->id === 'crm_page_tmt-crm-customers'
-    //     ) {
-    //         // Ví dụ ẩn mặc định 2 cột:
-    //         $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
-    //     }
-    //     return $hidden;
-    // }
+
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
 {
     if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\CustomerScreen::PAGE_SLUG) {
