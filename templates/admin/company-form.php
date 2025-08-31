@@ -40,10 +40,11 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                 </tr>
 
                 <tr>
-                    <th scope="row"><label for="tmt-company-tax-code"><?php esc_html_e('Mã số thuế', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="tmt-company-tax-code"><?php esc_html_e('Mã số thuế', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="tax_code" type="text" id="tmt-company-tax-code" class="regular-text"
                             value="<?php echo isset($company->tax_code) ? esc_attr($company->tax_code) : ''; ?>">
+                        <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p>
                     </td>
 
                 </tr>
@@ -65,10 +66,11 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                 </tr>
 
                 <tr>
-                    <th scope="row"><label for="tmt-company-address"><?php esc_html_e('Địa chỉ', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="tmt-company-address"><?php esc_html_e('Địa chỉ', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="address" type="text" id="tmt-company-address" class="regular-text"
                             value="<?php echo isset($company->address) ? esc_attr($company->address) : ''; ?>">
+                        <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p>
                     </td>
                 </tr>
 

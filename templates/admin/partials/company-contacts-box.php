@@ -25,6 +25,7 @@ defined('ABSPATH') || exit;
         </div>
     <?php endif; ?>
 
+    <!-- Bảng danh sách liên hệ đã được thêm vào công ty  -->
     <table class="widefat striped">
         <thead>
             <tr>
@@ -92,15 +93,15 @@ defined('ABSPATH') || exit;
         <table class="form-table">
             <tr>
                 <th scope="row">
-                    <label for="contact_customer_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label>
+                    <label for="contact_customer_id"><?php _e('Tên người liên hệ', 'tmt-crm'); ?></label>
                 </th>
                 <td>
-                    <select id="contact_customer_id"
-                        name="customer_id"
+                    <select id="contact_id"
+                        name="contact_id"
                         class="regular-text js-customer-select"
                         data-initial-id="<?php echo esc_attr((string) $customer_id_selected); ?>">
                     </select>
-                    <p class="description"><?php _e('Gõ để tìm khách hàng (Customer).', 'tmt-crm'); ?></p>
+                    <p class="description"><?php _e('Gõ để tìm tên người liên hệ (Customer).', 'tmt-crm'); ?></p>
                 </td>
             </tr>
             <tr>
@@ -114,7 +115,7 @@ defined('ABSPATH') || exit;
                 </td>
             </tr>
             <tr>
-                <th><label for="title">Chức danh</label></th>
+                <th><label for="title">Chức vụ</label></th>
                 <td><input type="text" name="title" id="title" class="regular-text"></td>
             </tr>
             <tr>

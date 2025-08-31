@@ -164,43 +164,125 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
     }
 
 
+    // public function search_for_select(string $keyword, int $page, int $per_page = 20): array
+    // {
+    //     $page   = max(1, $page);
+    //     $limit  = max(1, $per_page);
+    //     $fetch  = $limit + 1;
+    //     $offset = ($page - 1) * $limit;
+
+    //     $kw = trim($keyword);
+    //     if ($kw === '') {
+    //         $sql  = "SELECT id, name FROM {$this->table}
+    //                  ORDER BY name ASC LIMIT %d OFFSET %d";
+    //         $rows = $this->db->get_results($this->db->prepare($sql, $fetch, $offset), ARRAY_A);
+    //     } else {
+    //         // Ưu tiên prefix để dùng index name(191)
+    //         $kw_prefix = $this->db->esc_like($kw) . '%';
+    //         $sql  = "SELECT id, name FROM {$this->table}
+    //                  WHERE name LIKE %s
+    //                  ORDER BY name ASC LIMIT %d OFFSET %d";
+    //         $rows = $this->db->get_results($this->db->prepare($sql, $kw_prefix, $fetch, $offset), ARRAY_A);
+
+    //         // Fallback contains nếu prefix không trúng
+    //         if (!$rows) {
+    //             $kw_any = '%' . $this->db->esc_like($kw) . '%';
+    //             $sql  = "SELECT id, name FROM {$this->table}
+    //                      WHERE name LIKE %s
+    //                      ORDER BY name ASC LIMIT %d OFFSET %d";
+    //             $rows = $this->db->get_results($this->db->prepare($sql, $kw_any, $fetch, $offset), ARRAY_A);
+    //         }
+    //     }
+
+    //     $more = false;
+    //     if (count($rows) > $limit) {
+    //         array_pop($rows);
+    //         $more = true;
+    //     }
+
+    //     return ['items' => $rows ?: [], 'more' => $more];
+    // }
+
+    /**
+     * Tìm kiếm cho Select2: trả về ['items' => [...], 'total' => int]
+     * - Ưu tiên prefix match để tận dụng index name(191)
+     * - Fallback contains nếu prefix không có kết quả
+     * - Dùng over-fetch ($limit + 1) để biết còn trang sau, nhưng vẫn trả về total chính xác
+     */
     public function search_for_select(string $keyword, int $page, int $per_page = 20): array
     {
-        $page   = max(1, $page);
-        $limit  = max(1, $per_page);
-        $fetch  = $limit + 1;
-        $offset = ($page - 1) * $limit;
+        $page     = max(1, $page);
+        $limit    = max(1, $per_page);
+        $fetch    = $limit + 1;
+        $offset   = ($page - 1) * $limit;
 
-        $kw = trim($keyword);
+        $kw       = trim($keyword);
+        $items    = [];
+        $total    = 0;
+
         if ($kw === '') {
-            $sql  = "SELECT id, name FROM {$this->table}
-                     ORDER BY name ASC LIMIT %d OFFSET %d";
-            $rows = $this->db->get_results($this->db->prepare($sql, $fetch, $offset), ARRAY_A);
-        } else {
-            // Ưu tiên prefix để dùng index name(191)
-            $kw_prefix = $this->db->esc_like($kw) . '%';
-            $sql  = "SELECT id, name FROM {$this->table}
-                     WHERE name LIKE %s
-                     ORDER BY name ASC LIMIT %d OFFSET %d";
-            $rows = $this->db->get_results($this->db->prepare($sql, $kw_prefix, $fetch, $offset), ARRAY_A);
+            // DỮ LIỆU
+            $sql_data = "SELECT id, name
+                     FROM {$this->table}
+                     ORDER BY name ASC
+                     LIMIT %d OFFSET %d";
+            $rows = $this->db->get_results($this->db->prepare($sql_data, $fetch, $offset), ARRAY_A) ?: [];
 
-            // Fallback contains nếu prefix không trúng
+            // COUNT
+            $sql_count = "SELECT COUNT(*) FROM {$this->table}";
+            $total = (int) $this->db->get_var($sql_count);
+        } else {
+            // PREFIX
+            $kw_prefix = $this->db->esc_like($kw) . '%';
+
+            $sql_data = "SELECT id, name
+                     FROM {$this->table}
+                     WHERE name LIKE %s
+                     ORDER BY name ASC
+                     LIMIT %d OFFSET %d";
+            $rows = $this->db->get_results($this->db->prepare($sql_data, $kw_prefix, $fetch, $offset), ARRAY_A) ?: [];
+
+            // Nếu prefix không có gì → CONTAINS
             if (!$rows) {
                 $kw_any = '%' . $this->db->esc_like($kw) . '%';
-                $sql  = "SELECT id, name FROM {$this->table}
+
+                $sql_data = "SELECT id, name
+                         FROM {$this->table}
                          WHERE name LIKE %s
-                         ORDER BY name ASC LIMIT %d OFFSET %d";
-                $rows = $this->db->get_results($this->db->prepare($sql, $kw_any, $fetch, $offset), ARRAY_A);
+                         ORDER BY name ASC
+                         LIMIT %d OFFSET %d";
+                $rows = $this->db->get_results($this->db->prepare($sql_data, $kw_any, $fetch, $offset), ARRAY_A) ?: [];
+
+                // COUNT cho contains
+                $sql_count = "SELECT COUNT(*)
+                          FROM {$this->table}
+                          WHERE name LIKE %s";
+                $total = (int) $this->db->get_var($this->db->prepare($sql_count, $kw_any));
+            } else {
+                // COUNT cho prefix
+                $sql_count = "SELECT COUNT(*)
+                          FROM {$this->table}
+                          WHERE name LIKE %s";
+                $total = (int) $this->db->get_var($this->db->prepare($sql_count, $kw_prefix));
             }
         }
 
-        $more = false;
+        // Over-fetch → cắt bớt về đúng $limit
         if (count($rows) > $limit) {
             array_pop($rows);
-            $more = true;
+        }
+        // Chuẩn hóa phần tử
+        foreach ($rows as $r) {
+            $items[] = [
+                'id'   => (int) ($r['id'] ?? 0),
+                'name' => (string) ($r['name'] ?? ''),
+            ];
         }
 
-        return ['items' => $rows ?: [], 'more' => $more];
+        return [
+            'items' => $items,
+            'total' => $total,
+        ];
     }
 
     public function find_name_by_id(int $id): ?string

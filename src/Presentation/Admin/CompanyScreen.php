@@ -50,6 +50,30 @@ final class CompanyScreen
             'default' => 20,
             'option'  => self::OPTION_PER_PAGE,
         ]);
+
+        // ✅ Báo cho Screen Options biết danh sách cột (để hiện checkbox Columns)
+        $screen = get_current_screen();
+        $table  = new CompanyListTable();
+        add_filter("manage_{$screen->id}_columns", static function () use ($table) {
+            $cols = $table->get_columns();
+            unset($cols['cb']); // không cho bật/tắt cột checkbox
+            return $cols;
+        });
+
+        // ✅ Ẩn/hiện cột theo mặc định cho screen này
+        add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
+    }
+
+    public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
+    {
+        // ⚠️ Đổi đúng ID theo log current_screen của bạn
+        if (
+            $screen->id === 'crm_page_tmt-crm-companies'
+            || $screen->id === 'crm_page_tmt-crm-companies'
+        ) {
+            $hidden = array_unique(array_merge($hidden, ['id', 'owner', 'representer', 'created_at']));
+        }
+        return $hidden;
     }
 
     /**

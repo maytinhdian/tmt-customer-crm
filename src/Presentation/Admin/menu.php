@@ -62,8 +62,8 @@ final class Menu
         // ===== MỚI: Báo giá / Đơn hàng / Hoá đơn =====
         self::$quotes_hook = add_submenu_page(
             'tmt-crm',
-            __('Báo giá', 'tmt-crm'),
-            __('Báo giá', 'tmt-crm'),
+            __('Quotations Test', 'tmt-crm'),
+            __('Quotations', 'tmt-crm'),
             Capability::QUOTE_READ,
             'tmt-crm-quotes',
             [QuoteScreen::class, 'dispatch']
@@ -72,10 +72,10 @@ final class Menu
         // Screen Options cho Quotes 
         add_action('load-' . self::$quotes_hook, [QuoteScreen::class, 'on_load_quotes']);
 
-        // // (Tuỳ chọn) log screen id để chắc ID khớp
-        // add_action('current_screen', function ($s) {
-        //     error_log('SCREEN: ' . $s->id);
-        // });
+        // (Tuỳ chọn) log screen id để chắc ID khớp
+        add_action('current_screen', function ($s) {
+            error_log('SCREEN: ' . $s->id);
+        });
     }
 
     public static function render_dashboard(): void

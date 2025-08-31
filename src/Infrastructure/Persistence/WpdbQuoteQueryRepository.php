@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Infrastructure\Persistence;
@@ -9,7 +10,10 @@ use TMT\CRM\Domain\Repositories\QuoteQueryRepositoryInterface;
 final class WpdbQuoteQueryRepository implements QuoteQueryRepositoryInterface
 {
     public function __construct(private wpdb $db) {}
-    private function tq(): string { return $this->db->prefix . 'tmt_crm_quotes'; }
+    private function tq(): string
+    {
+        return $this->db->prefix . 'tmt_crm_quotes';
+    }
 
     public function paginate(array $args): array
     {
@@ -36,7 +40,8 @@ final class WpdbQuoteQueryRepository implements QuoteQueryRepositoryInterface
         if ($search !== '') {
             $where[] = "(code LIKE %s OR note LIKE %s)";
             $like = '%' . $this->db->esc_like($search) . '%';
-            $params[] = $like; $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
         }
         if ($status !== '') {
             $where[] = "status = %s";
@@ -48,7 +53,15 @@ final class WpdbQuoteQueryRepository implements QuoteQueryRepositoryInterface
 
         // Count tổng dòng
         $sql_count = "SELECT COUNT(*) FROM {$this->tq()} WHERE {$where_sql}";
-        $total = (int)$this->db->get_var($this->db->prepare($sql_count, ...$params));
+        if (!empty($params)) {
+            // Có điều kiện → có placeholder → dùng prepare
+            $total = (int) $this->db->get_var(
+                $this->db->prepare($sql_count, ...$params)
+            );
+        } else {
+            // Không có điều kiện → không cần prepare
+            $total = (int) $this->db->get_var($sql_count);
+        }
 
         // Lấy dữ liệu trang hiện tại
         $sql = "

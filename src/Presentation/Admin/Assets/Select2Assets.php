@@ -30,9 +30,6 @@ final class Select2Assets
         // Script khởi tạo riêng cho plugin
         wp_register_script('tmt-crm-select2-init', $base . 'assets/js/select2-init.js', ['jquery', 'tmt-select2'], '0.1.0', true);
 
-
-
-
         // Localize dữ liệu chung cho Ajax
         wp_localize_script('tmt-crm-select2-init', 'TMTCRM_Select2', [
             'ajax_url' => admin_url('admin-ajax.php'),
@@ -40,6 +37,7 @@ final class Select2Assets
             'i18n'     => [
                 'placeholder_company' => __('— Chọn công ty —', 'tmt-crm'),
                 'placeholder_owner'   => __('— Chọn người phụ trách —', 'tmt-crm'),
+                 'placeholder_customer'   => __('— Chọn người liên hệ  —', 'tmt-crm'),
                 'searching'           => __('Đang tìm...', 'tmt-crm'),
                 'no_results'          => __('Không có kết quả', 'tmt-crm'),
             ],

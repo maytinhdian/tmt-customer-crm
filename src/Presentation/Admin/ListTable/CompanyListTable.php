@@ -43,6 +43,8 @@ final class CompanyListTable extends \WP_List_Table
             'email'      => 'Email',
             'phone'      => 'Điện thoại',
             'address'    => 'Địa chỉ',
+            'owner' => 'Người phụ trách',
+            'representer' => 'Người đại diện',
             'created_at' => 'Tạo lúc',
             'updated_at' => 'Cập nhật',
         ];
@@ -92,6 +94,9 @@ final class CompanyListTable extends \WP_List_Table
             case 'tax_code':
             case 'email':
             case 'phone':
+            case 'owner':
+                return esc_html((string)($item[$column_name]) ?? "--");
+            case 'representer':
             case 'created_at':
             case 'updated_at':
                 return esc_html((string)($item[$column_name] ?? ''));
@@ -134,6 +139,22 @@ final class CompanyListTable extends \WP_List_Table
         return sprintf('<strong><a href="%s">%s</a></strong> %s', esc_url($edit_url), $name, $this->row_actions($actions));
     }
 
+    // Hiển thị tên người phụ trách từ owner_id
+    public function column_owner($item)
+    {
+        $oid = isset($item['owner_id']) ? (int) $item['owner_id'] : 0;
+        if ($oid <= 0) return '—';
+
+        $u = get_user_by('id', $oid);
+        $name = ($u instanceof \WP_User) ? ($u->display_name ?: $u->user_login) : null;
+
+        // // (tuỳ chọn) link tới trang sửa user
+        // if ($name && ($link = get_edit_user_link($oid))) {
+        //     return sprintf('<a href="%s">%s</a>', esc_url($link), esc_html($name));
+        // }
+        return $name ? esc_html($name) : sprintf('#%d', $oid);
+    }
+
     /**
      * Gọi trước render: nạp dữ liệu + tính phân trang
      */
@@ -168,6 +189,8 @@ final class CompanyListTable extends \WP_List_Table
                 'email'      => $dto->email,
                 'phone'      => $dto->phone,
                 'address'    => $dto->address,
+                'owner_id' => $dto->owner_id,
+                'representer' => $dto->representer,
                 'created_at' => $dto->created_at,
                 'updated_at' => $dto->updated_at,
             ];
@@ -175,8 +198,12 @@ final class CompanyListTable extends \WP_List_Table
 
         $this->total_items = (int)$result['total'];
 
+        $screen   = get_current_screen();
+        $hidden   = get_hidden_columns($screen); // ✅ cột bị ẩn theo user prefs
+
         $this->_column_headers = [
             $this->get_columns(),
+            $hidden,
             [],
             $this->get_sortable_columns(),
         ];

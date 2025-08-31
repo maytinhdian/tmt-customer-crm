@@ -24,7 +24,6 @@ $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
 
         <form method="post" action="<?php echo esc_url($action_url); ?>">
             <?php wp_nonce_field('tmt_crm_quote_form'); ?>
-
             <div class="panel">
                 <div class="grid col3">
                     <div>
@@ -32,10 +31,44 @@ $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
                         <input type="text" name="customer_text" placeholder="CTY Minh Anh" />
                         <input type="hidden" name="customer_id" value="101" />
                     </div>
-                    <div>
-                        <label><?php _e('Công ty (hoá đơn)', 'tmt-crm'); ?></label>
-                        <input type="text" name="company_text" placeholder="Công ty TNHH Minh Anh" />
-                        <input type="hidden" name="company_id" value="201" />
+                    <div class="form-field">
+                        <?php
+                        // Prefill: ưu tiên POST (sau khi submit lỗi) → fallback dữ liệu cũ (khi edit)
+                        $company_id_prefill   = isset($_POST['company_id']) ? (int) $_POST['company_id'] : (int) ($company_id_old ?? 0);
+                        $company_text_prefill = isset($_POST['company_text'])
+                            ? sanitize_text_field(wp_unslash($_POST['company_text']))
+                            : (string) ($company_name_old ?? '');
+
+                        // (Tuỳ chọn) nếu bạn muốn cung cấp nonce qua form thay vì wp_localize_script:
+                        // $ajax_nonce = wp_create_nonce('tmt_crm_select2');
+                        ?>
+                        <label for="company_id"><?php _e('Công ty (hoá đơn)', 'tmt-crm'); ?></label>
+
+                        <select
+                            id="company_id"
+                            name="company_id"
+                            class="js-select2-company"
+                            data-ajax-action="tmt_crm_search_companies"
+                            data-placeholder="<?php esc_attr_e('Chọn công ty…', 'tmt-crm'); ?>"
+                            data-initial-id="<?php echo esc_attr($company_id_prefill); ?>"
+                            data-initial-text="<?php echo esc_attr($company_text_prefill); ?>"
+                            data-min-length="1" 
+                            data-allow-clear="1"
+                            style="min-width: 350px"
+                            <?php /* required */ ?>
+                            ></select>
+
+                        <input type="hidden" id="company_text" name="company_text"
+                            value="<?php echo esc_attr($company_text_prefill); ?>" />
+
+                        <?php
+                        // (Tuỳ chọn) nếu muốn gửi nonce qua request dễ dàng, thêm hidden để JS đọc:
+                        // echo '<input type="hidden" id="_ajax_nonce" value="'. esc_attr($ajax_nonce) .'">';
+                        ?>
+
+                        <p class="description">
+                            <?php esc_html_e('Gõ vài ký tự để tìm công ty, ví dụ: "TMT", "Minh Anh"…', 'tmt-crm'); ?>
+                        </p>
                     </div>
                     <div>
                         <label><?php _e('Nhân viên phụ trách', 'tmt-crm'); ?></label>

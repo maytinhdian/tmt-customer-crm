@@ -122,6 +122,8 @@ final class Installer
             address TEXT NOT NULL,
             website VARCHAR(255) NULL,
             note TEXT NULL,
+            owner_id BIGINT UNSIGNED NULL,
+            representer VARCHAR(255) NULL,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY (id),

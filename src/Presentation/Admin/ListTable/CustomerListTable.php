@@ -160,10 +160,6 @@ final class CustomerListTable extends \WP_List_Table
             20
         );
 
-        // per_page từ Screen Options
-        // $this->per_page = (int) get_user_meta(get_current_user_id(), CustomerScreen::OPTION_PER_PAGE, true);
-        // if ($this->per_page <= 0) $this->per_page = 20;
-
         $current_page = $this->get_pagenum();
 
 
@@ -230,11 +226,10 @@ final class CustomerListTable extends \WP_List_Table
     }
 
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
-{
-    if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\CustomerScreen::PAGE_SLUG) {
-        $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
+    {
+        if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\CustomerScreen::PAGE_SLUG) {
+            $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
+        }
+        return $hidden;
     }
-    return $hidden;
-}
-
 }

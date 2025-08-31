@@ -61,7 +61,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
 
         $orderby = $filters['orderby'] ?? 'id';
         $order   = strtoupper((string)($filters['order'] ?? 'DESC'));
-        $allowed = ['id', 'name', 'tax_code', 'email', 'phone', 'created_at', 'updated_at'];
+        $allowed = ['id', 'name', 'tax_code', 'email', 'phone', 'owner_id', 'representer', 'created_at', 'updated_at'];
         if (!in_array($orderby, $allowed, true)) {
             $orderby = 'id';
         }
@@ -115,7 +115,8 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             'updated_at' => current_time('mysql'),
         ];
 
-        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s'];
+
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $ok = $this->db->insert($this->table, $data, $format);
@@ -138,7 +139,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             'representer' => $dto->representer,  // ⬅️
             'updated_at' => current_time('mysql'),
         ];
-        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
+        $format = ['%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s'];
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $ok = $this->db->update($this->table, $data, ['id' => $dto->id], $format, ['%d']);
@@ -152,6 +153,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return (bool)$ok;
     }
 
+    
     public function search_for_select(string $keyword, int $page, int $per_page = 20): array
     {
         $kw = '%' . $this->db->esc_like($keyword) . '%';

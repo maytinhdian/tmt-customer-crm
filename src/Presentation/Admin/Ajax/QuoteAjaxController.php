@@ -1,6 +1,7 @@
 <?php
 
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Presentation\Admin\Ajax;
+
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;  // use TMT\CRM\Domain\Repositories\
 use TMT\CRM\Shared\Container;

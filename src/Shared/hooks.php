@@ -53,6 +53,7 @@ final class Hooks
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
+        \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
 
 
         // Admin-post handlers (chạy khi submit form)

@@ -22,11 +22,14 @@ interface CustomerRepositoryInterface
     public function get_owner_id(int $id): ?int;
 
     /**
-     * Tìm kiếm khách hàng cho Select2, trả (items, more)
-     * @return array{items: array<array{id:int,name:string}>, more: bool}
+     * Tìm kiếm dạng phân trang để đổ vào Select2.
+     * Trả về mảng: ['items' => [ ['id'=>int, 'name'=>string], ... ], 'total' => int]
      */
-    public function search_for_select(string $keyword, int $page, int $per_page = 20): array;
+    public function search_for_select(string $term, int $page, int $per_page = 20): array;
 
-    /** Lấy tên theo ID để preload label */
+    /**
+     * Lấy nhãn hiển thị từ id (dùng khi load giá trị ban đầu).
+     * Trả về chuỗi tên hoặc null nếu không có.
+     */
     public function find_name_by_id(int $id): ?string;
 }
