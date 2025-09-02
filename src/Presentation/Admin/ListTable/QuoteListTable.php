@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use TMT\CRM\Domain\Repositories\QuoteQueryRepositoryInterface;
-use TMT\CRM\Presentation\Admin\QuoteScreen;
+use TMT\CRM\Presentation\Admin\Screen\QuoteScreen;
 
 if (!class_exists('\WP_List_Table')) {
     require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';

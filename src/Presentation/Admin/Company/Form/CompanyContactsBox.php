@@ -27,36 +27,6 @@ final class CompanyContactsBox
     /** Slug trang customers trên admin.php?page=... */
     public const PAGE_SLUG = 'tmt-crm-company-contacts';
 
-    // /** Render box trong form công ty */
-    // public static function render(int $company_id): void
-    // {
-    //     // Quyền xem/list Company
-    //     if (! current_user_can(Capability::COMPANY_READ)) {
-    //         wp_die(
-    //             '<p><em>' . esc_html__('Bạn không có quyền xem mục này.', 'tmt-crm') . '</em></p>',
-    //             esc_html__('Truy cập bị từ chối', 'tmt-crm'),
-    //             ['response' => 403]
-    //         );
-    //     }
-    //     /** @var CompanyContactRepositoryInterface $repo */
-    //     $repo = Container::get('company-contact-repo');
-    //     $roles = CompanyContactRole::all();
-
-    //     // Lấy tất cả contact đang active (có thể nhóm theo role ở template)
-    //     $contacts = $repo->find_active_contacts_by_company($company_id, null);
-
-    //     // Prefetch tên khách hàng để tránh N+1 (nếu repo có hỗ trợ); nếu không, sẽ fallback lấy lẻ
-    //     $customerLabels = self::prefetch_customer_labels($contacts);
-
-    //     // $nonce = wp_create_nonce('tmt_crm_company_contacts');
-    //     $action_add = admin_url('admin-post.php?action=tmt_crm_company_add_contact');
-    //     $action_end = admin_url('admin-post.php?action=tmt_crm_company_end_contact');
-    //     $action_primary = admin_url('admin-post.php?action=tmt_crm_company_set_primary');
-    //     $action_delete = admin_url('admin-post.php?action=tmt_crm_company_delete_contact');
-
-    //     include TMT_CRM_PATH . 'templates/admin/partials/company-contacts-box.php';
-    // }
-
     public static function render(int $company_id): void
     {
         // Quyền xem khối này (tuỳ bạn áp dụng)
@@ -109,7 +79,7 @@ final class CompanyContactsBox
         $nonce_delete   = $nonce_end;
 
         // 7) Include template: lúc này tất cả biến trên đã tồn tại trong scope
-        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/partials/company-contacts-box.php';
+        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company/partials/company-contacts-box.php';
         include $tpl;
     }
 

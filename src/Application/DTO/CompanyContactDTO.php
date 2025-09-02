@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Application\DTO;
 
-final class CompanyContactDTO
+use TMT\CRM\Shared\Traits\AsArrayTrait;
+
+final class CompanyContactDTO implements \JsonSerializable
 {
+    use AsArrayTrait;
+
     public ?int $id;
     public int $company_id;
     public int $customer_id;
@@ -44,40 +48,34 @@ final class CompanyContactDTO
         $this->updated_at = self::nn($updated_at);
     }
 
-    public static function from_array(array $row): self
+    public static function from_array(array $data): self
     {
         return new self(
-            isset($row['id']) ? (int)$row['id'] : null,
-            (int)$row['company_id'],
-            (int)$row['customer_id'],
-            (string)$row['role'],
-            $row['title'] ?? null,
-            !empty($row['is_primary']),
-            $row['start_date'] ?? null,
-            $row['end_date'] ?? null,
-            $row['note'] ?? null,
-            $row['created_at'] ?? null,
-            $row['updated_at'] ?? null
+            isset($data['id']) ? (int)$data['id'] : null,
+            (int)$data['company_id'],
+            (int)$data['customer_id'],
+            (string)$data['role'],
+            $data['title'] ?? null,
+            !empty($data['is_primary']),
+            $data['start_date'] ?? null,
+            $data['end_date'] ?? null,
+            $data['note'] ?? null,
+            $data['created_at'] ?? null,
+            $data['updated_at'] ?? null
         );
     }
-
-    public function to_array(): array
+    /**
+     * Hỗ trợ json_encode($dto)
+     */
+    public function jsonSerialize(): array
     {
-        return [
-            'id'          => $this->id,
-            'company_id'  => $this->company_id,
-            'customer_id' => $this->customer_id,
-            'role'        => $this->role,
-            'title'       => $this->title,
-            'is_primary'  => $this->is_primary ? 1 : 0,
-            'start_date'  => $this->start_date,
-            'end_date'    => $this->end_date,
-            'note'        => $this->note,
-            'created_at'  => $this->created_at,
-            'updated_at'  => $this->updated_at,
-        ];
+        return $this->to_array();
     }
 
+    /***********************************************
+     *  Helper                                     *
+     *                                             *
+     ***********************************************/
     private static function nn($v): ?string
     {
         $t = trim((string)$v);

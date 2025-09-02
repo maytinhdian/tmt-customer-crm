@@ -156,7 +156,7 @@ final class CustomerListTable extends \WP_List_Table
 
         // Lấy per-page từ Screen Options (KHÔNG đặt trong __construct vì lúc đó screen chưa sẵn)
         $this->per_page = $this->get_items_per_page(
-            \TMT\CRM\Presentation\Admin\CustomerScreen::OPTION_PER_PAGE,
+            \TMT\CRM\Presentation\Admin\Screen\CustomerScreen::OPTION_PER_PAGE,
             20
         );
 
@@ -227,7 +227,7 @@ final class CustomerListTable extends \WP_List_Table
 
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
-        if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\CustomerScreen::PAGE_SLUG) {
+        if ($screen->id === 'tmt-crm_page_' . \TMT\CRM\Presentation\Admin\Screen\CustomerScreen::PAGE_SLUG) {
             $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
         }
         return $hidden;

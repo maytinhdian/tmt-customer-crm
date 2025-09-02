@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Application\DTO\{QuoteDTO, QuoteItemDTO};
 

@@ -3,7 +3,7 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Presentation\Admin\{CustomerScreen, CompanyScreen, QuoteScreen};
+use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
 use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
 
 
@@ -46,6 +46,14 @@ final class Hooks
         add_action('admin_init', [CustomerScreen::class, 'boot']);
         add_action('admin_init', [CompanyScreen::class, 'boot']);
         add_action('admin_init', [QuoteScreen::class, 'boot']);
+        add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
+
+        //Controller 
+        // (file chính)
+        add_action('admin_init', function () {
+            \TMT\CRM\Presentation\Admin\Controller\CompanyContactController::register();
+        });
+
 
 
 
@@ -56,11 +64,11 @@ final class Hooks
         \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
 
 
-        // Admin-post handlers (chạy khi submit form)
-        add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
-        add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
-        add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
-        add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
+        // // Admin-post handlers (chạy khi submit form)
+        // add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
+        // add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
+        // add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
+        // add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
 
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);

@@ -1,16 +1,23 @@
 <?php
 
+/**
+ * File: templates/admin/companies/company-contacts-box.php
+ */
 /** @var int $company_id */
 /** @var array $contacts  */
 /** @var array $roles     */
 /** @var string $nonce    */
 /** @var string $action_add $action_end $action_primary $action_delete */
 
+use TMT\CRM\Shared\Container;
+use TMT\CRM\Presentation\Admin\ListTable\CompanyContactsListTable;
+use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
+
+
 defined('ABSPATH') || exit;
 ?>
 <div class="tmtcrm-box tmtcrm-company-contacts">
     <h2 class="title">Liên hệ (Contacts)</h2>
-
     <?php if (isset($_GET['cc_msg'])): ?>
         <div class="notice notice-success is-dismissible">
             <p><?=
@@ -24,64 +31,20 @@ defined('ABSPATH') || exit;
                 ?></p>
         </div>
     <?php endif; ?>
+    <?php
+    /** @var int $company_id đã có sẵn từ màn hình cha */
+    $add_url = add_query_arg([
+        'page'       => 'tmt-crm-company',
+        'tab'        => 'contacts',
+        'action'     => 'add',
+        'company_id' => (int)$company_id,
+    ], admin_url('admin.php'));
 
-    <!-- Bảng danh sách liên hệ đã được thêm vào công ty  -->
-    <table class="widefat striped">
-        <thead>
-            <tr>
-                <th>Khách hàng</th>
-                <th>Role</th>
-                <th>Chức vụ</th>
-                <th>Hiệu lực</th>
-                <th>Chính</th>
-                <th>Thao tác</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (!empty($contacts)): foreach ($contacts as $c): ?>
-                    <tr>
-                        <td>
-                            <?php
-                            $cid    = (int)($c->customer_id ?? 0);
-                            $label  = $customerLabels[$cid] ?? self::get_customer_label($cid);
-                            echo esc_html($label);
-                            ?>
-                        </td>
-                        <td><?= esc_html($c->role); ?></td>
-                        <td><?= esc_html($c->title ?? ''); ?></td>
-                        <td>
-                            <?= esc_html($c->start_date ?: '—'); ?> → <?= esc_html($c->end_date ?: 'hiện tại'); ?>
-                        </td>
-                        <td><?= $c->is_primary ? '✔' : '—'; ?></td>
-                        <td>
-                            <form method="post" action="<?= esc_url($action_primary); ?>" style="display:inline">
-                                <?php wp_nonce_field('tmt_crm_company_contacts'); ?>
-                                <input type="hidden" name="contact_id" value="<?= (int)$c->id; ?>">
-                                <button class="button button-small" type="submit">Đặt làm chính</button>
-                            </form>
 
-                            <form method="post" action="<?= esc_url($action_end); ?>" style="display:inline" onsubmit="return confirm('Kết thúc liên hệ này?')">
-                                <?php wp_nonce_field('tmt_crm_company_contacts'); ?>
-                                <input type="hidden" name="contact_id" value="<?= (int)$c->id; ?>">
-                                <input type="date" name="end_date" value="<?= esc_attr(date('Y-m-d')); ?>">
-                                <button class="button button-small" type="submit">Kết thúc</button>
-                            </form>
-
-                            <form method="post" action="<?= esc_url($action_delete); ?>" style="display:inline" onsubmit="return confirm('Xoá liên hệ này?')">
-                                <?php wp_nonce_field('tmt_crm_company_contacts'); ?>
-                                <input type="hidden" name="contact_id" value="<?= (int)$c->id; ?>">
-                                <button class="button button-small button-link-delete" type="submit">Xoá</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach;
-            else: ?>
-                <tr>
-                    <td colspan="6"><em>Chưa có liên hệ active.</em></td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+    ?>
+    <div class="company_contact">
+        <h4>Danh sách liên hệ</h4>
+    </div>
 
     <hr>
 

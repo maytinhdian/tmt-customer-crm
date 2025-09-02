@@ -54,4 +54,43 @@ final class CompanyContactService
     {
         return $this->repo->end_contact($id, $end_date);
     }
+    
 }
+
+add_action('admin_post_tmt_crm_company_contact_detach', function () {
+    if (!current_user_can('read')) wp_die('forbidden', 403);
+
+    $company_id = (int)($_GET['company_id'] ?? 0);
+    $contact_id = (int)($_GET['contact_id'] ?? 0);
+    check_admin_referer('tmt_crm_company_contact_detach_' . $company_id . '_' . $contact_id);
+
+    /** @var \TMT\CRM\Application\Services\CompanyContactService $svc */
+    $svc = \TMT\CRM\Shared\Container::get('company-contact-service');
+    $svc->detach_contact($company_id, $contact_id);
+
+    wp_safe_redirect(admin_url('admin.php?page='
+        . \TMT\CRM\Presentation\Admin\CompanyContactsScreen::PAGE_SLUG . '&company_id=' . $company_id));
+    exit;
+});
+
+// (Trong CompanyContactService.php hoặc một Controller riêng)
+add_action('admin_post_tmt_crm_company_contact_attach', function () {
+    if (!current_user_can('read')) wp_die('forbidden', 403);
+
+    $company_id  = (int)($_POST['company_id'] ?? 0);
+    check_admin_referer('tmt_crm_company_contact_attach_' . $company_id);
+
+    $customer_id = (int)($_POST['customer_id'] ?? 0);
+    $role        = sanitize_text_field($_POST['role'] ?? '');
+    $position    = sanitize_text_field($_POST['position'] ?? '');
+    $is_primary  = !empty($_POST['is_primary']) ? 1 : 0;
+    $start_date  = sanitize_text_field($_POST['start_date'] ?? '');
+
+    /** @var \TMT\CRM\Application\Services\CompanyContactService $svc */
+    $svc = \TMT\CRM\Shared\Container::get('company-contact-service');
+    $svc->attach_contact($company_id, $customer_id, $role, $position, $is_primary, $start_date);
+
+    wp_safe_redirect(admin_url('admin.php?page='
+        . \TMT\CRM\Presentation\Admin\CompanyContactsScreen::PAGE_SLUG . '&company_id=' . $company_id));
+    exit;
+});

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Infrastructure\Security\Capability;

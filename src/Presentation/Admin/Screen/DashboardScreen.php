@@ -1,5 +1,5 @@
 <?php
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Presentation\Admin\Screen;
 
 defined('ABSPATH') || exit;
 

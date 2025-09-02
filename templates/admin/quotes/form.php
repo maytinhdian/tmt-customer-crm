@@ -1,6 +1,6 @@
 <?php
 
-use TMT\CRM\Presentation\Admin\QuoteScreen;
+use TMT\CRM\Presentation\Admin\Screen\QuoteScreen;
 
 $back_url = admin_url('admin.php?page=' . QuoteScreen::PAGE_SLUG);
 $action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);

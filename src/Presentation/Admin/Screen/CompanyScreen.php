@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
@@ -196,7 +196,7 @@ final class CompanyScreen
             }
         }
 
-        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company-form.php';
+        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company/company-form.php';
         if (file_exists($tpl)) {
             /** @var CompanyDTO|null $company */
             /** @var string $nonce_name */

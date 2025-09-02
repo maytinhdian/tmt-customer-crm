@@ -1,6 +1,6 @@
 <?php
 
-use TMT\CRM\Presentation\Admin\QuoteScreen;
+use TMT\CRM\Presentation\Admin\Screen\QuoteScreen;
 use TMT\CRM\Presentation\Admin\ListTable\QuoteListTable;
 use TMT\CRM\Shared\Container;
 
