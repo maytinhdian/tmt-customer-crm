@@ -12,18 +12,13 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
 {
     private wpdb $db;
     private string $table;
+    private string $tblCompanyContacts;
 
     public function __construct(wpdb $db, string $table_name = '')
     {
         $this->db    = $db;
         $this->table = $table_name ?: ($db->prefix . 'tmt_crm_company_contacts');
-    }
-
-    public function find_by_id(int $id): ?CompanyContactDTO
-    {
-        $sql = "SELECT * FROM {$this->table} WHERE id = %d";
-        $row = $this->db->get_row($this->db->prepare($sql, $id), ARRAY_A);
-        return $row ? $this->map_row_to_dto($row) : null;
+        $this->tblCompanyContacts = $this->table;
     }
 
     public function find_active_contacts_by_company(int $company_id, ?string $role = null): array
@@ -42,215 +37,87 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         return array_map([$this, 'map_row_to_dto'], $rows ?: []);
     }
 
-    public function get_primary_contact(int $company_id, string $role): ?CompanyContactDTO
+    public function attach_customer(CompanyContactDTO $dto): int
     {
-        $sql = "SELECT * FROM {$this->table}
-                WHERE company_id = %d AND role = %s
-                  AND (end_date IS NULL OR end_date >= CURDATE())
-                ORDER BY is_primary DESC, id DESC
-                LIMIT 1";
-        $row = $this->db->get_row($this->db->prepare($sql, $company_id, $role), ARRAY_A);
-        return $row ? $this->map_row_to_dto($row) : null;
-    }
+        // Lấy mảng an toàn từ DTO (DTO của bạn có trait AsArrayTrait → to_array()).
+        $arr = method_exists($dto, 'to_array') ? $dto->to_array() : [];
 
-    public function upsert(CompanyContactDTO $dto): int
-    {
+        // Bắt buộc
+        $company_id  = (int)($arr['company_id'] ?? 0);
+        $customer_id = (int)($arr['customer_id'] ?? 0);
+
+        // Tuỳ chọn
+        $role       = isset($arr['role']) ? (string)$arr['role'] : '';
+        $position   = isset($arr['position']) ? (string)$arr['position'] : null;
+        $start_date = isset($arr['start_date']) ? trim((string)$arr['start_date']) : '';
+        $end_date   = isset($arr['end_date']) ? trim((string)$arr['end_date']) : '';
+        $is_primary = !empty($arr['is_primary']) ? 1 : 0;
+        $note       = isset($arr['note']) ? (string)$arr['note'] : null;
+        $created_by = isset($arr['created_by']) ? (int)$arr['created_by'] : (int)get_current_user_id();
+
         $data = [
-            'company_id'  => $dto->company_id,
-            'customer_id' => $dto->customer_id,
-            'role'        => $dto->role,
-            'title'       => $dto->title,
-            'is_primary'  => $dto->is_primary ? 1 : 0,
-            'start_date'  => $dto->start_date,
-            'end_date'    => $dto->end_date,
-            'note'        => $dto->note,
-            'created_at'  => $dto->created_at,
-            'updated_at'  => $dto->updated_at,
+            'company_id' => $company_id,
+            'customer_id' => $customer_id,
+            'role'       => $role,
+            'is_primary' => $is_primary,
+            'created_by' => $created_by,
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql'),
         ];
-        $format = ['%d', '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s'];
+        $format = ['%d', '%d', '%s', '%d', '%d', '%s', '%s'];
 
-        if ($dto->id) {
-            $this->db->update($this->table, $data, ['id' => $dto->id], $format, ['%d']);
-            return (int)$dto->id;
-        } else {
-            $this->db->insert($this->table, $data, $format);
-            return (int)$this->db->insert_id;
+        if ($position !== null) {
+            $data['position'] = $position;
+            $format[] = '%s';
         }
+        if ($note     !== null) {
+            $data['note']     = $note;
+            $format[] = '%s';
+        }
+        if ($start_date !== '') {
+            $data['start_date'] = $start_date;
+            $format[] = '%s';
+        }
+        if ($end_date   !== '') {
+            $data['end_date']   = $end_date;
+            $format[] = '%s';
+        }
+
+        $ok = $this->db->insert($this->table, $data, $format);
+        if ($ok === false) {
+            throw new \RuntimeException('DB error (attach_customer): ' . $this->db->last_error);
+        }
+        return (int)$this->db->insert_id;
     }
 
-    public function end_contact(int $id, string $end_date): bool
+    public function is_customer_active_in_company(int $company_id, int $customer_id): bool
     {
-        $updated = $this->db->update(
+        $sql = "
+            SELECT 1
+            FROM {$this->table}
+            WHERE company_id = %d
+              AND customer_id = %d
+              AND (end_date IS NULL OR end_date >= CURDATE())
+            LIMIT 1
+        ";
+        $val = $this->db->get_var($this->db->prepare($sql, $company_id, $customer_id));
+        return $val === '1' || $val === 1;
+    }
+
+    public function unset_primary(int $company_id): void
+    {
+        $res = $this->db->update(
             $this->table,
-            ['end_date' => $end_date, 'updated_at' => current_time('mysql')],
-            ['id' => $id],
-            ['%s', '%s'],
+            ['is_primary' => 0],
+            ['company_id' => $company_id],
+            ['%d'],
             ['%d']
         );
-        return $updated !== false;
-    }
-
-    public function delete(int $id): bool
-    {
-        $deleted = $this->db->delete($this->table, ['id' => $id], ['%d']);
-        return $deleted !== false;
-    }
-
-    /** Đặt is_primary=0 cho tất cả contact cùng company+role */
-    public function clear_primary_for_role(int $company_id, string $role): void
-    {
-        $sql = "UPDATE {$this->table} SET is_primary = 0 WHERE company_id = %d AND role = %s";
-        $this->db->query($this->db->prepare($sql, $company_id, $role));
-    }
-
-
-    /** @inheritDoc */
-    // public function list_by_company(int $company_id, array $args = []): array
-    // {
-    //     $page     = max(1, (int)($args['page'] ?? 1));
-    //     $per_page = max(1, (int)($args['per_page'] ?? 10));
-    //     $search   = isset($args['search']) ? (string)$args['search'] : '';
-    //     $status   = in_array(($args['status'] ?? 'all'), ['all', 'active', 'ended'], true) ? $args['status'] : 'all';
-
-    //     $orderby  = (string)($args['orderby'] ?? 'customer');
-    //     $order    = strtolower((string)($args['order'] ?? 'asc')) === 'desc' ? 'DESC' : 'ASC';
-
-    //     // Map cột UI → cột DB an toàn
-    //     $orderby_map = [
-    //         'customer'   => 'customer_id',   // không join, sort theo id khách
-    //         'role'       => 'role',
-    //         'title'      => 'title',
-    //         'is_primary' => 'is_primary',
-    //         'start_date' => 'start_date',
-    //         'end_date'   => 'end_date',
-    //     ];
-    //     $orderby_sql = $orderby_map[$orderby] ?? 'customer_id';
-
-    //     $where = ['company_id = %d'];
-    //     $params = [$company_id];
-
-    //     if ($status === 'active') {
-    //         $where[] = '(end_date IS NULL OR end_date = "")';
-    //     } elseif ($status === 'ended') {
-    //         $where[] = '(end_date IS NOT NULL AND end_date <> "")';
-    //     }
-
-    //     if ($search !== '') {
-    //         // Tìm trong vài cột chữ: role/title/phone/email (cột nào không có thì bỏ bớt)
-    //         $like = '%' . $this->db->esc_like($search) . '%';
-    //         $where[] = '(role LIKE %s OR title LIKE %s OR phone LIKE %s OR email LIKE %s)';
-    //         array_push($params, $like, $like, $like, $like);
-    //     }
-
-    //     $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
-
-    //     // Đếm tổng
-    //     $sql_count = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
-    //     $total = (int)$this->db->get_var($this->db->prepare($sql_count, ...$params));
-
-    //     // Lấy trang hiện tại
-    //     $offset = ($page - 1) * $per_page;
-    //     $sql = "SELECT id, company_id, customer_id, role, title, start_date, end_date, is_primary, phone, email
-    //             FROM {$this->table}
-    //             {$where_sql}
-    //             ORDER BY {$orderby_sql} {$order}
-    //             LIMIT %d OFFSET %d";
-
-    //     $rows = $this->db->get_results(
-    //         $this->db->prepare($sql, ...array_merge($params, [$per_page, $offset])),
-    //         ARRAY_A
-    //     ) ?: [];
-
-    //     $items = array_map(fn(array $r) => $this->hydrate_dto($r), $rows);
-
-    //     return ['items' => $items, 'total' => $total];
-    // }
-
-    public function list_by_company(int $company_id, array $args = []): array
-    {
-        $page     = max(1, (int)($args['page'] ?? 1));
-        $per_page = max(1, (int)($args['per_page'] ?? 10));
-        $search   = isset($args['search']) ? (string)$args['search'] : '';
-
-        // Đọc status an toàn → hết cảnh báo "Undefined array key 'status'"
-        $status_in = isset($args['status']) ? (string)$args['status'] : 'all';
-        $status    = in_array($status_in, ['all', 'active', 'ended'], true) ? $status_in : 'all';
-
-        $orderby_in = (string)($args['orderby'] ?? 'customer');
-        $order      = (strtolower((string)($args['order'] ?? 'asc')) === 'desc') ? 'DESC' : 'ASC';
-
-        // Map cột hiển thị → cột DB
-        $orderby_map = [
-            'customer'   => 'customer_id',
-            'role'       => 'role',
-            'title'      => 'title',
-            'is_primary' => 'is_primary',
-            'start_date' => 'start_date',
-            'end_date'   => 'end_date',
-        ];
-        $orderby_sql = $orderby_map[$orderby_in] ?? 'customer_id';
-
-        $where  = ['company_id = %d'];
-        $params = [$company_id];
-
-        // Nếu cột là DATE:
-        $today = current_time('Y-m-d');
-
-        if ($status === 'active') {
-            $where[] = '((start_date IS NULL OR start_date = "" OR start_date <= %s)
-                  AND (end_date IS NULL OR end_date = "" OR end_date >= %s))';
-            array_push($params, $today, $today);
-        } elseif ($status === 'ended') {
-            $where[] = '(end_date IS NOT NULL AND end_date <> "" AND end_date < %s)';
-            $params[] = $today;
+        if ($res === false) {
+            throw new \RuntimeException('DB error (unset_primary): ' . $this->db->last_error);
         }
-
-        if ($search !== '') {
-            $like = '%' . $this->db->esc_like($search) . '%';
-            $where[] = '(role LIKE %s OR title LIKE %s OR phone LIKE %s OR email LIKE %s)';
-            array_push($params, $like, $like, $like, $like);
-        }
-
-        $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
-
-        // Đếm tổng
-        $sql_count = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
-        $total = (int)$this->db->get_var($this->db->prepare($sql_count, ...$params));
-
-        // Trang hiện tại
-        $offset = ($page - 1) * $per_page;
-        $sql = "SELECT id, company_id, customer_id, role, title, start_date, end_date, is_primary
-            FROM {$this->table}
-            {$where_sql}
-            ORDER BY {$orderby_sql} {$order}
-            LIMIT %d OFFSET %d";
-
-        $rows = $this->db->get_results(
-            $this->db->prepare($sql, ...array_merge($params, [$per_page, $offset])),
-            ARRAY_A
-        ) ?: [];
-
-        $items = array_map(fn(array $r) => $this->hydrate_dto($r), $rows);
-
-        return ['items' => $items, 'total' => $total];
     }
 
-    protected function hydrate_dto(array $r): CompanyContactDTO
-    {
-        $dto = new CompanyContactDTO();
-        $dto->id          = (int)($r['id'] ?? 0);
-        $dto->company_id  = (int)($r['company_id'] ?? 0);
-        $dto->customer_id = (int)($r['customer_id'] ?? 0);
-        $dto->role        = (string)($r['role'] ?? '');
-        $dto->title       = isset($r['title']) ? (string)$r['title'] : null;
-        $dto->start_date  = isset($r['start_date']) ? (string)$r['start_date'] : null;
-        $dto->end_date    = isset($r['end_date']) ? (string)$r['end_date'] : null;
-        $dto->is_primary  = (bool)($r['is_primary'] ?? 0);
-        // Các field mở rộng nếu có
-        // $dto->phone       = isset($r['phone']) ? (string)$r['phone'] : null;
-        // $dto->email       = isset($r['email']) ? (string)$r['email'] : null;
-        return $dto;
-    }
 
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
@@ -265,6 +132,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
             $row['start_date'] ?? null,
             $row['end_date'] ?? null,
             $row['note'] ?? null,
+            (int)$row['created_by'] ?? null,
             $row['created_at'] ?? null,
             $row['updated_at'] ?? null
         );

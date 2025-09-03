@@ -77,7 +77,7 @@
   }
 
   //Customer (user có quyền COMPANY_CREATE)
-  const $customer = $("#contact_id");
+  const $customer = $("#customer_id");
   if ($customer.length) {
     $customer.select2({
       width: "100%",

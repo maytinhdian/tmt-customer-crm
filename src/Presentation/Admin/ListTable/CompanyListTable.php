@@ -163,6 +163,7 @@ final class CompanyListTable extends \WP_List_Table
      * - Liệt kê nhanh 2-3 liên hệ đang active
      * - Nút Thêm liên hệ mở form tạo khách hàng có gán trước company_id
      */
+
     // protected function column_contacts(array $item): string
     // {
     //     $company_id = isset($item['id']) ? (int)$item['id'] : 0;
@@ -170,15 +171,17 @@ final class CompanyListTable extends \WP_List_Table
     //         return '—';
     //     }
 
+    //     // 1) Quyền xem: nếu không có -> không hiển thị dữ liệu
+    //     if (!current_user_can(Capability::COMPANY_READ)) {
+    //         return '—';
+    //     }
+
     //     /** @var CompanyContactRepositoryInterface $contact_repo */
     //     $contact_repo = Container::get('company-contact-repo');
 
-    //     // Lấy các liên hệ đang active
-    //     $contacts = $contact_repo->find_active_contacts_by_company($company_id);
-    //     $contacts = is_array($contacts) ? $contacts : [];
+    //     $contacts = $contact_repo->find_active_contacts_by_company($company_id) ?: [];
+    //     $preview  = array_slice($contacts, 0, 3);
 
-    //     // Hiển thị tối đa 3 người để gọn
-    //     $preview = array_slice($contacts, 0, 3);
     //     $names = array_map(static function ($c): string {
     //         $name = esc_html($c['full_name'] ?? ($c['name'] ?? ''));
     //         $role = esc_html($c['role'] ?? '');
@@ -189,55 +192,43 @@ final class CompanyListTable extends \WP_List_Table
     //         ? sprintf(' <span style="opacity:.7">+%d</span>', count($contacts) - 3)
     //         : '';
 
-    //     // Link hành động
-    //     $edit_company_url    = admin_url('admin.php?page=tmt-crm-companies&action=edit&id=' . $company_id);
-    //     $manage_contacts_url = admin_url(
-    //         'admin.php?page=' . \TMT\CRM\Presentation\Admin\CompanyContactsScreen::PAGE_SLUG
-    //             . '&company_id=' . $company_id
-    //     );
-    //     // nhớ đặt id="company-contacts" ở box liên hệ
-    //     $add_contact_url     = admin_url('admin.php?page=tmt-crm-customers&action=new&company_id=' . $company_id);
-
-    //     // Danh sách actions theo style "Sửa | Xoá" (nhưng là "Thêm liên hệ | Quản lý")
-    //     $actions = [];
-
-    //     if (self::ensure_capability(Capability::COMPANY_READ, __('Bạn không có quyền truy cập liên hệ khách hàng.', 'tmt-crm'))) {
-    //         $actions['add_contact'] = sprintf(
-    //             '<a href="%s">%s</a>',
-    //             esc_url($add_contact_url),
-    //             esc_html__('Thêm liên hệ', 'tmt-crm')
-    //         );
-    //     }
-    //     if (self::ensure_capability(Capability::COMPANY_READ, __('Bạn không có quyền truy cập liên hệ khách hàng.', 'tmt-crm'))) {
-    //         $actions['manage'] = sprintf(
-    //             '<a href="%s">%s</a>',
-    //             esc_url($manage_contacts_url),
-    //             esc_html__('Quản lý', 'tmt-crm')
-    //         );
-    //     }
-
-    //     // Dùng helper của WP_List_Table để tạo markup .row-actions
-    //     $row_actions_html = $this->row_actions($actions);
-
-    //     // Mặc định .row-actions chỉ hiện khi hover cột "primary".
-    //     // Vì đây là cột phụ, ta cho hiển thị luôn bằng inline CSS nhỏ.
-    //     // (Không ảnh hưởng style chung của admin)
-    //     $force_show_css = '<style>.tmt-cell-actions .row-actions{display:block;margin-top:4px;}</style>';
-
     //     $list_html = !empty($names)
     //         ? '<div>' . implode('<br>', $names) . $extra . '</div>'
     //         : '<div style="opacity:.7">—</div>';
 
-    //     return $force_show_css . '<div class="tmt-cell-actions">' . $list_html . $row_actions_html . '</div>';
+    //     // 2) Hành động: tùy quyền mà hiện “Thêm liên hệ | Quản lý/Xem”
+    //     $manage_url = $manage_url = add_query_arg(
+    //         ['page' => \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::PAGE_SLUG, 'company_id' => $company_id],
+    //         admin_url('admin.php')
+    //     );
+
+    //     $add_url    = admin_url('admin.php?page=tmt-crm-customers&action=new&company_id=' . $company_id);
+
+    //     $actions = [];
+
+    //     if (current_user_can(Capability::COMPANY_READ)) {
+    //         // Có quyền quản lý ⇒ hiện đủ 2 nút
+    //         $actions['add_contact'] = sprintf('<a href="%s">%s</a>', esc_url($add_url), esc_html__('Thêm liên hệ', 'tmt-crm'));
+    //         $actions['manage']      = sprintf('<a href="%s">%s</a>', esc_url($manage_url), esc_html__('Quản lý', 'tmt-crm'));
+    //     } else {
+    //         // Chỉ có quyền xem ⇒ chỉ hiện “Xem”
+    //         $actions['manage'] = sprintf('<a href="%s">%s</a>', esc_url($manage_url), esc_html__('Xem', 'tmt-crm'));
+    //     }
+
+    //     // Style row-actions cho hiện luôn trong cột phụ
+    //     $force_show_css = '<style>.tmt-cell-actions .row-actions{display:block;margin-top:4px;}</style>';
+
+    //     return $force_show_css . '<div class="tmt-cell-actions">' . $list_html . $this->row_actions($actions) . '</div>';
     // }
+
     protected function column_contacts(array $item): string
     {
-        $company_id = isset($item['id']) ? (int)$item['id'] : 0;
+        $company_id = isset($item['id']) ? (int) $item['id'] : 0;
         if ($company_id <= 0) {
             return '—';
         }
 
-        // 1) Quyền xem: nếu không có -> không hiển thị dữ liệu
+        // 1) Quyền xem tối thiểu
         if (!current_user_can(Capability::COMPANY_READ)) {
             return '—';
         }
@@ -245,47 +236,118 @@ final class CompanyListTable extends \WP_List_Table
         /** @var CompanyContactRepositoryInterface $contact_repo */
         $contact_repo = Container::get('company-contact-repo');
 
+        // Có thể cân nhắc eager-load ở prepare_items() để tránh N+1
         $contacts = $contact_repo->find_active_contacts_by_company($company_id) ?: [];
-        $preview  = array_slice($contacts, 0, 3);
 
-        $names = array_map(static function ($c): string {
-            $name = esc_html($c['full_name'] ?? ($c['name'] ?? ''));
-            $role = esc_html($c['role'] ?? '');
-            return $role ? "{$name} <span style='opacity:.7'>( {$role} )</span>" : $name;
-        }, $preview);
+        // Chuẩn hóa 1 contact về view-model array
+        $normalize = static function ($c): array {
+            if ($c instanceof CompanyContactDTO) {
+                $name = (string) ($c->full_name ?? $c->contact_name ?? ($c->contact_id ? ('#' . (int)$c->contact_id) : ''));
+                return [
+                    'name'       => $name,
+                    'role'       => (string) ($c->role ?? ''),
+                    'position'   => (string) ($c->position ?? ''),
+                    'is_primary' => (bool) $c->is_primary,
+                ];
+            }
+            if (is_array($c)) {
+                $id   = isset($c['contact_id']) ? (int)$c['contact_id'] : 0;
+                $name = (string) ($c['full_name'] ?? $c['name'] ?? ($id ? ('#' . $id) : ''));
+                return [
+                    'name'       => $name,
+                    'role'       => (string) ($c['role'] ?? ''),
+                    'position'   => (string) ($c['position'] ?? ''),
+                    'is_primary' => !empty($c['is_primary']),
+                ];
+            }
+            return ['name' => '', 'role' => '', 'position' => '', 'is_primary' => false];
+        };
+
+        $preview   = array_slice($contacts, 0, 3);
+        $labels    = [];
+
+        foreach ($preview as $c) {
+            $a = $normalize($c);
+            if ($a['name'] === '') {
+                continue;
+            }
+            $meta = [];
+            if ($a['role'] !== '') {
+                $meta[] = esc_html($a['role']);
+            }
+            if ($a['position'] !== '') {
+                $meta[] = esc_html($a['position']);
+            }
+            if ($a['is_primary']) {
+                $meta[] = esc_html__('chính', 'tmt-crm');
+            }
+
+            $meta_str = $meta ? ' <small>(' . implode(' · ', $meta) . ')</small>' : '';
+            $labels[] = sprintf(
+                '<span class="tmt-contact-badge">%s%s</span>',
+                esc_html($a['name']),
+                $meta_str
+            );
+        }
 
         $extra = count($contacts) > 3
             ? sprintf(' <span style="opacity:.7">+%d</span>', count($contacts) - 3)
             : '';
 
-        $list_html = !empty($names)
-            ? '<div>' . implode('<br>', $names) . $extra . '</div>'
+        $list_html = $labels
+            ? '<div>' . implode('<br>', $labels) . $extra . '</div>'
             : '<div style="opacity:.7">—</div>';
 
-        // 2) Hành động: tùy quyền mà hiện “Thêm liên hệ | Quản lý/Xem”
-        $manage_url = $manage_url = add_query_arg(
-            ['page' => \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::PAGE_SLUG, 'company_id' => $company_id],
+        // 2) Hành động theo quyền
+        $manage_url = add_query_arg(
+            [
+                'page'       => CompanyContactsScreen::PAGE_SLUG,
+                'company_id' => $company_id,
+            ],
             admin_url('admin.php')
         );
 
-        $add_url    = admin_url('admin.php?page=tmt-crm-customers&action=new&company_id=' . $company_id);
+        // Nếu có flow “tạo khách hàng mới rồi gắn vào công ty”
+        $add_url = add_query_arg(
+            [
+                'page'       => 'tmt-crm-customers',
+                'action'     => 'new',
+                'company_id' => $company_id,
+            ],
+            admin_url('admin.php')
+        );
 
         $actions = [];
-
         if (current_user_can(Capability::COMPANY_READ)) {
-            // Có quyền quản lý ⇒ hiện đủ 2 nút
-            $actions['add_contact'] = sprintf('<a href="%s">%s</a>', esc_url($add_url), esc_html__('Thêm liên hệ', 'tmt-crm'));
-            $actions['manage']      = sprintf('<a href="%s">%s</a>', esc_url($manage_url), esc_html__('Quản lý', 'tmt-crm'));
+            // Tuỳ dự án: quyền thêm có thể nên check Capability::CUSTOMER_CREATE hoặc COMPANY_CONTACT_CREATE
+            $actions['add_contact'] = sprintf(
+                '<a href="%s">%s</a>',
+                esc_url($add_url),
+                esc_html__('Thêm liên hệ', 'tmt-crm')
+            );
+            $actions['manage'] = sprintf(
+                '<a href="%s">%s</a>',
+                esc_url($manage_url),
+                esc_html__('Quản lý', 'tmt-crm')
+            );
         } else {
-            // Chỉ có quyền xem ⇒ chỉ hiện “Xem”
-            $actions['manage'] = sprintf('<a href="%s">%s</a>', esc_url($manage_url), esc_html__('Xem', 'tmt-crm'));
+            $actions['manage'] = sprintf(
+                '<a href="%s">%s</a>',
+                esc_url($manage_url),
+                esc_html__('Xem', 'tmt-crm')
+            );
         }
 
-        // Style row-actions cho hiện luôn trong cột phụ
+        // Ép row-actions hiển thị luôn trong cell
         $force_show_css = '<style>.tmt-cell-actions .row-actions{display:block;margin-top:4px;}</style>';
 
-        return $force_show_css . '<div class="tmt-cell-actions">' . $list_html . $this->row_actions($actions) . '</div>';
+        return $force_show_css
+            . '<div class="tmt-cell-actions">'
+            . $list_html
+            . $this->row_actions($actions)
+            . '</div>';
     }
+
     /**
      * Gọi trước render: nạp dữ liệu + tính phân trang
      */
@@ -347,6 +409,7 @@ final class CompanyListTable extends \WP_List_Table
             'total_pages' => (int)ceil($this->total_items / $this->per_page),
         ]);
     }
+
     /* ===================== Helpers ===================== */
 
     /** Kiểm tra quyền, nếu không đủ -> die với thông báo */

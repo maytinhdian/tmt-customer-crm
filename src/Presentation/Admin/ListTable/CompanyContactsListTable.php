@@ -3,6 +3,7 @@
 namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use TMT\CRM\Shared\Container;
+use TMT\CRM\Application\DTO\CompanyContactDTO;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
 
@@ -42,54 +43,84 @@ class CompanyContactsListTable extends \WP_List_Table
 
     protected function column_full_name($item): string
     {
-        $name = esc_html($item['full_name'] ?? ($item['name'] ?? ''));
-        return $name . $this->row_actions([
-            // ví dụ: link sang màn khách hàng
-            'view' => sprintf(
+        // --- Normalize ---
+        if ($item instanceof CompanyContactDTO) {
+            // Ưu tiên full_name → contact_name → #contact_id
+            $full_name  = (string)($item->full_name ?? $item->contact_name ?? '');
+            if ($full_name === '') {
+                $full_name = $item->customer_id ? ('#' . (int)$item->customer_id) : '—';
+            }
+            // Link hồ sơ: dùng contact_id (tương đương customer id trong domain của bạn)
+            $customer_id = (int)($item->customer_id ?? 0);
+        } else {
+            // Mảng: thử nhiều key
+            $full_name = (string)($item['full_name'] ?? ($item['name'] ?? ''));
+            if ($full_name === '') {
+                $id = isset($item['customer_id']) ? (int)$item['customer_id']
+                    : (isset($item['contact_id']) ? (int)$item['contact_id'] : 0);
+                $full_name = $id ? ('#' . $id) : '—';
+            }
+            $customer_id = (int)($item['customer_id'] ?? ($item['contact_id'] ?? 0));
+        }
+
+        $name_html = esc_html($full_name);
+
+        // --- Actions ---
+        $actions = [];
+        if ($customer_id > 0) {
+            $profile_url = add_query_arg(
+                ['page' => 'tmt-crm-customers', 'action' => 'edit', 'id' => $customer_id],
+                admin_url('admin.php')
+            );
+            $actions['view'] = sprintf(
                 '<a href="%s">%s</a>',
-                esc_url(admin_url('admin.php?page=tmt-crm-customers&action=edit&id=' . (int)$item['customer_id'])),
+                esc_url($profile_url),
                 esc_html__('Mở hồ sơ', 'tmt-crm')
-            ),
-        ]);
+            );
+        }
+
+        // Nếu không có action thì chỉ trả tên
+        return $actions ? ($name_html . $this->row_actions($actions)) : $name_html;
     }
+
 
     protected function column_role($item): string
     {
-        return esc_html($item['role'] ?? '');
+        return esc_html($item->role ?? '');
     }
 
     protected function column_position($item): string
     {
-        return esc_html($item['position'] ?? '');
+        return esc_html($item->title ?? '');
     }
 
     protected function column_phone($item): string
     {
-        return esc_html($item['phone'] ?? '');
+        return esc_html($item->phone ?? '');
     }
 
     protected function column_email($item): string
     {
-        $email = esc_html($item['email'] ?? '');
+        $email = esc_html($item->email ?? '');
         return $email ? sprintf('<a href="mailto:%1$s">%1$s</a>', $email) : '—';
     }
 
     protected function column_period($item): string
     {
-        $start = !empty($item['start_date']) ? esc_html($item['start_date']) : '—';
-        $end   = !empty($item['end_date'])   ? esc_html($item['end_date'])   : __('hiện tại', 'tmt-crm');
+        $start = !empty($item->start_date) ? esc_html($item->start_date) : '—';
+        $end   = !empty($item->end_date)   ? esc_html($item->end_date)   : __('hiện tại', 'tmt-crm');
         return "{$start} → {$end}";
     }
 
     protected function column_is_primary($item): string
     {
-        return !empty($item['is_primary']) ? '✔' : '—';
+        return !empty($item->is_primary) ? '✔' : '—';
     }
 
     protected function column_actions($item): string
     {
         $company_id  = $this->company_id;
-        $contact_id  = (int)$item['id'];
+        $contact_id  = (int)$item->id;
 
         $detach_url = wp_nonce_url(
             admin_url('admin-post.php?action=tmt_crm_company_contact_detach&company_id=' . $company_id . '&contact_id=' . $contact_id),
@@ -139,7 +170,7 @@ class CompanyContactsListTable extends \WP_List_Table
             'per_page'    => $per_page,
         ]);
     }
-    
+
     /* ===================== Helpers ===================== */
 
     /** Kiểm tra quyền, nếu không đủ -> die với thông báo */

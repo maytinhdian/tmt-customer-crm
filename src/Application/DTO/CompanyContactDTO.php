@@ -10,7 +10,7 @@ final class CompanyContactDTO implements \JsonSerializable
 {
     use AsArrayTrait;
 
-    public ?int $id;
+    public ?int $id = null;
     public int $company_id;
     public int $customer_id;
     public string $role;          // 'accounting' | 'purchasing' | 'invoice_recipient' | 'decision_maker' | 'owner' | 'other'
@@ -19,19 +19,21 @@ final class CompanyContactDTO implements \JsonSerializable
     public ?string $start_date;   // 'YYYY-MM-DD'
     public ?string $end_date;     // 'YYYY-MM-DD'
     public ?string $note;
+    public ?int $created_by;
     public ?string $created_at;
     public ?string $updated_at;
 
     public function __construct(
-        ?int $id,
-        int $company_id,
-        int $customer_id,
-        string $role,
+        ?int $id = null,
+        ?int $company_id = null,
+        ?int $customer_id = null,
+        ?string $role = '',
         ?string $title = null,
         bool $is_primary = false,
         ?string $start_date = null,
         ?string $end_date = null,
         ?string $note = null,
+        ?int $created_by = null,
         ?string $created_at = null,
         ?string $updated_at = null
     ) {
@@ -44,6 +46,7 @@ final class CompanyContactDTO implements \JsonSerializable
         $this->start_date = self::nn($start_date);
         $this->end_date = self::nn($end_date);
         $this->note = self::nn($note);
+        $this->created_by = $created_by;
         $this->created_at = self::nn($created_at);
         $this->updated_at = self::nn($updated_at);
     }
@@ -60,6 +63,7 @@ final class CompanyContactDTO implements \JsonSerializable
             $data['start_date'] ?? null,
             $data['end_date'] ?? null,
             $data['note'] ?? null,
+            (int)$data['created_by'],
             $data['created_at'] ?? null,
             $data['updated_at'] ?? null
         );

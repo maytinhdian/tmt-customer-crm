@@ -1,80 +1,93 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Presentation\Admin\Controller;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Application\DTO\CompanyContactDTO;
+use TMT\CRM\Application\Services\CompanyContactService;
 use TMT\CRM\Infrastructure\Security\Capability;
-use TMT\CRM\Presentation\Admin\CompanyContactsScreen;
+use TMT\CRM\Shared\Container;
 
 final class CompanyContactController
 {
-    /** Đăng ký các admin_post handler */
+    public const ACTION_ATTACH = 'tmt_crm_company_contact_attach';
+    private const NONCE_PREFIX = 'tmt_crm_company_contact_attach_';
+
+    /** Đăng ký hook: gọi sớm ở bootstrap (file chính) */
     public static function register(): void
     {
-        add_action('admin_post_tmt_crm_company_contact_attach', [self::class, 'attach_contact']);
-        add_action('admin_post_tmt_crm_company_contact_detach', [self::class, 'detach_contact']);
+        add_action('admin_post_' . self::ACTION_ATTACH, [self::class, 'insert']);
+        // Nếu muốn cho khách chưa login:
+        // add_action('admin_post_nopriv_' . self::ACTION_ATTACH, [self::class, 'insert']);
     }
 
-    /** Gán (attach) 1 khách hàng làm liên hệ của công ty */
-    public static function attach_contact(): void
+    /** POST /wp-admin/admin-post.php?action=tmt_crm_company_contact_attach */
+    public static function insert(): void
     {
-        self::ensure_capability(
-            Capability::COMPANY_UPDATE,
-            __('Bạn không có quyền gán liên hệ cho công ty.', 'tmt-crm')
-        );
+        // --- Bảo mật & quyền ---
+        $company_id = isset($_POST['company_id']) ? (int)$_POST['company_id'] : 0;
+        check_admin_referer(self::NONCE_PREFIX . $company_id);
 
-        $company_id = isset($_POST['company_id']) ? absint($_POST['company_id']) : 0;
-        check_admin_referer('tmt_crm_company_contact_attach_' . $company_id);
+        if (!current_user_can(Capability::COMPANY_CREATE)) {
+            wp_die(__('Bạn không có quyền thực hiện thao tác này.', 'tmt-crm'), 403);
+        }
 
-        $customer_id = isset($_POST['customer_id']) ? absint($_POST['customer_id']) : 0;
-        $role        = sanitize_text_field($_POST['role'] ?? '');
-        $position    = sanitize_text_field($_POST['position'] ?? '');
+        // --- Lấy dữ liệu form & sanitize ---
+        $customer_id = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
+        $role        = isset($_POST['role']) ? sanitize_text_field((string)$_POST['role']) : '';
+        $title    = isset($_POST['title']) ? sanitize_text_field((string)$_POST['title']) : '';
+        $start_date  = sanitize_text_field((string)($_POST['start_date'] ?? '')) ?: wp_date('Y-m-d');
         $is_primary  = !empty($_POST['is_primary']);
-        $start_date  = sanitize_text_field($_POST['start_date'] ?? '');
+        $note        = isset($_POST['note']) ? sanitize_text_field((string)$_POST['note']) : '';
 
-        /** @var \TMT\CRM\Application\Services\CompanyContactService $svc */
+        if ($company_id <= 0 || $customer_id <= 0) {
+            self::redirect_back($company_id, 'error', __('Thiếu dữ liệu bắt buộc.', 'tmt-crm'));
+        }
+
+        // --- Build DTO từ Application\DTO ---
+        $dto = new CompanyContactDTO(
+            company_id: $company_id,
+            customer_id: $customer_id,
+            role: $role,
+            title: $title,
+            start_date: $start_date,
+            is_primary: $is_primary,
+            created_by: get_current_user_id()
+        );
+
+        // Một số DTO gốc có thể có 'note' → nếu có setter / to_array sẽ mang theo
+        if (property_exists($dto, 'note')) {
+            $dto->note = $note;
+        }
+
+        /** @var CompanyContactService $svc */
         $svc = Container::get('company-contact-service');
-        // Gọi service theo nghiệp vụ dự án của bạn
-        $svc->attach_contact($company_id, $customer_id, $role, $position, $is_primary, $start_date);
 
-        self::redirect(
-            admin_url('admin.php?page=' . CompanyContactsScreen::PAGE_SLUG . '&company_id=' . $company_id)
-        );
-    }
-
-    /** Gỡ (detach) 1 liên hệ khỏi công ty */
-    public static function detach_contact(): void
-    {
-        self::ensure_capability(
-            Capability::COMPANY_UPDATE,
-            __('Bạn không có quyền gỡ liên hệ khỏi công ty.', 'tmt-crm')
-        );
-
-        $company_id = isset($_GET['company_id']) ? absint($_GET['company_id']) : 0;
-        $contact_id = isset($_GET['contact_id']) ? absint($_GET['contact_id']) : 0;
-        check_admin_referer('tmt_crm_company_contact_detach_' . $company_id . '_' . $contact_id);
-
-        /** @var \TMT\CRM\Application\Services\CompanyContactService $svc */
-        $svc = Container::get('company-contact-service');
-        $svc->detach_contact($company_id, $contact_id);
-
-        self::redirect(
-            admin_url('admin.php?page=' . CompanyContactsScreen::PAGE_SLUG . '&company_id=' . $company_id)
-        );
-    }
-
-    /** Kiểm tra quyền, thiếu quyền -> die (đúng “dạng” bạn yêu cầu) */
-    private static function ensure_capability(string $capability, string $message): void
-    {
-        if (!current_user_can($capability)) {
-            wp_die($message, __('Không có quyền', 'tmt-crm'), ['response' => 403]);
+        try {
+            $relation_id = $svc->insert_customer_for_company($dto);
+            self::redirect_back($company_id, 'success', sprintf(
+                /* translators: %d: relation id */
+                __('Thêm khách liên hệ thành công (ID #%d).', 'tmt-crm'),
+                $relation_id
+            ));
+        } catch (\Throwable $e) {
+            error_log('[TMT CRM] company-contact attach error: ' . $e->getMessage());
+            self::redirect_back($company_id, 'error', $e->getMessage());
         }
     }
 
-    /** Redirect & exit gọn gàng */
-    private static function redirect(string $url): void
+    /** Điều hướng về tab Contacts của Company */
+    private static function redirect_back(int $company_id, string $status, string $message): void
     {
+        $url = add_query_arg([
+            'page'       => 'tmt-crm-company',
+            'tab'        => 'contacts',
+            'company_id' => $company_id,
+            'status'     => $status,
+            'msg'        => rawurlencode($message),
+        ], admin_url('admin.php'));
+
         wp_safe_redirect($url);
         exit;
     }

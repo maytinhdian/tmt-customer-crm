@@ -44,6 +44,9 @@ final class Menu
             [CustomerScreen::class, 'dispatch']
         );
 
+         // 👉 Bàn giao hook_suffix lại cho CustomerScreen
+        CustomerScreen::set_hook_suffix(self::$customers_hook);
+
         // Screen Options cho Customers
         add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);

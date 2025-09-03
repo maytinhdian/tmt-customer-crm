@@ -37,9 +37,9 @@ $action_url = admin_url('admin-post.php');
     <table class="form-table" role="presentation">
         <tbody>
             <tr>
-                <th><label for="contact_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label></th>
+                <th><label for="customer_id"><?php _e('Khách hàng', 'tmt-crm'); ?></label></th>
                 <td>
-                    <select id="contact_id" name="contact_id" style="width: 420px"
+                    <select id="customer_id" name="customer_id" style="width: 420px"
                         data-ajax-action="tmt_crm_search_customers"
                         data-placeholder="<?php esc_attr_e('Chọn khách hàng…', 'tmt-crm'); ?>">
                     </select>
@@ -52,7 +52,7 @@ $action_url = admin_url('admin-post.php');
                 <!-- <td><input type="text" id="role" name="role" class="regular-text" /></td> -->
                 <td><select name="role" required>
                         <?php foreach ($roles as $key => $label): ?>
-                            <option value="<?php echo esc_attr($key); ?>">
+                            <option value="<?php echo esc_attr($label); ?>">
                                 <?php echo esc_html($label); ?>
                             </option>
                         <?php endforeach; ?>

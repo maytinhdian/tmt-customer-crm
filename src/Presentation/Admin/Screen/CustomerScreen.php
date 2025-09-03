@@ -6,6 +6,7 @@ namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Presentation\Admin\ListTable\CustomerListTable;
 use TMT\CRM\Application\DTO\CustomerDTO;
 
@@ -16,6 +17,8 @@ defined('ABSPATH') || exit;
  */
 final class CustomerScreen
 {
+    private static ?string $hook_suffix = null;
+
     /** Slug trang customers trên admin.php?page=... */
     public const PAGE_SLUG = 'tmt-crm-customers';
 
@@ -33,6 +36,22 @@ final class CustomerScreen
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
     }
 
+    /** Menu.php sẽ gọi hàm này sau khi đăng ký submenu */
+    public static function set_hook_suffix(string $hook): void
+    {
+        self::$hook_suffix = $hook;
+    }
+
+    /** Trả về hook_suffix để AdminNoticeService scope đúng screen */
+    public static function hook_suffix(): string
+    {
+        if (!empty(self::$hook_suffix)) {
+            return $temp =  self::$hook_suffix;
+        }
+
+        // fallback nếu chưa được set (ít xảy ra)
+        return 'crm_page_' . self::PAGE_SLUG;
+    }
     public static function render(): void
     {
         $table = new CustomerListTable();
@@ -154,19 +173,19 @@ final class CustomerScreen
         // Nạp dữ liệu + phân trang
         $table->prepare_items();
 
-        // Notices
-        if (isset($_GET['created'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo khách hàng.', 'tmt-crm') . '</p></div>';
-        }
-        if (isset($_GET['updated'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật khách hàng.', 'tmt-crm') . '</p></div>';
-        }
-        if (isset($_GET['deleted'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s khách hàng.', 'tmt-crm'), (int) $_GET['deleted']) . '</p></div>';
-        }
-        if (isset($_GET['error']) && !empty($_GET['msg'])) {
-            echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
-        }
+        // // Notices
+        // if (isset($_GET['created'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo khách hàng.', 'tmt-crm') . '</p></div>';
+        // }
+        // if (isset($_GET['updated'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật khách hàng.', 'tmt-crm') . '</p></div>';
+        // }
+        // if (isset($_GET['deleted'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s khách hàng.', 'tmt-crm'), (int) $_GET['deleted']) . '</p></div>';
+        // }
+        // if (isset($_GET['error']) && !empty($_GET['msg'])) {
+        //     echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
+        // }
 
         $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
@@ -221,11 +240,70 @@ final class CustomerScreen
     }
 
     /** Handler: Save (Create/Update) */
+    // public static function handle_save(): void
+    // {
+    //     $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
+
+    //     // Phân quyền theo ngữ cảnh: tạo hay cập nhật
+    //     if ($id > 0) {
+    //         self::ensure_capability(Capability::CUSTOMER_UPDATE_ANY, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
+    //     } else {
+    //         self::ensure_capability(Capability::CUSTOMER_CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
+    //     }
+
+    //     // Kiểm nonce
+    //     $nonce_name = $id > 0 ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
+    //     if (!isset($_POST['_wpnonce']) || !wp_verify_nonce((string) $_POST['_wpnonce'], $nonce_name)) {
+    //         wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
+    //     }
+
+    //     // Sanitize input
+    //     $name     = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+    //     $email    = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+    //     $phone    = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
+    //     $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
+    //     $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
+    //     $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0; // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
+
+    //     // Tạo DTO (created_at/updated_at để repo tự set)
+    //     $dto = new CustomerDTO(
+    //         $id ?: null,
+    //         $name,
+    //         $email ?: null,
+    //         $phone ?: null,
+    //         $address ?: null,
+    //         $type ?: null,
+    //         $owner_id ?: null
+    //     );
+
+    //     $svc = Container::get('customer-service');
+
+    //     try {
+    //         if ($id > 0) {
+    //             $svc->update($dto);
+    //             self::redirect(self::url(['updated' => 1]));
+    //         } else {
+    //             $svc->create($dto);
+    //             self::redirect(self::url(['created' => 1]));
+    //         }
+    //     } catch (\Throwable $e) {
+    //         self::redirect(self::url([
+    //             'error' => 1,
+    //             'msg'   => rawurlencode($e->getMessage()),
+    //             'action' => $id > 0 ? 'edit' : 'add',
+    //             'id'     => $id ?: null,
+    //         ]));
+    //     }
+    // }
+    /**
+     * Handler: Save (Create/Update)
+     */
     public static function handle_save(): void
     {
+        error_log('SAVE as user_id=' . get_current_user_id());
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
 
-        // Phân quyền theo ngữ cảnh: tạo hay cập nhật
+        // Phân quyền theo ngữ cảnh
         if ($id > 0) {
             self::ensure_capability(Capability::CUSTOMER_UPDATE_ANY, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
         } else {
@@ -244,7 +322,8 @@ final class CustomerScreen
         $phone    = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
         $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
         $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
-        $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0; // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
+        // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
+        $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0;
 
         // Tạo DTO (created_at/updated_at để repo tự set)
         $dto = new CustomerDTO(
@@ -257,25 +336,41 @@ final class CustomerScreen
             $owner_id ?: null
         );
 
+        /** @var \TMT\CRM\Application\Services\CustomerService $svc */
         $svc = Container::get('customer-service');
 
         try {
             if ($id > 0) {
                 $svc->update($dto);
-                self::redirect(self::url(['updated' => 1]));
+                // Cập nhật
+
             } else {
                 $svc->create($dto);
-                self::redirect(self::url(['created' => 1]));
+                AdminNoticeService::success_for_screen(
+                    self::hook_suffix(),
+                    __('Đã tạo khách hàng.', 'tmt-crm')
+                );
             }
+
+            // URL sạch: trở về danh sách khách hàng
+            wp_safe_redirect(self::url());
+            exit;
         } catch (\Throwable $e) {
-            self::redirect(self::url([
-                'error' => 1,
-                'msg'   => rawurlencode($e->getMessage()),
-                'action' => $id > 0 ? 'edit' : 'add',
-                'id'     => $id ?: null,
-            ]));
+            AdminNoticeService::error_for_screen(
+                self::hook_suffix(),
+                sprintf(
+                    /* translators: %s: error message */
+                    __('Lưu thất bại: %s', 'tmt-crm'),
+                    esc_html($e->getMessage())
+                )
+            );
+
+            // Có thể quay lại list hoặc form; ở đây về list cho thống nhất
+            wp_safe_redirect(self::url());
+            exit;
         }
     }
+
 
     /** Handler: Delete (single) */
     public static function handle_delete(): void
@@ -328,5 +423,4 @@ final class CustomerScreen
         wp_safe_redirect($url);
         exit;
     }
-
 }

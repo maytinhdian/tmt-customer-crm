@@ -3,11 +3,9 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
+use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
+use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
-use TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox;
-
-
-
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
@@ -17,9 +15,6 @@ use TMT\CRM\Infrastructure\Persistence\{
     WpdbQuoteRepository,
     WpdbQuoteQueryRepository
 };
-
-use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
-
 use TMT\CRM\Application\Services\{
     CustomerService,
     CompanyService,
@@ -28,6 +23,8 @@ use TMT\CRM\Application\Services\{
     NumberingService,
     QuoteService
 };
+
+use function ElementorDeps\DI\get;
 
 final class Hooks
 {
@@ -49,11 +46,14 @@ final class Hooks
         add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
 
         //Controller 
-        // (file chính)
         add_action('admin_init', function () {
             \TMT\CRM\Presentation\Admin\Controller\CompanyContactController::register();
         });
 
+        //Notice Services
+        add_action('plugins_loaded', static function () {
+            AdminNoticeService::boot();
+        },0);
 
 
 
@@ -122,7 +122,7 @@ final class Hooks
             Container::get('company-repo'),
             Container::get('company-contact-repo')
         ));
-        Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo')));
+        Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo')));
         Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
         Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
     }

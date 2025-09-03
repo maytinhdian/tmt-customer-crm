@@ -164,45 +164,6 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
     }
 
 
-    // public function search_for_select(string $keyword, int $page, int $per_page = 20): array
-    // {
-    //     $page   = max(1, $page);
-    //     $limit  = max(1, $per_page);
-    //     $fetch  = $limit + 1;
-    //     $offset = ($page - 1) * $limit;
-
-    //     $kw = trim($keyword);
-    //     if ($kw === '') {
-    //         $sql  = "SELECT id, name FROM {$this->table}
-    //                  ORDER BY name ASC LIMIT %d OFFSET %d";
-    //         $rows = $this->db->get_results($this->db->prepare($sql, $fetch, $offset), ARRAY_A);
-    //     } else {
-    //         // Ưu tiên prefix để dùng index name(191)
-    //         $kw_prefix = $this->db->esc_like($kw) . '%';
-    //         $sql  = "SELECT id, name FROM {$this->table}
-    //                  WHERE name LIKE %s
-    //                  ORDER BY name ASC LIMIT %d OFFSET %d";
-    //         $rows = $this->db->get_results($this->db->prepare($sql, $kw_prefix, $fetch, $offset), ARRAY_A);
-
-    //         // Fallback contains nếu prefix không trúng
-    //         if (!$rows) {
-    //             $kw_any = '%' . $this->db->esc_like($kw) . '%';
-    //             $sql  = "SELECT id, name FROM {$this->table}
-    //                      WHERE name LIKE %s
-    //                      ORDER BY name ASC LIMIT %d OFFSET %d";
-    //             $rows = $this->db->get_results($this->db->prepare($sql, $kw_any, $fetch, $offset), ARRAY_A);
-    //         }
-    //     }
-
-    //     $more = false;
-    //     if (count($rows) > $limit) {
-    //         array_pop($rows);
-    //         $more = true;
-    //     }
-
-    //     return ['items' => $rows ?: [], 'more' => $more];
-    // }
-
     /**
      * Tìm kiếm cho Select2: trả về ['items' => [...], 'total' => int]
      * - Ưu tiên prefix match để tận dụng index name(191)

@@ -124,7 +124,6 @@ final class CompanyContactsScreen
         View::render_admin_module('company', 'contacts-manage.php', [
             'company'    => $company,
             'company_id' => $company_id,
-           
             'table'      => $table,
         ]);
     }
