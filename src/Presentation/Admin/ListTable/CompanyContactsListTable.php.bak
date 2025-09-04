@@ -1,0 +1,186 @@
+<?php
+
+namespace TMT\CRM\Presentation\Admin\ListTable;
+
+use TMT\CRM\Shared\Container;
+use TMT\CRM\Application\DTO\CompanyContactViewDTO;
+use TMT\CRM\Application\DTO\CompanyContactDTO;
+use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
+
+class CompanyContactsListTable extends \WP_List_Table
+{
+    private int $company_id;
+
+    public function __construct(int $company_id)
+    {
+        parent::__construct([
+            'singular' => 'contact',
+            'plural'   => 'contacts',
+            'ajax'     => false,
+        ]);
+        $this->company_id = $company_id;
+    }
+
+    public function get_columns(): array
+    {
+        return [
+            'cb'         => '<input type="checkbox" />',
+            'full_name'  => __('Họ tên', 'tmt-crm'),
+            'role'       => __('Vai trò', 'tmt-crm'),
+            'position'   => __('Chức vụ', 'tmt-crm'),
+            'phone'      => __('Điện thoại', 'tmt-crm'),
+            'email'      => __('Email', 'tmt-crm'),
+            'period'     => __('Hiệu lực', 'tmt-crm'),
+            'is_primary' => __('Chính', 'tmt-crm'),
+            'actions'    => __('Thao tác', 'tmt-crm'),
+        ];
+    }
+
+    protected function column_cb($item): string
+    {
+        return sprintf('<input type="checkbox" name="contact_ids[]" value="%d" />', (int)$item['id']);
+    }
+
+    protected function column_full_name($item): string
+    {
+        // --- Normalize ---
+        if ($item instanceof CompanyContactDTO) {
+            // Ưu tiên full_name → contact_name → #contact_id
+            $full_name  = (string)($item->full_name ?? $item->contact_name ?? '');
+            if ($full_name === '') {
+                $full_name = $item->customer_id ? ('#' . (int)$item->customer_id) : '—';
+            }
+            // Link hồ sơ: dùng contact_id (tương đương customer id trong domain của bạn)
+            $customer_id = (int)($item->customer_id ?? 0);
+        } else {
+            // Mảng: thử nhiều key
+            $full_name = (string)($item['full_name'] ?? ($item['name'] ?? ''));
+            if ($full_name === '') {
+                $id = isset($item['customer_id']) ? (int)$item['customer_id']
+                    : (isset($item['contact_id']) ? (int)$item['contact_id'] : 0);
+                $full_name = $id ? ('#' . $id) : '—';
+            }
+            $customer_id = (int)($item['customer_id'] ?? ($item['contact_id'] ?? 0));
+        }
+
+        $name_html = esc_html($full_name);
+
+        // --- Actions ---
+        $actions = [];
+        if ($customer_id > 0) {
+            $profile_url = add_query_arg(
+                ['page' => 'tmt-crm-customers', 'action' => 'edit', 'id' => $customer_id],
+                admin_url('admin.php')
+            );
+            $actions['view'] = sprintf(
+                '<a href="%s">%s</a>',
+                esc_url($profile_url),
+                esc_html__('Mở hồ sơ', 'tmt-crm')
+            );
+        }
+
+        // Nếu không có action thì chỉ trả tên
+        return $actions ? ($name_html . $this->row_actions($actions)) : $name_html;
+    }
+
+
+    protected function column_role($item): string
+    {
+        return esc_html($item->role ?? '');
+    }
+
+    protected function column_position($item): string
+    {
+        return esc_html($item->title ?? '');
+    }
+
+    protected function column_phone($item): string
+    {
+        return esc_html($item->phone ?? '');
+    }
+
+    protected function column_email($item): string
+    {
+        $email = esc_html($item->email ?? '');
+        return $email ? sprintf('<a href="mailto:%1$s">%1$s</a>', $email) : '—';
+    }
+
+    protected function column_period($item): string
+    {
+        $start = !empty($item->start_date) ? esc_html($item->start_date) : '—';
+        $end   = !empty($item->end_date)   ? esc_html($item->end_date)   : __('hiện tại', 'tmt-crm');
+        return "{$start} → {$end}";
+    }
+
+    protected function column_is_primary($item): string
+    {
+        return !empty($item->is_primary) ? '✔' : '—';
+    }
+
+    protected function column_actions($item): string
+    {
+        $company_id  = $this->company_id;
+        $contact_id  = (int)$item->id;
+
+        $detach_url = wp_nonce_url(
+            admin_url('admin-post.php?action=tmt_crm_company_contact_detach&company_id=' . $company_id . '&contact_id=' . $contact_id),
+            'tmt_crm_company_contact_detach_' . $company_id . '_' . $contact_id
+        );
+
+        $actions = [
+            'detach' => sprintf(
+                '<a href="%s" class="submitdelete" onclick="return confirm(\'%s\');">%s</a>',
+                esc_url($detach_url),
+                esc_attr__('Gỡ liên hệ khỏi công ty?', 'tmt-crm'),
+                esc_html__('Gỡ', 'tmt-crm')
+            ),
+        ];
+
+        return $this->row_actions($actions);
+    }
+
+    public function get_sortable_columns(): array
+    {
+        return [
+            'full_name' => ['full_name', false],
+            'role'      => ['role', false],
+        ];
+    }
+
+    public function prepare_items(): void
+    {
+        $per_page = (int) get_user_meta(get_current_user_id(), 'tmt_crm_company_contacts_per_page', true);
+        if (!$per_page) $per_page = 20;
+
+        $current_page = max(1, (int)($_GET['paged'] ?? 1));
+        $offset       = ($current_page - 1) * $per_page;
+
+        /** @var CompanyContactRepositoryInterface $repo */
+        $repo = Container::get('company-contact-repo');
+
+        // Repo nên có hàm phân trang; nếu chưa, ta lấy tất rồi cắt (tạm)
+        $all = $repo->find_active_contacts_by_company($this->company_id);
+        $total_items = count($all ?? []);
+        $items = array_slice($all ?? [], $offset, $per_page);
+
+        $this->items = $items;
+
+        $this->set_pagination_args([
+            'total_items' => $total_items,
+            'per_page'    => $per_page,
+        ]);
+    }
+
+    /* ===================== Helpers ===================== */
+
+    /** Kiểm tra quyền, nếu không đủ -> die với thông báo */
+    private static function ensure_capability(string $capability, string $message): void
+    {
+        if (!current_user_can($capability)) {
+            wp_die($message);
+        }
+    }
+}
+
+

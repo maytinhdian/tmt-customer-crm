@@ -59,4 +59,12 @@ final class WpdbUserRepository implements UserRepositoryInterface
         if (!$u) return null;
         return trim(($u->display_name ?: $u->user_login) . ' — ' . $u->user_email);
     }
+        public function get_display_name(int $user_id): ?string
+    {
+        $u = get_user_by('id', $user_id);
+        if ($u instanceof \WP_User) {
+            return $u->display_name !== '' ? $u->display_name : $u->user_login;
+        }
+        return null;
+    }
 }

@@ -103,4 +103,17 @@ interface CompanyContactRepositoryInterface
    * Bỏ cờ primary của TẤT CẢ quan hệ trong 1 công ty.
    */
   public function unset_primary(int $company_id): void;
+
+  /**
+   * Lấy danh sách liên hệ (có join customer + company owner) cho 1 công ty.
+   * @return array<CompanyContactViewDTO>
+   */
+  public function find_paged_with_relations(
+    int $company_id,
+    int $page,
+    int $per_page,
+    array $filters = []
+  ): array;
+
+  public function count_by_company_with_filters(int $company_id, array $filters = []): int;
 }

@@ -38,6 +38,7 @@ final class Hooks
         // WooCommerce integration (nếu có)
         // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
 
+        // error_log('[XDEBUG TEST] __FILE__=' . __FILE__);
 
 
         add_action('admin_init', [CustomerScreen::class, 'boot']);
@@ -48,12 +49,14 @@ final class Hooks
         //Controller 
         add_action('admin_init', function () {
             \TMT\CRM\Presentation\Admin\Controller\CompanyContactController::register();
+            error_log('[TMT CRM] CompanyContactController::register() is ready...');
         });
 
         //Notice Services
-        add_action('plugins_loaded', static function () {
+        add_action('admin_init', function () {
+            error_log('[TMT CRM] AdminNoticeService::boot() is running...');
             AdminNoticeService::boot();
-        },0);
+        }, 0);
 
 
 
@@ -104,11 +107,11 @@ final class Hooks
         Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
-        Container::set('user-repo',  fn() => new WpdbUserRepository());
-        \TMT\CRM\Shared\Container::set(
+        Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
+        Container::set(
             'quote-query-repo',
             fn() =>
-            new WpdbQuoteQueryRepository($GLOBALS['wpdb'])
+            new WpdbQuoteQueryRepository($wpdb)
         );
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
         Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));

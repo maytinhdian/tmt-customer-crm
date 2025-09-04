@@ -342,8 +342,10 @@ final class CustomerScreen
         try {
             if ($id > 0) {
                 $svc->update($dto);
-                // Cập nhật
-
+                AdminNoticeService::success_for_screen(
+                    self::hook_suffix(),
+                    __('Đã cập nhật khách hàng.', 'tmt-crm')
+                );
             } else {
                 $svc->create($dto);
                 AdminNoticeService::success_for_screen(
@@ -390,12 +392,18 @@ final class CustomerScreen
 
         try {
             $svc->delete($id);
-            self::redirect(self::url(['deleted' => 1]));
+            AdminNoticeService::error_for_screen(
+                self::hook_suffix(),
+                __('Đã xóa khách hàng.', 'tmt-crm')
+            );
+            wp_safe_redirect(self::url());
         } catch (\Throwable $e) {
-            self::redirect(self::url([
-                'error' => 1,
-                'msg'   => rawurlencode($e->getMessage()),
-            ]));
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                throw $e; // để dev thấy stack trace
+            }
+            AdminNoticeService::error_for_screen(self::hook_suffix(), __('Xóa khách hàng thất bại.', 'tmt-crm'));
+            wp_safe_redirect(self::url());
+            exit;
         }
     }
 

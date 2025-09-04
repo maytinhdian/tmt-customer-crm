@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Presentation\Admin\Support;
@@ -11,7 +12,8 @@ final class AdminNoticeService
     /** Khởi tạo hook in notice ở mọi trang WP Admin */
     public static function boot(): void
     {
-        add_action('admin_notices', [self::class, 'print_notices']);
+        add_action('all_admin_notices', [self::class, 'print_notices'], 20);
+        error_log('[TMT CRM] AdminNoticeService::boot() is running...');
     }
 
     /** Thông báo thành công (không ràng buộc screen) */
@@ -29,8 +31,8 @@ final class AdminNoticeService
     /** Thông báo thành công cho 1 screen cụ thể */
     public static function success_for_screen(string $screen_id, string $message): void
     {
-        self::flash('success', $message, $screen_id);
-        self::print_notices();
+        $temp_flash = self::flash('success', $message, $screen_id);
+        error_log('[AD]' . $screen_id);
     }
 
     /** Thông báo lỗi cho 1 screen cụ thể */
