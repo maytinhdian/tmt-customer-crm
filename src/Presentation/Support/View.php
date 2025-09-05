@@ -26,30 +26,6 @@ final class View
      * Render 1 file PHP tuyệt đối.
      * - $return = true → trả về string; false → echo trực tiếp.
      */
-    // public static function render(string $abs_path, array $vars = [], bool $return = false): ?string
-    // {
-    //     if ($abs_path === '' || !self::is_safe_inside_base($abs_path)) {
-    //         self::doing_it_wrong('render', 'Invalid or unsafe view path: ' . $abs_path);
-    //         return null;
-    //     }
-
-    //     if (!is_file($abs_path)) {
-    //         self::doing_it_wrong('render', 'View file not found: ' . $abs_path);
-    //         return null;
-    //     }
-
-    //     if ($return) {
-    //         ob_start();
-    //         extract($vars, EXTR_SKIP);
-    //         include $abs_path;
-    //         return (string) ob_get_clean();
-    //     }
-
-    //     extract($vars, EXTR_SKIP);
-    //     include $abs_path;
-    //     return null;
-    // }
-
 
     public static function render(string $abs_path, array $vars = [], bool $return = false): ?string
     {

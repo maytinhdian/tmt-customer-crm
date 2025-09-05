@@ -6,16 +6,32 @@ class Container
 {
     private static array $instances = [];
 
-    public static function set(string $id, callable $factory): void {
+    public static function set(string $id, callable $factory): void
+    {
         self::$instances[$id] = $factory;
     }
 
-    public static function get(string $id) {
+    // public static function get(string $id)
+    // {
+    //     if (!isset(self::$instances[$id])) {
+    //         throw new \RuntimeException("Service not found: {$id}");
+    //     }
+    //     $val = self::$instances[$id];
+    //     return is_callable($val) ? $val() : $val;
+    // }
+    public static function get(string $id)
+    {
         if (!isset(self::$instances[$id])) {
             throw new \RuntimeException("Service not found: {$id}");
         }
         $val = self::$instances[$id];
-        return is_callable($val) ? $val() : $val;
+
+        if (is_callable($val)) {
+            // resolve once, then cache the instance
+            $resolved = $val();
+            self::$instances[$id] = $resolved;
+            return $resolved;
+        }
+        return $val;
     }
- 
 }

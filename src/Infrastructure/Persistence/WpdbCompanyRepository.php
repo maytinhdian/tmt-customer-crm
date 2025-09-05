@@ -46,6 +46,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return $row ? $this->map_row_to_dto($row) : null;
     }
 
+    
     public function list_paginated(int $page, int $per_page, array $filters = []): array
     {
         $where  = [];

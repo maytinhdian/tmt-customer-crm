@@ -50,12 +50,6 @@ final class CompanyContactsScreen
 
         // Khai báo danh sách cột cho Screen Options → Columns
         $screen = get_current_screen();
-        $table  = new CompanyContactsListTable(0); // company_id set khi render, ở đây chỉ lấy cột
-        add_filter("manage_{$screen->id}_columns", static function () use ($table) {
-            $cols = $table->get_columns();
-            unset($cols['cb']); // không cho bật/tắt cột checkbox
-            return $cols;
-        });
 
         // Ẩn cột mặc định (điều chỉnh theo nhu cầu)
         add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
@@ -104,29 +98,61 @@ final class CompanyContactsScreen
         self::render_manage($company_id);
     }
 
+
+
     /** LIST VIEW: WP_List_Table + form Thêm liên hệ (template ngoài src để tránh PSR-4) */
     public static function render_manage(int $company_id): void
     {
+        /** @var \TMT\CRM\Application\Services\CompanyContactQueryService $svc */
+        // $svc = Container::get(\TMT\CRM\Application\Services\CompanyContactQueryService::class);
+        // hoặc nếu dùng alias:
+        $svc = Container::get('company-contact-query-service');
 
-        // Lấy dữ liệu công ty để render tiêu đề
-        $svc     = Container::get('company-service');
-        $companyDTO = $svc->find_by_id($company_id); // CompanyDTO|array tuỳ Service
-        if (!$companyDTO) {
-            wp_die(__('Không tìm thấy công ty', 'tmt-crm'));
-        }
-        $company = method_exists($companyDTO, 'to_array')
-            ? $companyDTO->to_array(true)
-            : ['id' => (int)($companyDTO->id ?? 0), 'name' => (string)($companyDTO->name ?? '')];
-        $table = new CompanyContactsListTable($company_id);
+        // per_page từ Screen Options
+        $user_per_page = (int) get_user_option(self::OPTION_PER_PAGE);
+        $per_page      = $user_per_page > 0 ? $user_per_page : 20;
+        $current_page  = isset($_GET['paged']) ? max(1, (int)$_GET['paged']) : 1;
+
+        $filters = [
+            'active_only' => isset($_GET['active_only']) ? (bool) $_GET['active_only'] : true,
+            'role'        => sanitize_text_field($_GET['role'] ?? ''),
+        ];
+
+        $sort = [
+            'by'  => sanitize_key($_GET['orderby'] ?? ''), // id, role, position, start_date, end_date, is_primary
+            'dir' => strtolower(sanitize_text_field($_GET['order'] ?? '')) === 'asc' ? 'asc' : 'desc',
+        ];
+
+        $items       = $svc->find_paged_view_by_company($company_id, $current_page, $per_page, $filters, $sort);
+        $total_items = $svc->count_view_by_company($company_id, $filters);
+
+        $table = new CompanyContactsListTable($items, $total_items, $per_page, $company_id);
         $table->prepare_items();
 
-        // ✅ Gọi template chính bằng View::render_admin_module
-        View::render_admin_module('company', 'contacts-manage.php', [
-            'company'    => $company,
-            'company_id' => $company_id,
-            'table'      => $table,
-        ]);
+        // Ưu tiên render qua View::
+        $module = 'company';
+        $file   = 'contacts-manage';
+
+        if (View::exists_admin($module . '/' . $file)) {
+            View::render_admin_module($module, $file, [
+                'company_id'   => (int) $company_id,
+                'table'        => $table,
+                'filters'      => $filters,
+                'per_page'     => (int) $per_page,
+                'current_page' => (int) $current_page,
+                'total_items'  => (int) $total_items,
+            ]);
+            return;
+        }
+        // Fallback rất tối giản (chỉ khi chưa có template)
+        echo '<div class="wrap"><h1 class="wp-heading-inline">'
+            . esc_html__('Liên hệ công ty', 'tmt-crm')
+            . '</h1><hr class="wp-header-end">';
+        $table->prepare_items();
+        $table->display();
+        echo '</div>';
     }
+
 
     /** Helper build URL (giống CompanyScreen::url) */
     private static function url(array $args = []): string

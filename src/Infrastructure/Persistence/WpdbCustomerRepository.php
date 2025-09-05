@@ -252,6 +252,33 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         $val = $this->db->get_var($this->db->prepare($sql, $id));
         return $val !== null ? (string)$val : null;
     }
+
+    /** @inheritDoc */
+    public function find_by_ids(array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $sql = "SELECT id, name, phone, email FROM {$this->table} WHERE id IN ($placeholders)";
+
+        $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
+
+        $map = [];
+        foreach ($rows as $r) {
+            $dto = new CustomerDTO(
+                (int)$r['id'],
+                $r['full_name'] ?? '',
+                $r['phone'] ?? null,
+                $r['email'] ?? null
+            );
+            $map[$dto->id] = $dto;
+        }
+        return $map;
+    }
+    
     // ──────────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────────

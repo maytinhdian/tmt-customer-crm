@@ -46,7 +46,7 @@ final class CustomerScreen
     public static function hook_suffix(): string
     {
         if (!empty(self::$hook_suffix)) {
-            return $temp =  self::$hook_suffix;
+            return self::$hook_suffix;
         }
 
         // fallback nếu chưa được set (ít xảy ra)

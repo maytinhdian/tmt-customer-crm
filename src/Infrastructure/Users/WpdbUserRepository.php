@@ -4,11 +4,26 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Infrastructure\Users;
 
+use wpdb;
 use WP_User_Query;
+use TMT\CRM\Application\DTO\UserDTO;
 use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
 
 final class WpdbUserRepository implements UserRepositoryInterface
 {
+    private wpdb $db;
+    private string $users_table;
+    private string $usermeta_table;
+
+
+
+    public function __construct(wpdb $db)
+    {
+        $this->db            = $db;
+        $this->users_table   = $db->users;
+        $this->usermeta_table = $db->usermeta;
+    }
+
     public function search_for_select(
         string $keyword,
         int $page,
@@ -59,12 +74,53 @@ final class WpdbUserRepository implements UserRepositoryInterface
         if (!$u) return null;
         return trim(($u->display_name ?: $u->user_login) . ' — ' . $u->user_email);
     }
-        public function get_display_name(int $user_id): ?string
+    public function get_display_name(int $user_id): ?string
     {
         $u = get_user_by('id', $user_id);
         if ($u instanceof \WP_User) {
             return $u->display_name !== '' ? $u->display_name : $u->user_login;
         }
         return null;
+    }
+    /** @inheritDoc */
+    public function find_by_ids(array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $sql = "SELECT ID as id, display_name, user_email FROM {$this->users_table} WHERE ID IN ($placeholders)";
+        $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
+
+        // Nếu cần lấy owner_phone từ usermeta
+        $phones = [];
+        $meta_key = 'owner_phone';
+        $meta_sql = "
+            SELECT user_id, meta_value
+            FROM {$this->usermeta_table}
+            WHERE meta_key = %s AND user_id IN ($placeholders)
+        ";
+        $meta_rows = $this->db->get_results(
+            $this->db->prepare($meta_sql, $meta_key, ...$ids),
+            ARRAY_A
+        ) ?: [];
+        foreach ($meta_rows as $m) {
+            $phones[(int)$m['user_id']] = $m['meta_value'];
+        }
+
+        $map = [];
+        foreach ($rows as $r) {
+            $id = (int)$r['id'];
+            $dto = new UserDTO(
+                $id,
+                $r['display_name'] ?? '',
+                $r['user_email'] ?? null,
+                $phones[$id] ?? null
+            );
+            $map[$id] = $dto;
+        }
+        return $map;
     }
 }

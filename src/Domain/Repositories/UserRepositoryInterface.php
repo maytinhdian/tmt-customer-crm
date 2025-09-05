@@ -24,4 +24,11 @@ interface UserRepositoryInterface
     
     /** Lấy tên hiển thị của user (display_name hoặc user_login). */
     public function get_display_name(int $user_id): ?string;
+
+        /**
+     * Trả về map [id => UserDTO]
+     * @param int[] $ids
+     * @return array<int, UserDTO>
+     */
+    public function find_by_ids(array $ids): array;
 }

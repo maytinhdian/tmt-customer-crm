@@ -28,8 +28,9 @@ interface CustomerRepositoryInterface
     public function search_for_select(string $term, int $page, int $per_page = 20): array;
 
     /**
-     * Lấy nhãn hiển thị từ id (dùng khi load giá trị ban đầu).
-     * Trả về chuỗi tên hoặc null nếu không có.
+     * Trả về map [id => CustomerDTO]
+     * @param int[] $ids
+     * @return array<int, CustomerDTO>
      */
-    public function find_name_by_id(int $id): ?string;
+    public function find_by_ids(array $ids): array;
 }

@@ -1,68 +1,68 @@
 <?php
-
-declare(strict_types=1);
-
+// src/Application/DTO/CompanyContactViewDTO.php
 namespace TMT\CRM\Application\DTO;
 
-use TMT\CRM\Shared\Traits\AsArrayTrait;
-
-final class CompanyContactViewDTO implements \JsonSerializable
+/**
+ * Dùng làm dữ liệu đầu vào cho CompanyContactListTable
+ */
+final class CompanyContactViewDTO
 {
-    use AsArrayTrait;
-
     public int $id;
     public int $company_id;
-    public int $customer_id;
-    public string $role;
-    public ?string $title;
-    public bool $is_primary;
+    public ?int $customer_id;
+
+    // Từ customers (ưu tiên hiển thị)
+    public string  $full_name;     // fallback: contact_name → #customer_id
+    public ?string $phone;
+    public ?string $email;
+
+    // Từ company_contacts
+    public ?string $role;
+    public ?string $position;
     public ?string $start_date;
     public ?string $end_date;
+    public bool    $is_primary;
 
-    // —— Trường “bên ngoài” lấy từ bảng khác —— //
-    public ?string $customer_full_name;   // từ bảng customer
-    public ?string $customer_phone;       // từ bảng customer
-    public ?string $customer_email;       // từ bảng customer
-
-    public ?int $owner_id;                // từ bảng companies
-    public ?string $owner_name;           // từ wp_users
+    // Người phụ trách (owner) – có thể lấy từ company_contacts hoặc bảng company tùy schema
+    public ?int    $owner_id;
+    public ?string $owner_name;
+    public ?string $owner_phone; // nếu có custom user meta
+    public ?string $owner_email;
 
     public function __construct(
         int $id,
         int $company_id,
-        int $customer_id,
-        string $role = '',
-        ?string $title = null,
-        bool $is_primary = false,
-        ?string $start_date = null,
-        ?string $end_date = null,
-        ?string $customer_full_name = null,
-        ?string $customer_phone = null,
-        ?string $customer_email = null,
-        ?int $owner_id = null,
-        ?string $owner_name = null
+        ?int $customer_id,
+        string $full_name,
+        ?string $phone,
+        ?string $email,
+        ?string $role,
+        ?string $position,
+        ?string $start_date,
+        ?string $end_date,
+        bool $is_primary,
+        ?int $owner_id,
+        ?string $owner_name,
+        ?string $owner_phone,
+        ?string $owner_email
     ) {
-        $this->id = $id;
-        $this->company_id = $company_id;
+        $this->id          = $id;
+        $this->company_id  = $company_id;
         $this->customer_id = $customer_id;
-        $this->role = $role;
-        $this->title = $title;
-        $this->is_primary = $is_primary;
-        $this->start_date = $start_date;
-        $this->end_date = $end_date;
 
-        $this->customer_full_name = $customer_full_name;
-        $this->customer_phone = $customer_phone;
-        $this->customer_email = $customer_email;
+        $this->full_name   = $full_name;
+        $this->phone       = $phone;
+        $this->email       = $email;
 
-        $this->owner_id = $owner_id;
-        $this->owner_name = $owner_name;
-    }
-    /**
-     * Hỗ trợ json_encode($dto)
-     */
-    public function jsonSerialize(): array
-    {
-        return $this->to_array();
+        $this->role        = $role;
+        $this->position    = $position;
+        $this->start_date  = $start_date;
+        $this->end_date    = $end_date;
+        $this->is_primary  = $is_primary;
+
+        $this->owner_id    = $owner_id;
+        $this->owner_name  = $owner_name;
+        $this->owner_phone = $owner_phone;
+        $this->owner_email = $owner_email;
     }
 }

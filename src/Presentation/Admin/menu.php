@@ -65,7 +65,7 @@ final class Menu
         add_action('load-' . self::$companies_hook, [CompanyScreen::class, 'on_load_companies']);
         add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
 
-        // ===== MỚI: Báo giá / Đơn hàng / Hoá đơn =====
+        // ===== Báo giá / Đơn hàng / Hoá đơn =====
         self::$quotes_hook = add_submenu_page(
             'tmt-crm',
             __('Quotations Test', 'tmt-crm'),
@@ -98,10 +98,10 @@ final class Menu
         // Screen Options cho Quotes 
         add_action('load-' . self::$contacts_hook, [CompanyContactsScreen::class, 'on_load_contacts']);
 
-        // (Tuỳ chọn) log screen id để chắc ID khớp
-        add_action('current_screen', function ($s) {
-            error_log('SCREEN: ' . $s->id);
-        });
+        // // (Tuỳ chọn) log screen id để chắc ID khớp
+        // add_action('current_screen', function ($s) {
+        //     error_log('SCREEN: ' . $s->id);
+        // });
     }
 
     public static function render_dashboard(): void

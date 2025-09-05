@@ -225,6 +225,80 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
     }
 
+
+    /** @inheritDoc */
+    public function find_paged_by_company(
+        int $company_id,
+        int $page,
+        int $per_page,
+        array $filters = [],
+        array $sort = []
+    ): array {
+        $where  = ['company_id = %d'];
+        $params = [$company_id];
+
+        // Ví dụ filter
+        if (!empty($filters['role'])) {
+            $where[]  = 'role = %s';
+            $params[] = (string)$filters['role'];
+        }
+        if (isset($filters['is_primary'])) {
+            $where[]  = 'is_primary = %d';
+            $params[] = (int)$filters['is_primary'];
+        }
+        if (!empty($filters['active_only'])) {
+            $where[] = '(end_date IS NULL OR end_date >= CURDATE())';
+        }
+
+        $order_by = 'is_primary DESC, id DESC';
+        if (!empty($sort['by'])) {
+            $dir = (!empty($sort['dir']) && strtolower($sort['dir']) === 'asc') ? 'ASC' : 'DESC';
+            // Chỉ cho phép sort trên các cột hợp lệ của bảng này
+            $allowed = ['id', 'role', 'position', 'start_date', 'end_date', 'is_primary'];
+            if (in_array($sort['by'], $allowed, true)) {
+                $order_by = sprintf('%s %s, id DESC', $sort['by'], $dir);
+            }
+        }
+
+        $offset = max(0, ($page - 1) * $per_page);
+
+        $sql = "
+            SELECT *
+            FROM {$this->t_contacts}
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY {$order_by}
+            LIMIT %d OFFSET %d
+        ";
+
+        $params[] = $per_page;
+        $params[] = $offset;
+
+        $rows = $this->db->get_results($this->db->prepare($sql, ...$params), ARRAY_A) ?: [];
+
+        return array_map([$this, 'map_row_to_dto'], $rows);
+    }
+
+    public function count_by_company(int $company_id, array $filters = []): int
+    {
+        $where  = ['company_id = %d'];
+        $params = [$company_id];
+
+        if (!empty($filters['role'])) {
+            $where[]  = 'role = %s';
+            $params[] = (string)$filters['role'];
+        }
+        if (isset($filters['is_primary'])) {
+            $where[]  = 'is_primary = %d';
+            $params[] = (int)$filters['is_primary'];
+        }
+        if (!empty($filters['active_only'])) {
+            $where[] = '(end_date IS NULL OR end_date >= CURDATE())';
+        }
+
+        $sql = "SELECT COUNT(1) FROM {$this->t_contacts} WHERE " . implode(' AND ', $where);
+        return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
+    }
+
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
     {
