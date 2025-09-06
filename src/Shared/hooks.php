@@ -50,12 +50,12 @@ final class Hooks
         //Controller 
         add_action('admin_init', function () {
             \TMT\CRM\Presentation\Admin\Controller\CompanyContactController::register();
-            error_log('[TMT CRM] CompanyContactController::register() is ready...');
+            error_log('[CRM Hooks] CompanyContactController::register() is ready...');
         });
 
         //Notice Services
         add_action('admin_init', function () {
-            error_log('[TMT CRM] AdminNoticeService::boot() is running...');
+            error_log('[TMT Hooks] AdminNoticeService::boot() is running...');
             AdminNoticeService::boot();
         }, 0);
 

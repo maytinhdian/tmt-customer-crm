@@ -65,7 +65,7 @@ final class AdminNoticeService
             if ($match_screen && $message !== '') {
                 $class = $type === 'success'
                     ? 'notice notice-success is-dismissible'
-                    : 'notice notice-error';
+                    : 'notice notice-error is-dismissible';
 
                 printf(
                     '<div class="%s"><p>%s</p></div>',

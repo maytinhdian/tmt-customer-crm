@@ -239,62 +239,6 @@ final class CustomerScreen
         }
     }
 
-    /** Handler: Save (Create/Update) */
-    // public static function handle_save(): void
-    // {
-    //     $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
-
-    //     // Phân quyền theo ngữ cảnh: tạo hay cập nhật
-    //     if ($id > 0) {
-    //         self::ensure_capability(Capability::CUSTOMER_UPDATE_ANY, __('Bạn không có quyền sửa khách hàng.', 'tmt-crm'));
-    //     } else {
-    //         self::ensure_capability(Capability::CUSTOMER_CREATE, __('Bạn không có quyền tạo khách hàng.', 'tmt-crm'));
-    //     }
-
-    //     // Kiểm nonce
-    //     $nonce_name = $id > 0 ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
-    //     if (!isset($_POST['_wpnonce']) || !wp_verify_nonce((string) $_POST['_wpnonce'], $nonce_name)) {
-    //         wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
-    //     }
-
-    //     // Sanitize input
-    //     $name     = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
-    //     $email    = sanitize_email(wp_unslash($_POST['email'] ?? ''));
-    //     $phone    = sanitize_text_field(wp_unslash($_POST['phone'] ?? ''));
-    //     $address  = sanitize_text_field(wp_unslash($_POST['address'] ?? ''));
-    //     $type     = sanitize_key(wp_unslash($_POST['type'] ?? ''));
-    //     $owner_id = isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? absint($_POST['owner_id']) : 0; // ⭐ Người phụ trách: hiển thị tên, nhưng LƯU ID
-
-    //     // Tạo DTO (created_at/updated_at để repo tự set)
-    //     $dto = new CustomerDTO(
-    //         $id ?: null,
-    //         $name,
-    //         $email ?: null,
-    //         $phone ?: null,
-    //         $address ?: null,
-    //         $type ?: null,
-    //         $owner_id ?: null
-    //     );
-
-    //     $svc = Container::get('customer-service');
-
-    //     try {
-    //         if ($id > 0) {
-    //             $svc->update($dto);
-    //             self::redirect(self::url(['updated' => 1]));
-    //         } else {
-    //             $svc->create($dto);
-    //             self::redirect(self::url(['created' => 1]));
-    //         }
-    //     } catch (\Throwable $e) {
-    //         self::redirect(self::url([
-    //             'error' => 1,
-    //             'msg'   => rawurlencode($e->getMessage()),
-    //             'action' => $id > 0 ? 'edit' : 'add',
-    //             'id'     => $id ?: null,
-    //         ]));
-    //     }
-    // }
     /**
      * Handler: Save (Create/Update)
      */

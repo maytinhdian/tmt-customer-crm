@@ -6,6 +6,7 @@ namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Application\DTO\CompanyContactDTO;
 use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
 
 defined('ABSPATH') || exit;
@@ -242,7 +243,7 @@ final class CompanyListTable extends \WP_List_Table
         // Chuẩn hóa 1 contact về view-model array
         $normalize = static function ($c): array {
             if ($c instanceof CompanyContactDTO) {
-                $name = (string) ($c->full_name ?? $c->contact_name ?? ($c->contact_id ? ('#' . (int)$c->contact_id) : ''));
+                $name = (string) ($c->full_name ?? $c->contact_name ?? ($c->created_by ? ('#' . (int)$c->created_by) : ''));
                 return [
                     'name'       => $name,
                     'role'       => (string) ($c->role ?? ''),
@@ -409,6 +410,11 @@ final class CompanyListTable extends \WP_List_Table
             'total_pages' => (int)ceil($this->total_items / $this->per_page),
         ]);
     }
+
+
+
+
+
 
     /* ===================== Helpers ===================== */
 

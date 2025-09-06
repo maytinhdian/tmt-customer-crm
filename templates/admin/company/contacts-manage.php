@@ -39,8 +39,8 @@ $company_name = (string)($company['name'] ?? ('#' . $company_id));
              * Nếu box này là partial, chỉ việc include vào đây để tái dùng UI/logic.
              * Box cần chấp nhận prefill company_id.
              */
-            // $company_id = (int)$company['id'];
-            // $prefill_company_id = $company_id;
+            $company_id = (int)$company['id'];
+            $prefill_company_id = $company_id;
 
             // ✅ Partial: templates/admin/company/partials/add-contact-form.php
             View::render_admin_partial('company', 'add-contact-form', [

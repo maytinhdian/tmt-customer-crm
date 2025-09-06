@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container;
+use TMT\CRM\Presentation\Support\View;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\ListTable\CompanyListTable;
 use TMT\CRM\Application\DTO\CompanyDTO;
@@ -184,7 +185,7 @@ final class CompanyScreen
     /** FORM VIEW: Add/Edit */
     public static function render_form(int $id = 0): void
     {
-        $svc = Container::get('company-service');
+        $svc     = Container::get('company-service');
         $company = null;
 
         if ($id > 0) {
@@ -196,14 +197,11 @@ final class CompanyScreen
             }
         }
 
-        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/company/company-form.php';
-        if (file_exists($tpl)) {
-            /** @var CompanyDTO|null $company */
-            /** @var string $nonce_name */
-            include $tpl;
-        } else {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Template company-form.php không tồn tại.', 'tmt-crm') . '</p></div>';
-        }
+        // ✅ GỌI BẰNG VIEW:: thay vì include trực tiếp
+        View::render_admin_module('company', 'company-form', [
+            'company'    => $company,
+            'nonce_name' => $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create',
+        ]);
     }
 
     /** Handler: Save (Create/Update) */

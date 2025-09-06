@@ -19,6 +19,8 @@ defined('ABSPATH') || exit;
  */
 final class CompanyContactsScreen
 {
+    private static ?string $hook_suffix = null;
+
     /** Slug trang */
     public const PAGE_SLUG = 'tmt-crm-company-contacts';
 
@@ -35,6 +37,23 @@ final class CompanyContactsScreen
         add_filter('set-screen-option', [self::class, 'save_screen_option'], 10, 3);
     }
 
+    /** Menu.php sẽ gọi hàm này sau khi đăng ký submenu */
+    public static function set_hook_suffix(string $hook): void
+    {
+        self::$hook_suffix = $hook;
+    }
+
+    /** Trả về hook_suffix để AdminNoticeService scope đúng screen */
+    public static function hook_suffix(): string
+    {
+        if (!empty(self::$hook_suffix)) {
+            return self::$hook_suffix;
+            error_log('Company Contact Screen $hook_suffix: ' . $hook_suffix);
+        }
+
+        // fallback nếu chưa được set (ít xảy ra)
+        return 'crm_page_' . self::PAGE_SLUG;
+    }
     /** In Screen Options (per-page) & cấu hình cột */
     public static function on_load_contacts(): void
     {
@@ -51,6 +70,16 @@ final class CompanyContactsScreen
         // Khai báo danh sách cột cho Screen Options → Columns
         $screen = get_current_screen();
 
+        // ✅ Cách 1: tạo instance "nhẹ" chỉ để lấy cột (không lệ thuộc dữ liệu)
+        $table  = new CompanyContactsListTable([], 0, 20, 0);
+
+        // Khai báo danh sách cột cho Screen Options → Columns
+        $screen = get_current_screen();
+        add_filter("manage_{$screen->id}_columns", static function () use ($table) {
+            $cols = $table->get_columns();
+            unset($cols['cb']); // không cho bật/tắt cột checkbox
+            return $cols;
+        });
         // Ẩn cột mặc định (điều chỉnh theo nhu cầu)
         add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
     }
@@ -59,9 +88,9 @@ final class CompanyContactsScreen
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
         // Nhớ kiểm tra $screen->id thực tế (log current_screen) để khớp
-        if ($screen->id === 'crm_page_' . self::PAGE_SLUG) {
+        if ($screen->id === 'crm_page_tmt-crm-company-contacts') {
             // ví dụ ẩn cột 'period'
-            $hidden = array_unique(array_merge($hidden, ['period']));
+            $hidden = array_unique(array_merge($hidden, ['email']));
         }
         return $hidden;
     }
@@ -90,9 +119,9 @@ final class CompanyContactsScreen
         );
 
         $company_id = isset($_GET['company_id']) ? absint($_GET['company_id']) : 0;
-        if ($company_id <= 0) {
-            wp_die(__('Thiếu company_id', 'tmt-crm'));
-        }
+        // if ($company_id <= 0) {
+        //     wp_die(__('Thiếu company_id', 'tmt-crm'));
+        // }
 
         // 1 view: danh sách liên hệ + form gán
         self::render_manage($company_id);

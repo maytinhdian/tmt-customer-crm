@@ -4,6 +4,7 @@ namespace TMT\CRM\Presentation\Admin;
 
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
+
 defined('ABSPATH') || exit;
 
 final class Menu
@@ -44,7 +45,7 @@ final class Menu
             [CustomerScreen::class, 'dispatch']
         );
 
-         // 👉 Bàn giao hook_suffix lại cho CustomerScreen
+        // 👉 Bàn giao hook_suffix lại cho CustomerScreen
         CustomerScreen::set_hook_suffix(self::$customers_hook);
 
         // Screen Options cho Customers
@@ -87,6 +88,8 @@ final class Menu
             'tmt-crm-company-contacts',
             [CompanyContactsScreen::class, 'dispatch']
         );
+        // 👉 Bàn giao hook_suffix lại cho CustomerScreen
+        CompanyContactsScreen::set_hook_suffix(self::$contacts_hook);
 
         // Ẩn khỏi menu
         // remove_submenu_page('tmt-crm', 'tmt-crm-company-contacts');
@@ -94,14 +97,13 @@ final class Menu
             remove_submenu_page('tmt-crm', CompanyContactsScreen::PAGE_SLUG);
         });
 
-
-        // Screen Options cho Quotes 
+        // Screen Options cho CompanyContactScreen 
         add_action('load-' . self::$contacts_hook, [CompanyContactsScreen::class, 'on_load_contacts']);
 
         // // (Tuỳ chọn) log screen id để chắc ID khớp
-        // add_action('current_screen', function ($s) {
-        //     error_log('SCREEN: ' . $s->id);
-        // });
+        add_action('current_screen', function ($s) {
+            error_log('SCREEN: ' . $s->id);
+        });
     }
 
     public static function render_dashboard(): void
