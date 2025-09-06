@@ -5,6 +5,7 @@ namespace TMT\CRM\Application\Services;
 use TMT\CRM\Application\DTO\CompanyContactViewDTO;
 use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
+use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
 
 final class CompanyContactQueryService
@@ -12,7 +13,8 @@ final class CompanyContactQueryService
     public function __construct(
         private CompanyContactRepositoryInterface $contact_repo,
         private CustomerRepositoryInterface       $customer_repo,
-        private UserRepositoryInterface           $user_repo
+        private UserRepositoryInterface           $user_repo,
+        private CompanyRepositoryInterface $company_repo
     ) {}
 
     /**
@@ -70,14 +72,14 @@ final class CompanyContactQueryService
                 email: $cust?->email,
 
                 role: $d->role,
-                position: $d->role,
+                position: $d->title,
                 start_date: $d->start_date,
                 end_date: $d->end_date,
                 is_primary: (bool)$d->is_primary,
 
                 owner_id: $d->created_by ? (int)$d->created_by : null,
                 owner_name: $owner?->display_name,
-                owner_phone: $owner?->phone,    // nếu UserDTO có
+                owner_phone: $owner?->phone ,    // nếu UserDTO có
                 owner_email: $owner?->email
             );
         }
@@ -88,5 +90,10 @@ final class CompanyContactQueryService
     public function count_view_by_company(int $company_id, array $filters = []): int
     {
         return $this->contact_repo->count_by_company($company_id, $filters);
+    }
+    public function get_company_name(int $company_id): string
+    {
+        $c = $this->company_repo->find_by_id($company_id);
+        return $c?->name ?? ('#' . $company_id);
     }
 }

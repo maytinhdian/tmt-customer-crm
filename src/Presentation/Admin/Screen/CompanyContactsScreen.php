@@ -119,9 +119,9 @@ final class CompanyContactsScreen
         );
 
         $company_id = isset($_GET['company_id']) ? absint($_GET['company_id']) : 0;
-        // if ($company_id <= 0) {
-        //     wp_die(__('Thiếu company_id', 'tmt-crm'));
-        // }
+        if ($company_id <= 0) {
+            wp_die(__('Thiếu company_id', 'tmt-crm'));
+        }
 
         // 1 view: danh sách liên hệ + form gán
         self::render_manage($company_id);
@@ -153,6 +153,7 @@ final class CompanyContactsScreen
         ];
 
         $items       = $svc->find_paged_view_by_company($company_id, $current_page, $per_page, $filters, $sort);
+        $company_name = $svc->get_company_name($company_id);
         $total_items = $svc->count_view_by_company($company_id, $filters);
 
         $table = new CompanyContactsListTable($items, $total_items, $per_page, $company_id);
@@ -161,25 +162,16 @@ final class CompanyContactsScreen
         // Ưu tiên render qua View::
         $module = 'company';
         $file   = 'contacts-manage';
-
+        $vars  = [
+            'company_id'   => (int) $company_id,
+            'table'        => $table,
+            'total_items' => $total_items,
+            'company_name' => $company_name
+        ];
         if (View::exists_admin($module . '/' . $file)) {
-            View::render_admin_module($module, $file, [
-                'company_id'   => (int) $company_id,
-                'table'        => $table,
-                'filters'      => $filters,
-                'per_page'     => (int) $per_page,
-                'current_page' => (int) $current_page,
-                'total_items'  => (int) $total_items,
-            ]);
+            View::render_admin_module($module, $file, $vars);
             return;
         }
-        // Fallback rất tối giản (chỉ khi chưa có template)
-        echo '<div class="wrap"><h1 class="wp-heading-inline">'
-            . esc_html__('Liên hệ công ty', 'tmt-crm')
-            . '</h1><hr class="wp-header-end">';
-        $table->prepare_items();
-        $table->display();
-        echo '</div>';
     }
 
 

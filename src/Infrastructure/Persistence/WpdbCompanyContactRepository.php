@@ -299,6 +299,36 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
     }
 
+
+    /**
+     * Lấy tên công ty theo ID. Nếu không có tên, trả về "#<id>".
+     *
+     * @param int $company_id
+     * @return string
+     */
+    public function get_company_name(int $company_id): string
+    {
+        if ($company_id <= 0) {
+            return '#0';
+        }
+
+        // Chuẩn bị câu lệnh có LIMIT 1 và chọn cột tường minh
+        $sql = sprintf(
+            'SELECT name FROM %s WHERE id = %%d LIMIT 1',
+            $this->t_companies
+        );
+
+        $prepared = $this->db->prepare($sql, $company_id);
+        if ($prepared === false) {
+            return '#' . $company_id;
+        }
+
+        $name = $this->db->get_var($prepared);
+        $name = is_string($name) ? trim($name) : '';
+
+        return ($name !== '') ? $name : ('#' . $company_id);
+    }
+
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
     {

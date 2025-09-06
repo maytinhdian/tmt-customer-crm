@@ -39,4 +39,5 @@ interface CompanyContactRepositoryInterface
   ): array;
 
   public function count_by_company(int $company_id, array $filters = []): int;
+  public function get_company_name(int $company_id): string;
 }

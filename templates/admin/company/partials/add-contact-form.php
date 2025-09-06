@@ -12,6 +12,7 @@ $company_id = isset($company_id) ? (int)$company_id : 0;
 
 use TMT\CRM\Infrastructure\Security\Capability;
 
+
 if ($company_id <= 0) {
     echo '<div class="notice notice-error"><p>'
         . esc_html__('Thiếu company_id.', 'tmt-crm')

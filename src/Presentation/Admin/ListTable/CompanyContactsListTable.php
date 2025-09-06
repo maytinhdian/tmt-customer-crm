@@ -23,7 +23,7 @@ final class CompanyContactsListTable extends WP_List_Table
 
     private int $company_id;
     private int $total_items = 0;
-    private int $per_page    = 20;
+    private int $per_page    = 20; 
 
     /**
      * @param CompanyContactViewDTO[] $items_view
@@ -50,12 +50,12 @@ final class CompanyContactsListTable extends WP_List_Table
         return [
             'cb'            => '<input type="checkbox" />',
             'full_name'     => __('Họ tên', 'tmt-crm'),
-            'role'          => __('Vai trò', 'tmt-crm'),
+            'role'          => __('Bộ phận', 'tmt-crm'),
             'position'      => __('Chức vụ', 'tmt-crm'),
             'phone'         => __('Số điện thoại', 'tmt-crm'), // từ tmt_crm_customers
             'email'         => __('Email', 'tmt-crm'),         // từ tmt_crm_customers
-            'owner'         => __('Người phụ trách', 'tmt-crm'), // tên + (#ID)
-            'owner_contact' => __('Liên hệ phụ trách', 'tmt-crm'), // sđt/email phụ trách
+            'owner'         => __('Tên người phụ trách', 'tmt-crm'), // tên + (#ID)
+            'owner_contact' => __('Email người phụ trách', 'tmt-crm'), // sđt/email phụ trách
             'period'        => __('Hiệu lực', 'tmt-crm'),
             'is_primary'    => __('Chính', 'tmt-crm'),
         ];
@@ -111,16 +111,16 @@ final class CompanyContactsListTable extends WP_List_Table
     {
         switch ($column_name) {
             case 'role':
-                return esc_html($item->role ?? '—');
+                return esc_html($item->role ?? '--');
 
             case 'position':
-                return esc_html($item->position ?? '—');
+                return esc_html($item->position ?? '--');
 
             case 'phone':
-                return esc_html($item->phone ?? '—');
+                return esc_html($item->phone ?? '--');
 
             case 'email':
-                return esc_html($item->email ?? '—');
+                return esc_html($item->email ?? '--');
 
             case 'owner':
                 // Hiển thị: "Tên (#ID)" hoặc "—"

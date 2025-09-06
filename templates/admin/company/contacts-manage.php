@@ -7,13 +7,15 @@ use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Domain\ValueObject\CompanyContactRole;
 use TMT\CRM\Presentation\Support\View;
 
+use function ElementorDeps\DI\string;
+
 $back_url = admin_url('admin.php?page=' . CompanyScreen::PAGE_SLUG);
-$company_id   = (int)($company['id'] ?? 0);
-$company_name = (string)($company['name'] ?? ('#' . $company_id));
+$company_id   = isset($company_id) ? (int) $company_id : 0;
+$company_name = isset($company_name) ? string($company_name) : '';
 ?>
 <div class="wrap">
     <h1 class="wp-heading-inline">
-        <?php echo esc_html__('Quản lý liên hệ: ', 'tmt-crm') . esc_html($company['name'] ?? ('#' . $company_id)); ?>
+        <?php echo esc_html__('Quản lý liên hệ: ', 'tmt-crm') . esc_html($company_name ?? ('#' . $company_id)); ?>
     </h1>
     <a href="<?php echo esc_url($back_url); ?>" class="page-title-action">
         <?php esc_html_e('Quay lại danh sách công ty', 'tmt-crm'); ?>
@@ -23,11 +25,9 @@ $company_name = (string)($company['name'] ?? ('#' . $company_id));
     <div class="tmt-grid">
         <div>
             <h2><?php esc_html_e('Liên hệ đang active', 'tmt-crm'); ?></h2>
-            <form method="post">
-                <?php
-                $table->display(); // Bảng bên trái
-                ?>
-            </form>
+            <?php
+            $table->display(); // Bảng bên trái
+            ?>
         </div>
 
         <div>
@@ -39,7 +39,7 @@ $company_name = (string)($company['name'] ?? ('#' . $company_id));
              * Nếu box này là partial, chỉ việc include vào đây để tái dùng UI/logic.
              * Box cần chấp nhận prefill company_id.
              */
-            $company_id = (int)$company['id'];
+            // $company_id = (int)$company['id'];
             $prefill_company_id = $company_id;
 
             // ✅ Partial: templates/admin/company/partials/add-contact-form.php

@@ -270,9 +270,9 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         foreach ($rows as $r) {
             $dto = new CustomerDTO(
                 (int)$r['id'],
-                $r['full_name'] ?? '',
+                $r['name'] ?? '',
+                $r['email'] ?? null,
                 $r['phone'] ?? null,
-                $r['email'] ?? null
             );
             $map[$dto->id] = $dto;
         }
