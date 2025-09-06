@@ -133,9 +133,7 @@ final class CompanyContactsScreen
     public static function render_manage(int $company_id): void
     {
         /** @var \TMT\CRM\Application\Services\CompanyContactQueryService $svc */
-        // $svc = Container::get(\TMT\CRM\Application\Services\CompanyContactQueryService::class);
-        // hoặc nếu dùng alias:
-        $svc = Container::get('company-contact-query-service');
+        $svc = Container::get('company-contact-query-service');  // $svc = Container::get(\TMT\CRM\Application\Services\CompanyContactQueryService::class);
 
         // per_page từ Screen Options
         $user_per_page = (int) get_user_option(self::OPTION_PER_PAGE);
