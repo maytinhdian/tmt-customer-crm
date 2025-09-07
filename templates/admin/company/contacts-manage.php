@@ -7,11 +7,9 @@ use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Domain\ValueObject\CompanyContactRole;
 use TMT\CRM\Presentation\Support\View;
 
-use function ElementorDeps\DI\string;
-
 $back_url = admin_url('admin.php?page=' . CompanyScreen::PAGE_SLUG);
 $company_id   = isset($company_id) ? (int) $company_id : 0;
-$company_name = isset($company_name) ? string($company_name) : '';
+$company_name = isset($company_name) ? (string)($company_name) : '';
 ?>
 <div class="wrap">
     <h1 class="wp-heading-inline">

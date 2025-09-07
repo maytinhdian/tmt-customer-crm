@@ -117,15 +117,9 @@ final class Hooks
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
         Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
         Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
-        Container::set('quote-service', fn() => new QuoteService(
-            Container::get('quote-repo'),
-            Container::get('numbering')
-        ));
+        Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
         // Services
-        Container::set('company-service',   fn() => new CompanyService(
-            Container::get('company-repo'),
-            Container::get('company-contact-repo')
-        ));
+        Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo')));
         Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo')));
         Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
         Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));

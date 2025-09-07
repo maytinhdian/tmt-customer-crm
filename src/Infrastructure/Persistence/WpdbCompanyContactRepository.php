@@ -124,106 +124,106 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         }
     }
 
-    public function find_paged_with_relations(
-        int $company_id,
-        int $page,
-        int $per_page,
-        array $filters = []
-    ): array {
-        $offset = max(0, ($page - 1) * $per_page);
+    // public function find_paged_with_relations(
+    //     int $company_id,
+    //     int $page,
+    //     int $per_page,
+    //     array $filters = []
+    // ): array {
+    //     $offset = max(0, ($page - 1) * $per_page);
 
-        $where  = ["cc.company_id = %d"];
-        $params = [$company_id];
+    //     $where  = ["cc.company_id = %d"];
+    //     $params = [$company_id];
 
-        // keyword tìm theo tên/điện thoại/email của customer
-        if (!empty($filters['keyword'])) {
-            $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
-            $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
-            array_push($params, $kw, $kw, $kw);
-        }
+    //     // keyword tìm theo tên/điện thoại/email của customer
+    //     if (!empty($filters['keyword'])) {
+    //         $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
+    //         $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
+    //         array_push($params, $kw, $kw, $kw);
+    //     }
 
-        // còn hiệu lực?
-        if (!empty($filters['active_only'])) {
-            $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
-        }
+    //     // còn hiệu lực?
+    //     if (!empty($filters['active_only'])) {
+    //         $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
+    //     }
 
-        $orderby = in_array(($filters['orderby'] ?? 'id'), ['id', 'role', 'is_primary', 'start_date', 'end_date'], true)
-            ? $filters['orderby'] : 'id';
-        $order   = strtoupper($filters['order'] ?? 'DESC');
-        if (!in_array($order, ['ASC', 'DESC'], true)) $order = 'DESC';
+    //     $orderby = in_array(($filters['orderby'] ?? 'id'), ['id', 'role', 'is_primary', 'start_date', 'end_date'], true)
+    //         ? $filters['orderby'] : 'id';
+    //     $order   = strtoupper($filters['order'] ?? 'DESC');
+    //     if (!in_array($order, ['ASC', 'DESC'], true)) $order = 'DESC';
 
-        $sql = "
-            SELECT
-                cc.id,
-                cc.company_id,
-                cc.customer_id,
-                cc.role,
-                cc.title,
-                cc.is_primary,
-                cc.start_date,
-                cc.end_date,
+    //     $sql = "
+    //         SELECT
+    //             cc.id,
+    //             cc.company_id,
+    //             cc.customer_id,
+    //             cc.role,
+    //             cc.title,
+    //             cc.is_primary,
+    //             cc.start_date,
+    //             cc.end_date,
 
-                c.full_name   AS customer_full_name,
-                c.phone       AS customer_phone,
-                c.email       AS customer_email,
+    //             c.full_name   AS customer_full_name,
+    //             c.phone       AS customer_phone,
+    //             c.email       AS customer_email,
 
-                co.owner_id   AS owner_id,
-                u.display_name AS owner_name
-            FROM {$this->t_contacts} AS cc
-            LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
-            LEFT JOIN {$this->t_companies} AS co ON co.id = cc.company_id
-            LEFT JOIN {$this->t_users}    AS u  ON u.ID = co.owner_id
-            WHERE " . implode(' AND ', $where) . "
-            ORDER BY cc.{$orderby} {$order}
-            LIMIT %d OFFSET %d
-        ";
+    //             co.owner_id   AS owner_id,
+    //             u.display_name AS owner_name
+    //         FROM {$this->t_contacts} AS cc
+    //         LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
+    //         LEFT JOIN {$this->t_companies} AS co ON co.id = cc.company_id
+    //         LEFT JOIN {$this->t_users}    AS u  ON u.ID = co.owner_id
+    //         WHERE " . implode(' AND ', $where) . "
+    //         ORDER BY cc.{$orderby} {$order}
+    //         LIMIT %d OFFSET %d
+    //     ";
 
-        $rows = $this->db->get_results(
-            $this->db->prepare($sql, ...array_merge($params, [$per_page, $offset])),
-            ARRAY_A
-        ) ?: [];
+    //     $rows = $this->db->get_results(
+    //         $this->db->prepare($sql, ...array_merge($params, [$per_page, $offset])),
+    //         ARRAY_A
+    //     ) ?: [];
 
-        return array_map(function (array $r): CompanyContactViewDTO {
-            return new CompanyContactViewDTO(
-                (int)$r['id'],
-                (int)$r['company_id'],
-                (int)$r['customer_id'],
-                (string)($r['role'] ?? ''),
-                $r['title'] !== null ? (string)$r['title'] : null,
-                (bool)$r['is_primary'],
-                $r['start_date'] ?? null,
-                $r['end_date'] ?? null,
-                $r['customer_full_name'] ?? null,
-                $r['customer_phone'] ?? null,
-                $r['customer_email'] ?? null,
-                isset($r['owner_id']) ? (int)$r['owner_id'] : null,
-                $r['owner_name'] ?? null
-            );
-        }, $rows);
-    }
+    //     return array_map(function (array $r): CompanyContactViewDTO {
+    //         return new CompanyContactViewDTO(
+    //             (int)$r['id'],
+    //             (int)$r['company_id'],
+    //             (int)$r['customer_id'],
+    //             (string)($r['role'] ?? ''),
+    //             $r['title'] !== null ? (string)$r['title'] : null,
+    //             (bool)$r['is_primary'],
+    //             $r['start_date'] ?? null,
+    //             $r['end_date'] ?? null,
+    //             $r['customer_full_name'] ?? null,
+    //             $r['customer_phone'] ?? null,
+    //             $r['customer_email'] ?? null,
+    //             isset($r['owner_id']) ? (int)$r['owner_id'] : null,
+    //             $r['owner_name'] ?? null
+    //         );
+    //     }, $rows);
+    // }
 
-    public function count_by_company_with_filters(int $company_id, array $filters = []): int
-    {
-        $where  = ["cc.company_id = %d"];
-        $params = [$company_id];
+    // public function count_by_company_with_filters(int $company_id, array $filters = []): int
+    // {
+    //     $where  = ["cc.company_id = %d"];
+    //     $params = [$company_id];
 
-        if (!empty($filters['keyword'])) {
-            $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
-            $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
-            array_push($params, $kw, $kw, $kw);
-        }
-        if (!empty($filters['active_only'])) {
-            $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
-        }
+    //     if (!empty($filters['keyword'])) {
+    //         $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
+    //         $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
+    //         array_push($params, $kw, $kw, $kw);
+    //     }
+    //     if (!empty($filters['active_only'])) {
+    //         $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
+    //     }
 
-        $sql = "
-            SELECT COUNT(*)
-            FROM {$this->t_contacts} AS cc
-            LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
-            WHERE " . implode(' AND ', $where);
+    //     $sql = "
+    //         SELECT COUNT(*)
+    //         FROM {$this->t_contacts} AS cc
+    //         LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
+    //         WHERE " . implode(' AND ', $where);
 
-        return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
-    }
+    //     return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
+    // }
 
 
     /** @inheritDoc */

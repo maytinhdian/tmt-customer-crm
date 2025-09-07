@@ -69,10 +69,10 @@ final class CompanyService
     }
 
 
-    public function get_active_contact_by_role(int $company_id, string $role): ?CompanyContactDTO
-    {
-        return $this->contact_repo->get_primary_contact($company_id, $role);
-    }
+    // public function get_active_contact_by_role(int $company_id, string $role): ?CompanyContactDTO
+    // {
+    //     return $this->contact_repo->get_primary_contact($company_id, $role);
+    // }
 
     public function get_active_contacts(int $company_id, ?string $role = null): array
     {

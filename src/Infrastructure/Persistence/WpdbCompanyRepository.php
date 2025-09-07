@@ -29,22 +29,22 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return $row ? $this->map_row_to_dto($row) : null;
     }
 
-    public function find_by_tax_code(string $tax_code, ?int $exclude_id = null): ?CompanyDTO
-    {
-        $tax_code = trim($tax_code);
-        if ($tax_code === '') {
-            return null;
-        }
+    // public function find_by_tax_code(string $tax_code, ?int $exclude_id = null): ?CompanyDTO
+    // {
+    //     $tax_code = trim($tax_code);
+    //     if ($tax_code === '') {
+    //         return null;
+    //     }
 
-        if ($exclude_id) {
-            $sql = "SELECT * FROM {$this->table} WHERE tax_code = %s AND id <> %d";
-            $row = $this->db->get_row($this->db->prepare($sql, $tax_code, $exclude_id), ARRAY_A);
-        } else {
-            $sql = "SELECT * FROM {$this->table} WHERE tax_code = %s";
-            $row = $this->db->get_row($this->db->prepare($sql, $tax_code), ARRAY_A);
-        }
-        return $row ? $this->map_row_to_dto($row) : null;
-    }
+    //     if ($exclude_id) {
+    //         $sql = "SELECT * FROM {$this->table} WHERE tax_code = %s AND id <> %d";
+    //         $row = $this->db->get_row($this->db->prepare($sql, $tax_code, $exclude_id), ARRAY_A);
+    //     } else {
+    //         $sql = "SELECT * FROM {$this->table} WHERE tax_code = %s";
+    //         $row = $this->db->get_row($this->db->prepare($sql, $tax_code), ARRAY_A);
+    //     }
+    //     return $row ? $this->map_row_to_dto($row) : null;
+    // }
 
     
     public function list_paginated(int $page, int $per_page, array $filters = []): array

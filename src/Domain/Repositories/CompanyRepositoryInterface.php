@@ -12,7 +12,7 @@ interface CompanyRepositoryInterface
 
     public function find_name_by_id(int $id): ?string;
 
-    public function find_by_tax_code(string $tax_code, ?int $exclude_id = null): ?CompanyDTO;
+    // public function find_by_tax_code(string $tax_code, ?int $exclude_id = null): ?CompanyDTO;
 
     /**
      * @return CompanyDTO[]
