@@ -54,7 +54,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
 
         // Tuỳ chọn
         $role       = isset($arr['role']) ? (string)$arr['role'] : '';
-        $position   = isset($arr['position']) ? (string)$arr['position'] : null;
+        $title   = isset($arr['title']) ? (string)$arr['title'] : null;
         $start_date = isset($arr['start_date']) ? trim((string)$arr['start_date']) : '';
         $end_date   = isset($arr['end_date']) ? trim((string)$arr['end_date']) : '';
         $is_primary = !empty($arr['is_primary']) ? 1 : 0;
@@ -65,15 +65,16 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
             'company_id' => $company_id,
             'customer_id' => $customer_id,
             'role'       => $role,
+            'title' => $title,
             'is_primary' => $is_primary,
             'created_by' => $created_by,
             'created_at' => current_time('mysql'),
             'updated_at' => current_time('mysql'),
         ];
-        $format = ['%d', '%d', '%s', '%d', '%d', '%s', '%s'];
+        $format = ['%d', '%d', '%s', '%s', '%d', '%d', '%s', '%s'];
 
-        if ($position !== null) {
-            $data['position'] = $position;
+        if ($title !== null) {
+            $data['title'] = $title;
             $format[] = '%s';
         }
         if ($note     !== null) {
@@ -110,6 +111,75 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         return $val === '1' || $val === 1;
     }
 
+    /**
+     * Đặt 1 contact làm liên hệ chính của company.
+     * - Xác thực contact thuộc company.
+     * - Reset tất cả is_primary = 0 cho company_id.
+     * - Set is_primary = 1 cho customer_id chỉ định.
+     *
+     * @throws \RuntimeException khi dữ liệu không hợp lệ hoặc lỗi DB.
+     */
+    public function set_primary(int $company_id, int $customer_id): bool
+    {
+        $company_id = (int) $company_id;
+        $customer_id = (int) $customer_id;
+
+        // 1) Kiểm tra liên hệ có thuộc công ty không
+        $exists = (int) $this->db->get_var(
+            $this->db->prepare(
+                "SELECT COUNT(1) FROM {$this->t_contacts} WHERE customer_id = %d AND company_id = %d",
+                $customer_id,
+                $company_id
+            )
+        );
+        if ($exists !== 1) {
+            throw new \RuntimeException(__('Liên hệ không thuộc công ty hoặc không tồn tại.', 'tmt-crm'));
+        }
+
+        $now = current_time('mysql', true);
+
+        // 2) Transaction (nếu DB hỗ trợ)
+        $this->db->query('START TRANSACTION');
+
+        try {
+            // 2.1) Reset tất cả về 0
+            $reset = $this->db->query(
+                $this->db->prepare(
+                    "UPDATE {$this->t_contacts}
+                     SET is_primary = 0, updated_at = %s
+                     WHERE company_id = %d",
+                    $now,
+                    $company_id
+                )
+            );
+            if ($reset === false) {
+                throw new \RuntimeException($this->db->last_error ?: __('Lỗi khi reset liên hệ chính.', 'tmt-crm'));
+            }
+
+            // 2.2) Set contact chỉ định về 1
+            $set = $this->db->query(
+                $this->db->prepare(
+                    "UPDATE {$this->t_contacts}
+                     SET is_primary = 1, updated_at = %s
+                     WHERE customer_id = %d AND company_id = %d",
+                    $now,
+                    $customer_id,
+                    $company_id
+                )
+            );
+
+            if ($set === false || (int) $this->db->rows_affected < 1) {
+                throw new \RuntimeException(__('Không thể đặt liên hệ làm chính.', 'tmt-crm'));
+            }
+
+            $this->db->query('COMMIT');
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->query('ROLLBACK');
+            throw $e;
+        }
+    }
+
     public function unset_primary(int $company_id): void
     {
         $res = $this->db->update(
@@ -124,107 +194,71 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         }
     }
 
-    // public function find_paged_with_relations(
-    //     int $company_id,
-    //     int $page,
-    //     int $per_page,
-    //     array $filters = []
-    // ): array {
-    //     $offset = max(0, ($page - 1) * $per_page);
+    /**
+     * Soft-detach: đặt end_date và bỏ cờ is_primary (giữ lịch sử).
+     */
+    public function detach(int $company_id, int $customer_id, ?string $end_date = null): bool
+    {
+        $company_id = (int) $company_id;
+        $customer_id = (int) $customer_id;
 
-    //     $where  = ["cc.company_id = %d"];
-    //     $params = [$company_id];
+        // 0) Kiểm tra tồn tại & thuộc công ty
+        $exists = (int) $this->db->get_var(
+            $this->db->prepare(
+                "SELECT COUNT(1) FROM {$this->t_contacts} WHERE customer_id = %d AND company_id = %d",
+                $customer_id,
+                $company_id
+            )
+        );
+        if ($exists !== 1) {
+            throw new \RuntimeException(__('Liên hệ không thuộc công ty hoặc không tồn tại.', 'tmt-crm'));
+        }
 
-    //     // keyword tìm theo tên/điện thoại/email của customer
-    //     if (!empty($filters['keyword'])) {
-    //         $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
-    //         $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
-    //         array_push($params, $kw, $kw, $kw);
-    //     }
+        // 1) Chuẩn bị ngày kết thúc và thời điểm cập nhật
+        $date = $end_date ?: wp_date('Y-m-d');            // theo timezone WP, dạng YYYY-MM-DD
+        $now  = current_time('mysql', true);              // GMT datetime cho updated_at
 
-    //     // còn hiệu lực?
-    //     if (!empty($filters['active_only'])) {
-    //         $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
-    //     }
+        // 2) Transaction (nếu DB hỗ trợ)
+        $this->db->query('START TRANSACTION');
 
-    //     $orderby = in_array(($filters['orderby'] ?? 'id'), ['id', 'role', 'is_primary', 'start_date', 'end_date'], true)
-    //         ? $filters['orderby'] : 'id';
-    //     $order   = strtoupper($filters['order'] ?? 'DESC');
-    //     if (!in_array($order, ['ASC', 'DESC'], true)) $order = 'DESC';
+        try {
+            // 2.1) Đặt end_date + hạ is_primary về 0
+            $sql = "UPDATE {$this->t_contacts}
+                    SET end_date = %s,
+                        is_primary = 0,
+                        updated_at = %s
+                    WHERE customer_id = %d AND company_id = %d";
 
-    //     $sql = "
-    //         SELECT
-    //             cc.id,
-    //             cc.company_id,
-    //             cc.customer_id,
-    //             cc.role,
-    //             cc.title,
-    //             cc.is_primary,
-    //             cc.start_date,
-    //             cc.end_date,
+            $ok = $this->db->query(
+                $this->db->prepare($sql, $date, $now, $customer_id, $company_id)
+            );
 
-    //             c.full_name   AS customer_full_name,
-    //             c.phone       AS customer_phone,
-    //             c.email       AS customer_email,
+            if ($ok === false || (int) $this->db->rows_affected < 1) {
+                throw new \RuntimeException(__('Không thể gỡ liên hệ.', 'tmt-crm'));
+            }
 
-    //             co.owner_id   AS owner_id,
-    //             u.display_name AS owner_name
-    //         FROM {$this->t_contacts} AS cc
-    //         LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
-    //         LEFT JOIN {$this->t_companies} AS co ON co.id = cc.company_id
-    //         LEFT JOIN {$this->t_users}    AS u  ON u.ID = co.owner_id
-    //         WHERE " . implode(' AND ', $where) . "
-    //         ORDER BY cc.{$orderby} {$order}
-    //         LIMIT %d OFFSET %d
-    //     ";
+            $this->db->query('COMMIT');
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->query('ROLLBACK');
+            throw $e;
+        }
+    }
 
-    //     $rows = $this->db->get_results(
-    //         $this->db->prepare($sql, ...array_merge($params, [$per_page, $offset])),
-    //         ARRAY_A
-    //     ) ?: [];
+    /**
+     * Hard delete: xoá hẳn hàng khỏi bảng.
+     * Chỉ dùng khi chắc chắn không cần lịch sử.
+     */
+    public function delete(int $customer_id): bool
+    {
+        $customer_id = (int) $customer_id;
 
-    //     return array_map(function (array $r): CompanyContactViewDTO {
-    //         return new CompanyContactViewDTO(
-    //             (int)$r['id'],
-    //             (int)$r['company_id'],
-    //             (int)$r['customer_id'],
-    //             (string)($r['role'] ?? ''),
-    //             $r['title'] !== null ? (string)$r['title'] : null,
-    //             (bool)$r['is_primary'],
-    //             $r['start_date'] ?? null,
-    //             $r['end_date'] ?? null,
-    //             $r['customer_full_name'] ?? null,
-    //             $r['customer_phone'] ?? null,
-    //             $r['customer_email'] ?? null,
-    //             isset($r['owner_id']) ? (int)$r['owner_id'] : null,
-    //             $r['owner_name'] ?? null
-    //         );
-    //     }, $rows);
-    // }
-
-    // public function count_by_company_with_filters(int $company_id, array $filters = []): int
-    // {
-    //     $where  = ["cc.company_id = %d"];
-    //     $params = [$company_id];
-
-    //     if (!empty($filters['keyword'])) {
-    //         $kw = '%' . $this->db->esc_like((string)$filters['keyword']) . '%';
-    //         $where[]  = "(c.full_name LIKE %s OR c.phone LIKE %s OR c.email LIKE %s)";
-    //         array_push($params, $kw, $kw, $kw);
-    //     }
-    //     if (!empty($filters['active_only'])) {
-    //         $where[] = "(cc.end_date IS NULL OR cc.end_date >= CURDATE())";
-    //     }
-
-    //     $sql = "
-    //         SELECT COUNT(*)
-    //         FROM {$this->t_contacts} AS cc
-    //         LEFT JOIN {$this->t_customers} AS c ON c.id = cc.customer_id
-    //         WHERE " . implode(' AND ', $where);
-
-    //     return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
-    // }
-
+        $ok = $this->db->delete($this->t_contacts, ['id' => $customer_id], ['%d']);
+        if ($ok === false || (int) $this->db->rows_affected < 1) {
+            throw new \RuntimeException(__('Không thể xoá liên hệ.', 'tmt-crm'));
+        }
+        return true;
+    }
 
     /** @inheritDoc */
     public function find_paged_by_company(

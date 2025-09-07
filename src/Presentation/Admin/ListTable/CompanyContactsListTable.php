@@ -6,6 +6,8 @@ namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use WP_List_Table;
 use TMT\CRM\Application\DTO\CompanyContactViewDTO;
+use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
+use TMT\CRM\Presentation\Admin\Support\AdminPostHelper;
 
 if (!class_exists('\WP_List_Table')) {
     require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
@@ -18,12 +20,15 @@ if (!class_exists('\WP_List_Table')) {
  */
 final class CompanyContactsListTable extends WP_List_Table
 {
+    private const NONCE_PREFIX_DETACH = 'tmt_crm_company_contact_detach_';
+    private const NONCE_PREFIX_SET_PRIMARY = 'tmt_crm_company_contact_set_primary_';
+
     /** @var CompanyContactViewDTO[] */
     private array $items_view = [];
 
     private int $company_id;
     private int $total_items = 0;
-    private int $per_page    = 20; 
+    private int $per_page    = 20;
 
     /**
      * @param CompanyContactViewDTO[] $items_view
@@ -58,6 +63,7 @@ final class CompanyContactsListTable extends WP_List_Table
             'owner_contact' => __('Email người phụ trách', 'tmt-crm'), // sđt/email phụ trách
             'period'        => __('Hiệu lực', 'tmt-crm'),
             'is_primary'    => __('Chính', 'tmt-crm'),
+            'actions'     => __('Thao tác', 'tmt-crm'), // 👈 cột mới
         ];
     }
 
@@ -97,11 +103,64 @@ final class CompanyContactsListTable extends WP_List_Table
         // Ví dụ row actions (sửa/xoá…) – tuỳ bạn nối URL thực tế:
         $actions = [];
 
-        // $edit_url = add_query_arg([...], admin_url('admin.php'));
+        // $edit_url = add_query_arg(admin_url('admin.php'));
         // $actions['edit'] = sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Sửa', 'tmt-crm'));
 
         return $name . $this->row_actions($actions);
     }
+    /** 🔥 Cột “Thao tác” */
+    public function column_actions($item): string
+    {
+        $customer_id = $item->customer_id;
+
+        // Giữ state & URL quay về màn contacts
+        $state    = CompanyContactsScreen::current_state();
+        $back_url = CompanyContactsScreen::back_url($this->company_id, $state);
+
+        // 1) Sửa → qua Screen
+        $edit_url = CompanyContactsScreen::edit_url(
+            $this->company_id,
+            $customer_id,
+            $state
+        );
+
+        // 2) Đặt làm chính → admin-post
+        $set_primary_url = AdminPostHelper::url(
+            'tmt_crm_company_contact_set_primary',
+            [
+                'company_id'  => $this->company_id,
+                'customer_id'  => $customer_id,
+                'redirect_to' => $back_url,
+            ],
+            self::NONCE_PREFIX_SET_PRIMARY . $customer_id
+        );
+
+        // 3) Gỡ khỏi công ty → admin-post
+        $detach_url = AdminPostHelper::url(
+            'tmt_crm_company_contact_detach',
+            [
+                'company_id'  => $this->company_id,
+                'customer_id'  => $customer_id,
+                'redirect_to' => $back_url,
+            ],
+            self::NONCE_PREFIX_DETACH . $customer_id
+        );
+
+        $actions = [
+            'edit'        => sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Sửa', 'tmt-crm')),
+            'set_primary' => !empty($d->is_primary)
+                ? '<span class="dashicons dashicons-yes" title="' . esc_attr__('Liên hệ chính', 'tmt-crm') . '"></span>'
+                : sprintf('<a href="%s">%s</a>', esc_url($set_primary_url), esc_html__('Đặt làm chính', 'tmt-crm')),
+            'detach'      => sprintf(
+                '<a href="%s" class="submitdelete" onclick="return confirm(\'%s\');">%s</a>',
+                esc_url($detach_url),
+                esc_js(__('Gỡ liên hệ này khỏi công ty?', 'tmt-crm')),
+                esc_html__('Gỡ', 'tmt-crm')
+            ),
+        ];
+        return $this->row_actions($actions, true);
+    }
+
 
     /**
      * Render mặc định cho các cột còn lại

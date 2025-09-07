@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Application\Services;
@@ -52,8 +53,31 @@ final class CompanyContactService
 
         // 4) Insert
         return $this->relation_repo->attach_customer($dto);
-
-        
     }
-    
+
+    /**
+     * Đặt 1 contact làm liên hệ chính của công ty.
+     * - Reset các liên hệ khác về is_primary = 0.
+     * - Set contact được chọn về is_primary = 1.
+     */
+    public function set_primary(int $company_id, int $contact_id): void
+    {
+        if ($company_id <= 0 || $contact_id <= 0) {
+            throw new \InvalidArgumentException('company_id/contact_id không hợp lệ.');
+        }
+        $this->relation_repo->set_primary($company_id, $contact_id);
+    }
+
+
+    // CompanyContactService
+    public function detach(int $company_id, int $contact_id, ?string $end_date = null): void
+    {
+        $this->relation_repo->detach($company_id, $contact_id, $end_date);
+    }
+
+    // Nếu muốn xoá cứng:
+    public function delete(int $contact_id): void
+    {
+        $this->relation_repo->delete($contact_id);
+    }
 }

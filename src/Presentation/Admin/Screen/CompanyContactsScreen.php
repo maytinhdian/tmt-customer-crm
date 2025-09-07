@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Presentation\Admin\Screen;
 
-use TMT\CRM\Application\DTO\CompanyDTO;
+
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Presentation\Support\View;
 use TMT\CRM\Infrastructure\Security\Capability;
@@ -173,8 +173,50 @@ final class CompanyContactsScreen
     }
 
 
+    /** Lấy state hiện tại để giữ phân trang, sort, filter khi điều hướng */
+    public static function current_state(): array
+    {
+        $keep = ['paged', 'orderby', 'order', 'role', 'active_only', 's', 'per_page'];
+        $state = [];
+
+        foreach ($keep as $k) {
+            if (!isset($_GET[$k])) {
+                continue;
+            }
+            // active_only có thể là boolean/string; còn lại xử lý về string an toàn
+            if ($k === 'active_only') {
+                $state[$k] = (int) !! $_GET[$k];
+                continue;
+            }
+            $val = wp_unslash($_GET[$k]);
+            $state[$k] = is_array($val)
+                ? array_map('sanitize_text_field', $val)
+                : sanitize_text_field((string) $val);
+        }
+
+        return $state;
+    }
+
+    /** URL mở form Sửa liên hệ (giữ tab + state hiện tại) */
+    public static function edit_url(int $company_id, int $contact_id, array $state = []): string
+    {
+        return self::url(array_merge([
+            'action'     => 'edit',
+            'company_id' => $company_id,
+            'contact_id' => $contact_id,
+        ], $state));
+    }
+
+    /** URL quay lại danh sách contacts (đã giữ state) */
+    public static function back_url(int $company_id, array $extra = []): string
+    {
+        return self::url(array_merge([
+            'company_id' => $company_id,
+        ], $extra, self::current_state()));
+    }
+
     /** Helper build URL (giống CompanyScreen::url) */
-    private static function url(array $args = []): string
+    public static function url(array $args = []): string
     {
         $base = ['page' => self::PAGE_SLUG];
         $args = array_merge($base, $args);

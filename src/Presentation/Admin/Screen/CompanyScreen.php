@@ -6,9 +6,11 @@ namespace TMT\CRM\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Presentation\Support\View;
+use TMT\CRM\Application\DTO\CompanyDTO;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\ListTable\CompanyListTable;
-use TMT\CRM\Application\DTO\CompanyDTO;
+use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+
 
 defined('ABSPATH') || exit;
 
@@ -17,6 +19,9 @@ defined('ABSPATH') || exit;
  */
 final class CompanyScreen
 {
+
+    private static ?string $hook_suffix = null;
+
     /** Slug trang companies trên admin.php?page=... */
     public const PAGE_SLUG = 'tmt-crm-companies';
 
@@ -27,16 +32,27 @@ final class CompanyScreen
     /** Tên option Screen Options: per-page */
     public const OPTION_PER_PAGE = 'tmt_crm_companies_per_page';
 
+    /** Menu.php sẽ gọi hàm này sau khi đăng ký submenu */
+    public static function set_hook_suffix(string $hook): void
+    {
+        self::$hook_suffix = $hook;
+    }
+    /** Trả về hook_suffix để AdminNoticeService scope đúng screen */
+    public static function hook_suffix(): string
+    {
+        if (!empty(self::$hook_suffix)) {
+            return self::$hook_suffix;
+        }
+
+        // fallback nếu chưa được set (ít xảy ra)
+        return 'crm_page_' . self::PAGE_SLUG;
+    }
+
     /** Đăng ký các handler admin_post (submit form) */
     public static function boot(): void
     {
         add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
-
-        add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
-        add_filter('set-screen-option', function ($status, $option, $value) {
-            return ($option === 'tmt_crm_customers_per_page') ? (int)$value : $status;
-        }, 10, 3);
     }
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
@@ -68,10 +84,7 @@ final class CompanyScreen
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
         // ⚠️ Đổi đúng ID theo log current_screen của bạn
-        if (
-            $screen->id === 'crm_page_tmt-crm-companies'
-            || $screen->id === 'crm_page_tmt-crm-companies'
-        ) {
+        if ($screen->id === self::$hook_suffix) {
             $hidden = array_unique(array_merge($hidden, ['id', 'owner', 'representer', 'created_at']));
         }
         return $hidden;
@@ -134,9 +147,23 @@ final class CompanyScreen
                 foreach ($ids as $id) {
                     try {
                         $svc->delete((int)$id);
+                        // ✅ Dùng notice theo Screen
+                        AdminNoticeService::success_for_screen(
+                            self::$hook_suffix,
+                            sprintf(
+                                /* translators: %d = số bản ghi đã xóa */
+                                __('Đã xóa %d công ty.', 'tmt-crm'),
+                                count($ids)
+                            )
+                        );
                     } catch (\Throwable $e) {
                         if (defined('WP_DEBUG') && WP_DEBUG) {
+                            AdminNoticeService::error_for_screen(
+                                self::$hook_suffix,
+                                $e->getMessage()
+                            );
                             error_log('[tmt-crm] bulk delete companies failed id=' . $id . ' msg=' . $e->getMessage());
+                            self::redirect(self::url(['error' => 1]));
                         }
                     }
                 }
@@ -148,19 +175,19 @@ final class CompanyScreen
         // Nạp dữ liệu + phân trang
         $table->prepare_items();
 
-        // Notices
-        if (isset($_GET['created'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo công ty.', 'tmt-crm') . '</p></div>';
-        }
-        if (isset($_GET['updated'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật công ty.', 'tmt-crm') . '</p></div>';
-        }
-        if (isset($_GET['deleted'])) {
-            echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s công ty.', 'tmt-crm'), (int) $_GET['deleted']) . '</p></div>';
-        }
-        if (isset($_GET['error']) && !empty($_GET['msg'])) {
-            echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
-        }
+        // // Notices
+        // if (isset($_GET['created'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo công ty.', 'tmt-crm') . '</p></div>';
+        // }
+        // if (isset($_GET['updated'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật công ty.', 'tmt-crm') . '</p></div>';
+        // }
+        // if (isset($_GET['deleted'])) {
+        //     echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s công ty.', 'tmt-crm'), (int) $_GET['deleted']) . '</p></div>';
+        // }
+        // if (isset($_GET['error']) && !empty($_GET['msg'])) {
+        //     echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
+        // }
 
         $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
@@ -205,7 +232,7 @@ final class CompanyScreen
     }
 
     /** Handler: Save (Create/Update) */
-    public static function handle_save(): void
+    public static function  handle_save(): void
     {
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
 
@@ -251,16 +278,28 @@ final class CompanyScreen
         try {
             if ($id > 0) {
                 $svc->update($id, $data);
-                self::redirect(self::url(['updated' => 1]));
+                AdminNoticeService::success_for_screen(
+                    self::hook_suffix(),
+                    __('Đã cập nhật công ty.', 'tmt-crm')
+                );
             } else {
                 $new_id = $svc->create($data);
-                self::redirect(self::url(['created' => 1]));
+                AdminNoticeService::success_for_screen(
+                    self::hook_suffix(),
+                    __('Tạo mới công ty thành công.', 'tmt-crm')
+                );
             }
+            self::redirect(self::url());
+            exit;
         } catch (\Throwable $e) {
-            self::redirect(self::url([
-                'error' => 1,
-                'msg'   => rawurlencode($e->getMessage()),
-            ]));
+            AdminNoticeService::error_for_screen(
+                self::hook_suffix(),
+                sprintf(
+                    /* translators: %s: error message */
+                    __('Thao tác thất bại: %s', 'tmt-crm'),
+                    esc_html($e->getMessage())
+                )
+            );
         }
     }
 
@@ -282,12 +321,20 @@ final class CompanyScreen
 
         try {
             $svc->delete($id);
-            self::redirect(self::url(['deleted' => 1]));
+            AdminNoticeService::success_for_screen(
+                self::hook_suffix(),
+                __('Xóa công ty thành công.', 'tmt-crm')
+            );
+            self::redirect(self::url());
         } catch (\Throwable $e) {
-            self::redirect(self::url([
-                'error' => 1,
-                'msg'   => rawurlencode($e->getMessage()),
-            ]));
+            AdminNoticeService::error_for_screen(
+                self::hook_suffix(),
+                sprintf(
+                    /* translators: %s: error message */
+                    __('Xóa thất bại: %s', 'tmt-crm'),
+                    esc_html($e->getMessage())
+                )
+            );
         }
     }
 

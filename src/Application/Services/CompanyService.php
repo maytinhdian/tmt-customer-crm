@@ -69,63 +69,6 @@ final class CompanyService
     }
 
 
-    // public function get_active_contact_by_role(int $company_id, string $role): ?CompanyContactDTO
-    // {
-    //     return $this->contact_repo->get_primary_contact($company_id, $role);
-    // }
-
-    public function get_active_contacts(int $company_id, ?string $role = null): array
-    {
-        return $this->contact_repo->find_active_contacts_by_company($company_id, $role);
-    }
-
-    public function assign_contact(
-        int $company_id,
-        int $customer_id,
-        string $role,
-        ?string $title = null,
-        bool $is_primary = false,
-        ?string $start_date = null,
-        ?string $note = null
-    ): int {
-        if ($is_primary) {
-            $this->contact_repo->clear_primary_for_role($company_id, $role);
-        }
-
-        $dto = new CompanyContactDTO(
-            id: null,
-            company_id: $company_id,
-            customer_id: $customer_id,
-            role: $role,
-            title: $title,
-            is_primary: $is_primary,
-            start_date: $start_date,
-            end_date: null,
-            note: $note,
-            created_at: current_time('mysql'),
-            updated_at: current_time('mysql')
-        );
-
-        return $this->contact_repo->upsert($dto);
-    }
-
-    public function set_primary_contact(int $contact_id): bool
-    {
-        $contact = $this->contact_repo->find_by_id($contact_id);
-        if (!$contact) return false;
-
-        $this->contact_repo->clear_primary_for_role($contact->company_id, $contact->role);
-        $contact->is_primary = true;
-        $contact->updated_at = current_time('mysql');
-        $this->contact_repo->upsert($contact);
-        return true;
-    }
-
-    public function end_contact(int $contact_id, string $end_date): bool
-    {
-        return $this->contact_repo->end_contact($contact_id, $end_date);
-    }
-
     // ================== helpers ==================
 
     private function build_dto_from_array(array $data, ?int $id = null): CompanyDTO

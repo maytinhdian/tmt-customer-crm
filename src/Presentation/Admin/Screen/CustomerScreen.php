@@ -297,7 +297,6 @@ final class CustomerScreen
                     __('Đã tạo khách hàng.', 'tmt-crm')
                 );
             }
-
             // URL sạch: trở về danh sách khách hàng
             wp_safe_redirect(self::url());
             exit;

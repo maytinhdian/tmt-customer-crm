@@ -6,6 +6,7 @@ use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
+use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
@@ -24,8 +25,6 @@ use TMT\CRM\Application\Services\{
     QuoteService,
     CompanyContactQueryService
 };
-
-use function ElementorDeps\DI\get;
 
 final class Hooks
 {
@@ -49,13 +48,13 @@ final class Hooks
 
         //Controller 
         add_action('admin_init', function () {
-            \TMT\CRM\Presentation\Admin\Controller\CompanyContactController::register();
-            error_log('[CRM Hooks] CompanyContactController::register() is ready...');
+            // error_log('[CRM Hooks] CompanyContactController::register() is ready...');
+            CompanyContactController::register();
         });
 
         //Notice Services
         add_action('admin_init', function () {
-            error_log('[TMT Hooks] AdminNoticeService::boot() is running...');
+            // error_log('[TMT Hooks] AdminNoticeService::boot() is running...');
             AdminNoticeService::boot();
         }, 0);
 

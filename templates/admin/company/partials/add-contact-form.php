@@ -50,7 +50,6 @@ $action_url = admin_url('admin-post.php');
 
             <tr>
                 <th><label for="role"><?php _e('Vai trò', 'tmt-crm'); ?></label></th>
-                <!-- <td><input type="text" id="role" name="role" class="regular-text" /></td> -->
                 <td><select name="role" required>
                         <?php foreach ($roles as $key => $label): ?>
                             <option value="<?php echo esc_attr($label); ?>">
@@ -62,8 +61,8 @@ $action_url = admin_url('admin-post.php');
             </tr>
 
             <tr>
-                <th><label for="position"><?php _e('Chức vụ', 'tmt-crm'); ?></label></th>
-                <td><input type="text" id="position" name="position" class="regular-text" /></td>
+                <th><label for="title"><?php _e('Chức vụ', 'tmt-crm'); ?></label></th>
+                <td><input type="text" id="title" name="title" class="regular-text" /></td>
 
             </tr>
 

@@ -52,7 +52,7 @@ final class Menu
         add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
         add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
 
-        // //-- Submenu: Companies (MỚI) ---
+        //-- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(
             'tmt-crm', // slug của menu cha
             __('Companies Test', 'tmt-crm'), // tiêu đề hiển thị trên <title>
@@ -61,6 +61,9 @@ final class Menu
             'tmt-crm-companies',  // slug của trang 
             [CompanyScreen::class, 'dispatch'] // hàm/class method render nội dung
         );
+
+        // 👉 Bàn giao hook_suffix lại cho CompanyScreen
+        CompanyScreen::set_hook_suffix(self::$companies_hook);
 
         // Screen Options cho Companies
         add_action('load-' . self::$companies_hook, [CompanyScreen::class, 'on_load_companies']);
