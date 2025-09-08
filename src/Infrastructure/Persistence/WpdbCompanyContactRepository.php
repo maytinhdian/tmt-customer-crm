@@ -26,7 +26,27 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         $this->t_companies = ($db->prefix . 'tmt_crm_companies');
         $this->t_users = ($db->prefix) . 'users';
     }
+    /***
+     * Transaction Helper
+     */
+    public function begin(): void
+    {
+        $this->db->query('START TRANSACTION');
+    }
+    public function commit(): void
+    {
+        $this->db->query('COMMIT');
+    }
+    public function roll_back(): void
+    {
+        $this->db->query('ROLLBACK');
+    }
+    /**End Transaction Helper **/
 
+    /****
+     * Tìm tất cả liên hệ của công ty
+     * return @array
+     */
     public function find_active_contacts_by_company(int $company_id, ?string $role = null): array
     {
         $where  = ["company_id = %d", "(end_date IS NULL OR end_date >= CURDATE())"];
@@ -362,6 +382,10 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
 
         return ($name !== '') ? $name : ('#' . $company_id);
     }
+
+
+
+
 
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO

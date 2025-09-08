@@ -143,14 +143,14 @@ final class Installer
 
         $sql = "CREATE TABLE {$this->table_contacts} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            company_id BIGINT UNSIGNED NOT NULL,
             customer_id BIGINT UNSIGNED NOT NULL,
             role VARCHAR(40) NOT NULL,
             title VARCHAR(191) NULL,
-            is_primary TINYINT(1) NOT NULL DEFAULT 0,
+            is_primary TINYINT(1) NULL DEFAULT NULL,
             start_date DATE NULL,
             end_date DATE NULL,
             note TEXT NULL,
+            created_by BIGINT UNSIGNED NOT NULL,
             created_at DATETIME NULL,
             updated_at DATETIME NULL,
             PRIMARY KEY  (id),
@@ -162,6 +162,59 @@ final class Installer
         ) {$collate};";
 
         \dbDelta($sql);
+
+        // Sau khi dbDelta: chuẩn hoá dữ liệu & thêm UNIQUE KEY (company_id, is_primary)
+        $this->normalize_contacts_primary_constraint();
+    }
+
+    /**
+     * Chuẩn hoá “liên hệ chính”:
+     * - Cho phép is_primary NULL (liên hệ thường)
+     * - Convert giá trị 0 -> NULL (dữ liệu cũ)
+     * - Tạo UNIQUE KEY (company_id, is_primary) để mỗi công ty chỉ có 1 liên hệ có is_primary=1
+     */
+    private function normalize_contacts_primary_constraint(): void
+    {
+        $table = $this->table_contacts;
+
+        // 1) Sửa kiểu cột is_primary về NULL DEFAULT NULL (an toàn, không lỗi nếu đã đúng)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $this->db->query("ALTER TABLE `{$table}`
+        MODIFY COLUMN `is_primary` TINYINT(1) NULL DEFAULT NULL");
+
+        // 2) Dọn dữ liệu cũ: 0 -> NULL
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $this->db->query("UPDATE `{$table}` SET `is_primary` = NULL WHERE `is_primary` = 0");
+
+        // 3) Đảm bảo có cột company_id (phòng khi bản rất cũ bị thiếu)
+        $columns = $this->db->get_col("SHOW COLUMNS FROM `{$table}` LIKE 'company_id'");
+        if (empty($columns)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $this->db->query("ALTER TABLE `{$table}` ADD COLUMN `company_id` BIGINT UNSIGNED NOT NULL AFTER `id`");
+            // Bổ sung index
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $this->db->query("CREATE INDEX idx_company ON `{$table}` (`company_id`)");
+        }
+
+        // 4) Tạo UNIQUE KEY (company_id, is_primary) — cho phép nhiều NULL, nhưng chỉ có 1 dòng (company_id, 1)
+        $indexes = $this->db->get_results("SHOW INDEX FROM `{$table}`", ARRAY_A);
+        $hasUnique = false;
+        foreach ($indexes as $idx) {
+            if (isset($idx['Key_name']) && $idx['Key_name'] === 'uniq_company_primary') {
+                $hasUnique = true;
+                break;
+            }
+        }
+        if ($hasUnique) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $this->db->query("DROP INDEX `uniq_company_primary` ON `{$table}`");
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $this->db->query("CREATE UNIQUE INDEX `uniq_company_primary`
+                      ON `{$table}` (`company_id`, `is_primary`)");
+
+        // 5) (Tuỳ chọn) Nếu muốn cứng ràng buộc “liên hệ chính phải đang active” ở DB thì không thể,
+        //    phần này để Service/Validator đảm bảo ở tầng ứng dụng như đã triển khai.
     }
 
     /** Lịch sử gắn KH ↔ Công ty (employment/history) */
@@ -174,7 +227,7 @@ final class Installer
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             customer_id BIGINT UNSIGNED NOT NULL,
             company_id BIGINT UNSIGNED NOT NULL,
-            title VARCHAR(191) NULL,               -- chức danh (VD: Kế toán trưởng)
+            title VARCHAR(191) NULL,              
             start_date DATE NULL,
             end_date DATE NULL,
             note TEXT NULL,
@@ -200,7 +253,7 @@ final class Installer
         $sql = "CREATE TABLE {$this->table_sequences} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             type ENUM('quote','order','invoice','payment') NOT NULL,
-            period CHAR(6) NOT NULL, -- YYYYMM
+            period CHAR(6) NOT NULL, 
             last_no INT UNSIGNED NOT NULL DEFAULT 0,
             PRIMARY KEY (id),
             UNIQUE KEY uq_type_period (type, period)
@@ -251,7 +304,7 @@ final class Installer
             qty DECIMAL(18,3) NOT NULL DEFAULT 1,
             unit_price DECIMAL(18,2) NOT NULL DEFAULT 0.00,
             discount DECIMAL(18,2) NOT NULL DEFAULT 0.00,
-            tax_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00, -- %
+            tax_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00, 
             line_total DECIMAL(18,2) NOT NULL DEFAULT 0.00,
             PRIMARY KEY (id),
             KEY idx_qi_quote (quote_id),

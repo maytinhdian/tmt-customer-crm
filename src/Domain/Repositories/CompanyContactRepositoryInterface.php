@@ -40,22 +40,47 @@ interface CompanyContactRepositoryInterface
 
   public function count_by_company(int $company_id, array $filters = []): int;
   public function get_company_name(int $company_id): string;
-  /***
-   *  Đặt 1 liên hệ làm liên hệ chính 
-   * */
-  public function set_primary(int $company_id, int $contact_id): bool;
-
+  
   /**
    * Gỡ liên hệ ra khỏi công ty (soft-detach): set end_date + is_primary = 0.
    * @param int         $company_id
    * @param int         $contact_id
    * @param string|null $end_date  'YYYY-MM-DD'; null => hôm nay theo timezone WP
-   */
+  */
   public function detach(int $company_id, int $contact_id, ?string $end_date = null): bool;
-
+  
   /**
    * Xoá cứng liên hệ (hard delete). Cân nhắc kỹ trước khi dùng.
-   */
+  */
   public function delete(int $contact_id): bool;
+  
+  //Ràng buộc is_primary
+   
+  /***
+   *  Đặt 1 liên hệ làm liên hệ chính 
+   * */
+  public function set_primary(int $company_id, int $contact_id): bool;
 
+  public function find_by_id(int $id): ?CompanyContactDTO;
+  
+  /**
+   * @return CompanyContactDTO[] Liên hệ của công ty
+  */
+  public function find_by_company(int $company_id): array;
+  
+  public function find_active_primary_by_company(int $company_id): ?CompanyContactDTO;
+  
+  /** Bỏ is_primary (=NULL) cho toàn bộ liên hệ công ty */
+  public function clear_primary(int $company_id): int;
+  
+  /** Kiểm tra contact thuộc company (để ràng buộc dữ liệu) */
+  public function contact_belongs_to_company(int $contact_id, int $company_id): bool;
+  
+  /** Ngày kết thúc < hôm nay thì xem như hết hiệu lực */
+  public function is_contact_active(int $contact_id): bool;
+  
+  /** Transaction helpers (tuỳ DB) */
+  public function begin(): void;
+  public function commit(): void;
+  public function roll_back(): void;
 }
