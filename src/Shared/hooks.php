@@ -5,8 +5,15 @@ namespace TMT\CRM\Shared;
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+use TMT\CRM\Application\Validation\CompanyContactValidator;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
 use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
+use TMT\CRM\Domain\Repositories\{
+    CompanyRepositoryInterface,
+    CustomerRepositoryInterface,
+    CompanyContactRepositoryInterface
+};
+
 use TMT\CRM\Infrastructure\Persistence\{
     WpdbCustomerRepository,
     WpdbCompanyRepository,
@@ -101,25 +108,37 @@ final class Hooks
 
         // Đăng ký DI vào Container
         global $wpdb;
+        //---------------------
+        // Bind theo Interface
+        //---------------------
+        Container::set(CustomerRepositoryInterface::class,       fn() => new WpdbCustomerRepository($wpdb));
 
-        // Repositories
+
+        // -------------------------
+        // Repositories (aliases)
+        // -------------------------
         Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
-        Container::set('customer-repo',  fn() => new WpdbCustomerRepository($wpdb));
+        Container::set('customer-repo',  fn() => Container::get(CustomerRepositoryInterface::class));
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
         Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
-        Container::set(
-            'quote-query-repo',
-            fn() =>
-            new WpdbQuoteQueryRepository($wpdb)
-        );
+        Container::set('quote-query-repo', fn() => new WpdbQuoteQueryRepository($wpdb));
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
-        Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
         Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
-        Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
+
+        // ------------------------
+        // Validator (đăng ký để tái sử dụng ở nhiều service/controller)
+        // -------------------------
+        Container::set('company-contact-validator', fn() => new CompanyContactValidator(
+            Container::get('company-contact-repo')
+        ));
+
+
         // Services
+        Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
+        Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo')));
-        Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo')));
+        Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo'), Container::get('company-contact-validator')));
         Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
         Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
         Container::set('company-contact-query-service',  fn() => new CompanyContactQueryService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('user-repo'), Container::get('company-repo')));

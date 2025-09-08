@@ -43,6 +43,37 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
     }
     /**End Transaction Helper **/
 
+    public function find_by_id(int $id): ?CompanyContactDTO
+    {
+        $row = $this->db->get_row(
+            $this->db->prepare("SELECT * FROM {$this->t_contacts} WHERE id=%d", $id),
+            ARRAY_A
+        );
+        return $row ? $this->map_row_to_dto($row) : null;
+    }
+
+    public function find_by_company(int $company_id): array
+    {
+        $rows = $this->db->get_results(
+            $this->db->prepare("SELECT * FROM {$this->t_contacts} WHERE company_id=%d", $company_id),
+            ARRAY_A
+        );
+        return array_map([$this, 'map_row_to_dto'], $rows ?: []);
+    }
+    public function find_active_primary_by_company(int $company_id): ?CompanyContactDTO
+    {
+        $row = $this->db->get_row(
+            $this->db->prepare(
+                "SELECT * FROM {$this->t_contacts}
+                 WHERE company_id=%d AND is_primary=1
+                 LIMIT 1",
+                $company_id
+            ),
+            ARRAY_A
+        );
+        return $row ? $this->map_row_to_dto($row) : null;
+    }
+
     /****
      * Tìm tất cả liên hệ của công ty
      * return @array
@@ -61,6 +92,19 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         $rows = $this->db->get_results($this->db->prepare($sql, ...$params), ARRAY_A);
 
         return array_map([$this, 'map_row_to_dto'], $rows ?: []);
+    }
+
+
+    public function clear_primary(int $company_id): int
+    {
+        $this->db->update(
+            $this->t_contacts,
+            ['is_primary' => null, 'updated_at' => current_time('mysql')],
+            ['company_id' => $company_id],
+            ['%s', '%s'],
+            ['%d']
+        );
+        return (int)$this->db->rows_affected;
     }
 
     public function attach_customer(CompanyContactDTO $dto): int
@@ -385,8 +429,56 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
 
 
 
+    public function contact_belongs_to_company(int $customer_id, int $company_id): bool
+    {
+        $exists = $this->db->get_var(
+            $this->db->prepare(
+                "SELECT COUNT(1) FROM {$this->t_contacts} WHERE customer_id=%d AND company_id=%d",
+                $customer_id,
+                $company_id
+            )
+        );
+        return (int)$exists === 1;
+    }
 
+    public function is_contact_active(int $customer_id): bool
+    {
+        // end_date NULL hoặc >= hôm nay => active
+        $today = current_time('Y-m-d');
+        $val = $this->db->get_var(
+            $this->db->prepare(
+                "SELECT COUNT(1) FROM {$this->t_contacts}
+                 WHERE customer_id=%d AND (end_date IS NULL OR end_date > %s)",
+                $customer_id,
+                $today
+            )
+        );
+        return (int)$val === 1;
+    }
 
+    public function update(CompanyContactDTO $d): bool
+    {
+        $data = [
+            'customer_id' => (int)$d->customer_id,
+            'role'        => (string)$d->role,
+            'title'       => $d->title ?: null,
+            'is_primary'  => $d->is_primary ? 1 : null, // giữ quy ước NULL/1
+            'start_date'  => $d->start_date ?: null,
+            'end_date'    => $d->end_date ?: null,
+            'updated_at'  => current_time('mysql'),
+        ];
+
+        $updated = $this->db->update(
+            $this->t_contacts,
+            $data,
+            ['id' => (int)$d->id, 'company_id' => (int)$d->company_id],
+            ['%d', '%s', '%s', '%d', '%s', '%s', '%s'],
+            ['%d', '%d']
+        );
+
+        return $updated !== false;
+    }
+    
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
     {

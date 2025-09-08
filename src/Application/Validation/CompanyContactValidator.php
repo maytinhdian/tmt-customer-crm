@@ -12,17 +12,17 @@ final class CompanyContactValidator
         private CompanyContactRepositoryInterface $repo
     ) {}
 
-    public function ensure_contact_belongs_company(int $contact_id, int $company_id): void
+    public function ensure_contact_belongs_company(int $customer_id, int $company_id): void
     {
-        if (!$this->repo->contact_belongs_to_company($contact_id, $company_id)) {
+        if (!$this->repo->contact_belongs_to_company($customer_id, $company_id)) {
             throw new \InvalidArgumentException(__('Liên hệ không thuộc công ty.', 'tmt-crm'));
         }
     }
 
-    public function ensure_contact_active(int $contact_id): void
+    public function ensure_contact_active(int $customer_id): void
     {
-        if (!$this->repo->is_contact_active($contact_id)) {
-            throw new \RuntimeException(__('Liên hệ đã hết hiệu lực (end_date < hôm nay).', 'tmt-crm'));
+        if (!$this->repo->is_contact_active($customer_id)) {
+            throw new \RuntimeException(__('Liên hệ đã hết hiệu lực (end_date >= hôm nay).', 'tmt-crm'));
         }
     }
 }

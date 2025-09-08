@@ -17,10 +17,12 @@ final class CompanyContactController
     public const ACTION_ATTACH = 'tmt_crm_company_contact_attach';
     public const ACTION_SET_PRIMARY = 'tmt_crm_company_contact_set_primary';
     public const ACTION_DETACH = 'tmt_crm_company_contact_detach';
+    public const ACTION_UPDATE = 'tmt_crm_company_contact_update';
 
     private const NONCE_PREFIX_ATTACH = 'tmt_crm_company_contact_attach_';
     private const NONCE_PREFIX_DETACH = 'tmt_crm_company_contact_detach_';
     private const NONCE_PREFIX_SET_PRIMARY = 'tmt_crm_company_contact_set_primary_';
+    private const NONCE_PREFIX_UPDATE = 'tmt_crm_company_contact_update_';
 
     /** Đăng ký hook: gọi sớm ở bootstrap (file chính) */
     public static function register(): void
@@ -30,14 +32,10 @@ final class CompanyContactController
         // Nếu muốn cho khách chưa login:
         // add_action('admin_post_nopriv_' . self::ACTION_ATTACH, [self::class, 'insert']);
 
-        add_action(
-            'admin_post_' . self::ACTION_SET_PRIMARY,
-            [self::class, 'set_primary']
-        );
-        add_action(
-            'admin_post_' . self::ACTION_DETACH,
-            [self::class, 'detach']
-        );
+        add_action('admin_post_' . self::ACTION_SET_PRIMARY, [self::class, 'set_primary']);
+
+        add_action('admin_post_' . self::ACTION_DETACH, [self::class, 'detach']);
+        add_action('admin_post_' . self::ACTION_UPDATE, [self::class, 'update']);
     }
 
     /** POST /wp-admin/admin-post.php?action=tmt_crm_company_contact_attach */
@@ -55,7 +53,7 @@ final class CompanyContactController
         $customer_id = isset($_POST['customer_id']) ? (int)$_POST['customer_id'] : 0;
         $role        = isset($_POST['role']) ? sanitize_text_field((string)$_POST['role']) : '';
         $title    = isset($_POST['title']) ? sanitize_text_field((string)$_POST['title']) : '';
-        $start_date  = sanitize_text_field((string)($_POST['start_date'] ?? '')) ?: wp_date('Y-m-d');
+        $start_date  = sanitize_text_field((string)($_POST['start_date'] ?? NULL)) ?: wp_date('Y-m-d');
         $is_primary  = !empty($_POST['is_primary']);
         $note        = isset($_POST['note']) ? sanitize_text_field((string)$_POST['note']) : '';
 
@@ -114,7 +112,7 @@ final class CompanyContactController
             $svc = Container::get('company-contact-service');
             $svc->set_primary($company_id, $customer_id);
 
-            AdminNoticeService::success_for_screen('tmt-crm-company-contacts', __('Đã đặt liên hệ làm chính.', 'tmt-crm'));
+            AdminNoticeService::success_for_screen(CompanyContactsScreen::hook_suffix(), __('Đã đặt liên hệ làm chính.', 'tmt-crm'));
             self::redirect_back($company_id, 'Success ...');
         } catch (\Throwable $e) {
             AdminNoticeService::success_for_screen(
@@ -125,7 +123,7 @@ final class CompanyContactController
                     esc_html($e->getMessage())
                 )
             );
-            // self::redirect_back($company_id,'');
+            self::redirect_back($company_id, '');
         }
     }
 
@@ -151,8 +149,69 @@ final class CompanyContactController
                     esc_html($e->getMessage())
                 )
             );
+            self::redirect_back($company_id, 'Thất bại');
         }
     }
+
+    public static function update(): void
+    {
+        check_admin_referer(self::ACTION_UPDATE);
+
+        $company_id = absint($_POST['company_id'] ?? 0);
+        $customer_id = absint($_POST['customer_id'] ?? 0);
+        $role       = sanitize_text_field($_POST['role'] ?? 'other');
+        $title      = sanitize_text_field($_POST['title'] ?? '');
+        $is_primary = !empty($_POST['is_primary']);
+        $start_date = sanitize_text_field($_POST['start_date'] ?? '');
+
+        // Chuẩn hoá date: '' -> NULL
+        $start_date = $start_date !== '' ? $start_date : null;
+
+        /** @var \TMT\CRM\Application\Services\CompanyContactService $svc */
+        $svc = Container::get('company-contact-service');
+
+        try {
+            $dto = new CompanyContactDTO(
+                company_id: $company_id,
+                customer_id: $customer_id,
+                role: $role,
+                title: $title,
+                is_primary: $is_primary,
+                start_date: $start_date,
+                note: null,
+                created_by: get_current_user_id()
+            );
+
+            // Service update (bạn implement trong Service + Repo)
+            $svc->update($dto);
+
+            // Xử lý cờ liên hệ chính qua service để đảm bảo UNIQUE
+            if ($is_primary) {
+                $svc->set_primary($company_id, $customer_id, get_current_user_id());
+            } else {
+                // nếu đang bỏ cờ
+                $svc->unset_primary($company_id);
+            }
+
+            \TMT\CRM\Presentation\Admin\Support\AdminNoticeService::success_for_screen(
+                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::hook_suffix(),
+                __('Đã cập nhật liên hệ.', 'tmt-crm')
+            );
+        } catch (\Throwable $e) {
+            \TMT\CRM\Presentation\Admin\Support\AdminNoticeService::error_for_screen(
+                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::hook_suffix(),
+                sprintf(__('Cập nhật thất bại: %s', 'tmt-crm'), $e->getMessage())
+            );
+        }
+
+        wp_safe_redirect(\TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::url([
+            'company_id' => $company_id,
+        ]));
+        exit;
+    }
+
+
+
 
     /** Điều hướng về tab Contacts của Company */
     private static function redirect_back(int $company_id, ?string $status): void

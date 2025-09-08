@@ -6,6 +6,7 @@ namespace TMT\CRM\Application\Services;
 
 use TMT\CRM\Application\DTO\CompanyContactDTO;
 use TMT\CRM\Domain\Repositories\CompanyRepositoryInterface;
+use TMT\CRM\Application\Validation\CompanyContactValidator;
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
 use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
 
@@ -19,9 +20,10 @@ use TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface;
 final class CompanyContactService
 {
     public function __construct(
-        private CompanyContactRepositoryInterface $relation_repo,
+        private CompanyContactRepositoryInterface $contact_repo,
         private CustomerRepositoryInterface       $customer_repo,
         private CompanyRepositoryInterface        $company_repo,
+        private CompanyContactValidator $validator
     ) {}
 
     /**
@@ -42,42 +44,74 @@ final class CompanyContactService
         }
 
         // 2) Tránh gắn trùng đang active
-        if ($this->relation_repo->is_customer_active_in_company($company_id, $customer_id)) {
+        if ($this->contact_repo->is_customer_active_in_company($company_id, $customer_id)) {
             throw new \RuntimeException(__('Khách này đã được gắn vào công ty và đang còn hiệu lực.', 'tmt-crm'));
         }
 
         // 3) Đảm bảo primary duy nhất (nếu yêu cầu)
         if (!empty($dto->is_primary)) {
-            $this->relation_repo->unset_primary($company_id);
+            $this->contact_repo->unset_primary($company_id);
         }
 
         // 4) Insert
-        return $this->relation_repo->attach_customer($dto);
+        return $this->contact_repo->attach_customer($dto);
     }
 
     /**
-     * Đặt 1 contact làm liên hệ chính của công ty.
-     * - Reset các liên hệ khác về is_primary = 0.
-     * - Set contact được chọn về is_primary = 1.
+     * Đặt liên hệ chính cho công ty:
+     * - Validate: contact thuộc company & đang active
+     * - Transaction: clear_primary -> set_primary
+     * - DB UNIQUE (company_id, is_primary) bảo vệ mức hạ tầng
      */
-    public function set_primary(int $company_id, int $contact_id): void
+    public function set_primary(int $company_id, int $customer_id): void
     {
-        if ($company_id <= 0 || $contact_id <= 0) {
-            throw new \InvalidArgumentException('company_id/contact_id không hợp lệ.');
+        if ($company_id <= 0 || $customer_id <= 0) {
+            throw new \InvalidArgumentException('company_id/customer_id không hợp lệ.');
         }
-        $this->relation_repo->set_primary($company_id, $contact_id);
+
+        $this->validator->ensure_contact_belongs_company($customer_id, $company_id);
+        $this->validator->ensure_contact_active($customer_id);
+
+        try {
+            $this->contact_repo->begin();
+
+            $this->contact_repo->clear_primary($company_id);
+            if (!$this->contact_repo->set_primary($company_id, $customer_id)) {
+                throw new \RuntimeException(__('Không đặt được liên hệ chính.', 'tmt-crm'));
+            }
+
+            $this->contact_repo->commit();
+        } catch (\Throwable $e) {
+            $this->contact_repo->roll_back();
+            throw $e;
+        }
+    }
+
+
+    public function update(CompanyContactDTO $d): void
+    {
+        // validate nhanh
+        if ($d->id <= 0 || $d->company_id <= 0 || $d->customer_id <= 0) {
+            throw new \InvalidArgumentException('Thiếu dữ liệu bắt buộc.');
+        }
+        // Không cho set end_date < start_date
+        if ($d->start_date && $d->end_date && $d->end_date < $d->start_date) {
+            throw new \InvalidArgumentException('end_date không thể nhỏ hơn start_date.');
+        }
+
+        $this->contact_repo->update($d);
     }
 
 
     // CompanyContactService
-    public function detach(int $company_id, int $contact_id, ?string $end_date = null): void
+    public function detach(int $company_id, int $customer_id, ?string $end_date = null): void
     {
-        $this->relation_repo->detach($company_id, $contact_id, $end_date);
+        $this->contact_repo->detach($company_id, $customer_id, $end_date);
     }
 
     // Nếu muốn xoá cứng:
-    public function delete(int $contact_id): void
+    public function delete(int $customer_id): void
     {
-        $this->relation_repo->delete($contact_id);
+        $this->contact_repo->delete($customer_id);
     }
 }
