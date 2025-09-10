@@ -117,6 +117,11 @@ final class CompanyContactsListTable extends WP_List_Table
         $customer_id = $item->customer_id;
         $contact_id = $item->id;
 
+        // Quy ước 1 | NULL
+        $is_primary  = is_object($item) ? $item->is_primary : null;
+
+        $is_primary_bool = ($is_primary === 1);
+
         // Giữ state & URL quay về màn contacts
         $state    = CompanyContactsScreen::current_state();
         $back_url = CompanyContactsScreen::back_url($this->company_id, $state);
@@ -153,7 +158,7 @@ final class CompanyContactsListTable extends WP_List_Table
 
         $actions = [
             'edit'        => sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Sửa', 'tmt-crm')),
-            'set_primary' => !empty($d->is_primary)
+            'set_primary' => $is_primary
                 ? '<span class="dashicons dashicons-yes" title="' . esc_attr__('Liên hệ chính', 'tmt-crm') . '"></span>'
                 : sprintf('<a href="%s">%s</a>', esc_url($set_primary_url), esc_html__('Đặt làm chính', 'tmt-crm')),
             'detach'      => sprintf(

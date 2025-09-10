@@ -21,7 +21,7 @@ final class CompanyContactViewDTO
     public ?string $position;
     public ?string $start_date;
     public ?string $end_date;
-    public bool    $is_primary;
+    public ?int    $is_primary;
 
     // Người phụ trách (owner) – có thể lấy từ company_contacts hoặc bảng company tùy schema
     public ?int    $owner_id;
@@ -40,7 +40,7 @@ final class CompanyContactViewDTO
         ?string $position,
         ?string $start_date,
         ?string $end_date,
-        bool $is_primary,
+        ?int $is_primary,
         ?int $owner_id,
         ?string $owner_name,
         ?string $owner_phone,

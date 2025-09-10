@@ -15,7 +15,7 @@ final class CompanyContactDTO implements \JsonSerializable
     public int $customer_id;
     public string $role;          // 'accounting' | 'purchasing' | 'invoice_recipient' | 'decision_maker' | 'owner' | 'other'
     public ?string $title;        // Hiển thị chức danh nếu cần
-    public bool $is_primary;
+    public ?int $is_primary = null;
     public ?string $start_date;   // 'YYYY-MM-DD'
     public ?string $end_date;     // 'YYYY-MM-DD'
     public ?string $note;
@@ -29,7 +29,7 @@ final class CompanyContactDTO implements \JsonSerializable
         ?int $customer_id = null,
         ?string $role = '',
         ?string $title = null,
-        bool $is_primary = false,
+        ?int $is_primary = null,
         ?string $start_date = null,
         ?string $end_date = null,
         ?string $note = null,
@@ -42,7 +42,7 @@ final class CompanyContactDTO implements \JsonSerializable
         $this->customer_id = $customer_id;
         $this->role = $role;
         $this->title = self::nn($title);
-        $this->is_primary = $is_primary;
+        $this->is_primary = (($is_primary ?? null) === 1 ? 1 : null);
         $this->start_date = self::nn($start_date);
         $this->end_date = self::nn($end_date);
         $this->note = self::nn($note);
@@ -59,7 +59,7 @@ final class CompanyContactDTO implements \JsonSerializable
             (int)$data['customer_id'],
             (string)$data['role'],
             $data['title'] ?? null,
-            !empty($data['is_primary']),
+            isset($data['is_primary']) && (int)$data['is_primary'] === '1' ? 1 : null,
             $data['start_date'] ?? null,
             $data['end_date'] ?? null,
             $data['note'] ?? null,
