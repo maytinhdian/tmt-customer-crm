@@ -30,7 +30,25 @@ final class CompanyContactRole
             self::OTHER,
         ];
     }
+    /** Map value => label (có i18n) để hiển thị */
+    public static function labels(): array
+    {
+        return [
+            self::ACCOUNTING        => __('Kế toán', 'tmt-crm'),
+            self::PURCHASING        => __('Thu mua', 'tmt-crm'),
+            self::INVOICE_RECIPIENT => __('Người nhận HĐ', 'tmt-crm'),
+            self::DECISION_MAKER    => __('Người quyết định', 'tmt-crm'),
+            self::OWNER             => __('Chủ sở hữu', 'tmt-crm'),
+            self::OTHER             => __('Khác', 'tmt-crm'),
+        ];
+    }
 
+    /** Lấy label cho 1 role cụ thể (fallback về chính value nếu chưa map) */
+    public static function label(string $role): string
+    {
+        $labels = self::labels();
+        return $labels[$role] ?? $role;
+    }
     /** Kiểm tra role có hợp lệ không */
     public static function is_valid(string $role): bool
     {

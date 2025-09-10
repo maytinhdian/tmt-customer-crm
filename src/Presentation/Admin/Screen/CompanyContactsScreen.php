@@ -90,7 +90,7 @@ final class CompanyContactsScreen
         // Nhớ kiểm tra $screen->id thực tế (log current_screen) để khớp
         if ($screen->id === 'crm_page_tmt-crm-company-contacts') {
             // ví dụ ẩn cột 'period'
-            $hidden = array_unique(array_merge($hidden, ['email']));
+            $hidden = array_unique(array_merge($hidden, ['owner_contact', 'id']));
         }
         return $hidden;
     }
@@ -127,50 +127,188 @@ final class CompanyContactsScreen
         self::render_manage($company_id);
     }
 
+    /**
+     * LIST VIEW: WP_List_Table + form Thêm/Sửa liên hệ (template ngoài src để tránh PSR-4)
+     */
+    // public static function render_manage(int $company_id): void
+    // {
+    //     /** @var \TMT\CRM\Application\Services\CompanyContactQueryService $svc */
+    //     $svc = \TMT\CRM\Shared\Container::get('company-contact-query-service');
 
+    //     // ====== Paging & Filters ======
+    //     $user_per_page = (int) get_user_option(self::OPTION_PER_PAGE);
+    //     $per_page      = $user_per_page > 0 ? $user_per_page : 20;
+    //     $current_page  = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
 
-    /** LIST VIEW: WP_List_Table + form Thêm liên hệ (template ngoài src để tránh PSR-4) */
+    //     $filters = [
+    //         'active_only' => isset($_GET['active_only']) ? (bool) (int) $_GET['active_only'] : true,
+    //         'role'        => sanitize_text_field($_GET['role'] ?? ''),
+    //     ];
+
+    //     $allowed_orderby = ['id', 'role', 'position', 'start_date', 'end_date', 'is_primary'];
+    //     $orderby = sanitize_key($_GET['orderby'] ?? '');
+    //     if (!in_array($orderby, $allowed_orderby, true)) {
+    //         $orderby = ''; // mặc định trong service
+    //     }
+
+    //     $sort = [
+    //         'by'  => $orderby,
+    //         'dir' => strtolower(sanitize_text_field($_GET['order'] ?? '')) === 'asc' ? 'asc' : 'desc',
+    //     ];
+
+    //     // ====== Data cho bảng ======
+    //     $items        = $svc->find_paged_view_by_company($company_id, $current_page, $per_page, $filters, $sort);
+    //     $company_name = $svc->get_company_name($company_id);
+    //     $total_items  = $svc->count_view_by_company($company_id, $filters);
+
+    //     $table = new \TMT\CRM\Presentation\Admin\ListTable\CompanyContactsListTable($items, $total_items, $per_page, $company_id);
+    //     $table->prepare_items();
+
+    //     // ====== Prefill khi Sửa ======
+    //     $editing    = (isset($_GET['action']) && $_GET['action'] === 'edit');
+    //     $contact_id = isset($_GET['contact_id']) ? absint($_GET['contact_id']) : 0;
+    //     $edit_contact = null;
+
+    //     if ($editing && $contact_id > 0) {
+    //         /** @var \TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface $repo */
+    //         $repo = \TMT\CRM\Shared\Container::get('company-contact-repo');
+    //         if ($repo && method_exists($repo, 'find_by_id')) {
+    //             $edit_contact = $repo->find_by_id($contact_id);
+    //             // an toàn: bản ghi phải thuộc đúng company
+    //             if (!$edit_contact || (int) $edit_contact->company_id !== (int) $company_id) {
+    //                 $editing = false;
+    //                 $edit_contact = null;
+    //             }
+    //             // ====== Render qua View:: ======
+    //             $module = 'company';
+    //             $file   = 'contacts-manage';
+    //             $vars   = [
+    //                 'company_id'   => (int) $company_id,
+    //                 'company_name' => $company_name,
+    //                 'total_items'  => $total_items,
+    //                 'table'        => $table,
+    //                 'editing'      => $editing,
+    //                 'edit_contact' => $edit_contact,   // DTO: id, customer_id, full_name, role, title, is_primary, start_date, end_date
+
+    //             ];
+
+    //             if (View::exists_admin($module . '/' . $file)) {
+    //                 View::render_admin_module($module, $file, $vars);
+    //                 return;
+    //             }
+    //         } else {
+    //             $editing = false;
+    //         }
+    //     } else {
+    //         // ====== Render qua View:: ======
+    //         $module = 'company';
+    //         $file   = 'contacts-manage';
+    //         $vars   = [
+    //             'company_id'   => (int) $company_id,
+    //             'company_name' => $company_name,
+    //             'total_items'  => $total_items,
+    //             'table'        => $table,
+    //         ];
+
+    //         if (View::exists_admin($module . '/' . $file)) {
+    //             View::render_admin_module($module, $file, $vars);
+    //             return;
+    //         }
+    //     }
+    // }
+
     public static function render_manage(int $company_id): void
     {
         /** @var \TMT\CRM\Application\Services\CompanyContactQueryService $svc */
-        $svc = Container::get('company-contact-query-service');  // $svc = Container::get(\TMT\CRM\Application\Services\CompanyContactQueryService::class);
+        $svc = \TMT\CRM\Shared\Container::get('company-contact-query-service');
 
-        // per_page từ Screen Options
+        // ====== Parse request (list + filter + sort) ======
         $user_per_page = (int) get_user_option(self::OPTION_PER_PAGE);
         $per_page      = $user_per_page > 0 ? $user_per_page : 20;
-        $current_page  = isset($_GET['paged']) ? max(1, (int)$_GET['paged']) : 1;
+        $current_page  = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
 
         $filters = [
-            'active_only' => isset($_GET['active_only']) ? (bool) $_GET['active_only'] : true,
+            'active_only' => isset($_GET['active_only']) ? (bool) (int) $_GET['active_only'] : true,
             'role'        => sanitize_text_field($_GET['role'] ?? ''),
         ];
 
+        $allowed_orderby = ['id', 'role', 'position', 'start_date', 'end_date', 'is_primary'];
+        $orderby = sanitize_key($_GET['orderby'] ?? '');
+        if (!in_array($orderby, $allowed_orderby, true)) {
+            $orderby = ''; // để service tự mặc định
+        }
         $sort = [
-            'by'  => sanitize_key($_GET['orderby'] ?? ''), // id, role, position, start_date, end_date, is_primary
+            'by'  => $orderby,
             'dir' => strtolower(sanitize_text_field($_GET['order'] ?? '')) === 'asc' ? 'asc' : 'desc',
         ];
 
-        $items       = $svc->find_paged_view_by_company($company_id, $current_page, $per_page, $filters, $sort);
+        // ====== Data chung cho bảng ======
+        $items        = $svc->find_paged_view_by_company($company_id, $current_page, $per_page, $filters, $sort);
+        $total_items  = $svc->count_view_by_company($company_id, $filters);
         $company_name = $svc->get_company_name($company_id);
-        $total_items = $svc->count_view_by_company($company_id, $filters);
 
-        $table = new CompanyContactsListTable($items, $total_items, $per_page, $company_id);
+        $table = new \TMT\CRM\Presentation\Admin\ListTable\CompanyContactsListTable(
+            $items,
+            $total_items,
+            $per_page,
+            $company_id
+        );
         $table->prepare_items();
 
-        // Ưu tiên render qua View::
+        // ====== Xác định mode hiển thị (list | edit) ======
+        // DÙNG 'view' cho UI để không đụng 'action' của admin-post.php
+        $view       = sanitize_key($_GET['view'] ?? 'list');
+        $is_editing = ($view === 'edit');
+        $contact_id = $is_editing ? absint($_GET['contact_id'] ?? 0) : 0;
+
+        // ====== Nạp data cho form Edit (nếu có) ======
+        $edit_contact = null;
+        if ($is_editing && $contact_id > 0) {
+            /** @var \TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface $repo */
+            $repo = \TMT\CRM\Shared\Container::get('company-contact-repo');
+            if ($repo && method_exists($repo, 'find_by_id')) {
+                $edit_contact = $repo->find_by_id($contact_id);
+                // Trước khi gọi module
+                error_log('[CRM] Screen→module edit_contact: ' . (is_object($edit_contact) ? get_class($edit_contact) : gettype($edit_contact)));
+                // Bảo toàn dữ liệu: bắt buộc thuộc đúng company
+                if (
+                    !$edit_contact instanceof \TMT\CRM\Application\DTO\CompanyContactDTO ||
+                    (int)$edit_contact->company_id !== (int)$company_id
+                ) {
+                    // Ghi log để bạn thấy đang nhận kiểu gì
+                    error_log('[CRM] edit_contact type: ' . (is_object($edit_contact) ? get_class($edit_contact) : gettype($edit_contact)));
+                    $is_editing   = false;
+                    $edit_contact = null;
+                }
+            } else {
+                $is_editing = false;
+            }
+        }
+
+        // ====== Render duy nhất qua View:: ======
         $module = 'company';
         $file   = 'contacts-manage';
-        $vars  = [
+        $vars   = [
             'company_id'   => (int) $company_id,
+            'company_name' => $company_name,
+            'total_items'  => $total_items,
             'table'        => $table,
-            'total_items' => $total_items,
-            'company_name' => $company_name
+
+            // Luôn truyền để template chủ động (đỡ if/else ở Controller)
+            'editing'      => (bool) $is_editing,
+            'contact_id'   => (int) $contact_id,
+            'edit_contact' => $edit_contact, // DTO | null
+            // Nếu form cần danh sách role hiển thị:
+            // 'roles'     => \TMT\CRM\Domain\ValueObject\CompanyContactRole::labels(),
         ];
+
         if (View::exists_admin($module . '/' . $file)) {
             View::render_admin_module($module, $file, $vars);
             return;
         }
     }
+
+
 
 
     /** Lấy state hiện tại để giữ phân trang, sort, filter khi điều hướng */
@@ -198,12 +336,14 @@ final class CompanyContactsScreen
     }
 
     /** URL mở form Sửa liên hệ (giữ tab + state hiện tại) */
-    public static function edit_url(int $company_id, int $contact_id, array $state = []): string
+    public static function edit_url(int $company_id, int $customer_id, int $contact_id, array $state = []): string
     {
         return self::url(array_merge([
             'action'     => 'edit',
             'company_id' => $company_id,
+            'customer_id' => $customer_id,
             'contact_id' => $contact_id,
+            'view'       => 'edit',
         ], $state));
     }
 

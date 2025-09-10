@@ -33,7 +33,6 @@ final class CompanyContactController
         // add_action('admin_post_nopriv_' . self::ACTION_ATTACH, [self::class, 'insert']);
 
         add_action('admin_post_' . self::ACTION_SET_PRIMARY, [self::class, 'set_primary']);
-
         add_action('admin_post_' . self::ACTION_DETACH, [self::class, 'detach']);
         add_action('admin_post_' . self::ACTION_UPDATE, [self::class, 'update']);
     }
@@ -55,7 +54,6 @@ final class CompanyContactController
         $title    = isset($_POST['title']) ? sanitize_text_field((string)$_POST['title']) : '';
         $start_date  = sanitize_text_field((string)($_POST['start_date'] ?? NULL)) ?: wp_date('Y-m-d');
         $is_primary  = !empty($_POST['is_primary']);
-        $note        = isset($_POST['note']) ? sanitize_text_field((string)$_POST['note']) : '';
 
         if ($company_id <= 0 || $customer_id <= 0) {
             self::redirect_back($company_id, 'error', __('Thiếu dữ liệu bắt buộc.', 'tmt-crm'));
@@ -155,14 +153,14 @@ final class CompanyContactController
 
     public static function update(): void
     {
-        check_admin_referer(self::ACTION_UPDATE);
-
-        $company_id = absint($_POST['company_id'] ?? 0);
-        $customer_id = absint($_POST['customer_id'] ?? 0);
-        $role       = sanitize_text_field($_POST['role'] ?? 'other');
-        $title      = sanitize_text_field($_POST['title'] ?? '');
+        $contact_id = absint($_GET['contact_id'] ?? 0);
+        check_admin_referer(self::NONCE_PREFIX_UPDATE . $contact_id);
+        $company_id = absint($_GET['company_id'] ?? 0);
+        $customer_id = absint($_GET['customer_id'] ?? 0);
+        $role       = sanitize_text_field($_GET['role'] ?? 'other');
+        $title      = sanitize_text_field($_GET['title'] ?? '');
         $is_primary = !empty($_POST['is_primary']);
-        $start_date = sanitize_text_field($_POST['start_date'] ?? '');
+        $start_date = sanitize_text_field($_GET['start_date'] ?? '');
 
         // Chuẩn hoá date: '' -> NULL
         $start_date = $start_date !== '' ? $start_date : null;
@@ -193,18 +191,18 @@ final class CompanyContactController
                 $svc->unset_primary($company_id);
             }
 
-            \TMT\CRM\Presentation\Admin\Support\AdminNoticeService::success_for_screen(
-                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::hook_suffix(),
+            AdminNoticeService::success_for_screen(
+                CompanyContactsScreen::hook_suffix(),
                 __('Đã cập nhật liên hệ.', 'tmt-crm')
             );
         } catch (\Throwable $e) {
-            \TMT\CRM\Presentation\Admin\Support\AdminNoticeService::error_for_screen(
-                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::hook_suffix(),
+            AdminNoticeService::error_for_screen(
+                CompanyContactsScreen::hook_suffix(),
                 sprintf(__('Cập nhật thất bại: %s', 'tmt-crm'), $e->getMessage())
             );
         }
 
-        wp_safe_redirect(\TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::url([
+        wp_safe_redirect(CompanyContactsScreen::url([
             'company_id' => $company_id,
         ]));
         exit;

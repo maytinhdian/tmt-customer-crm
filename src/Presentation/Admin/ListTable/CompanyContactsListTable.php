@@ -22,6 +22,7 @@ final class CompanyContactsListTable extends WP_List_Table
 {
     private const NONCE_PREFIX_DETACH = 'tmt_crm_company_contact_detach_';
     private const NONCE_PREFIX_SET_PRIMARY = 'tmt_crm_company_contact_set_primary_';
+    private const NONCE_PREFIX_UPDATE = 'tmt_crm_company_contact_update_';
 
     /** @var CompanyContactViewDTO[] */
     private array $items_view = [];
@@ -54,6 +55,7 @@ final class CompanyContactsListTable extends WP_List_Table
     {
         return [
             'cb'            => '<input type="checkbox" />',
+            'id'            => __('ID', 'tmt-crm'),
             'full_name'     => __('Họ tên', 'tmt-crm'),
             'role'          => __('Bộ phận', 'tmt-crm'),
             'position'      => __('Chức vụ', 'tmt-crm'),
@@ -63,7 +65,7 @@ final class CompanyContactsListTable extends WP_List_Table
             'owner_contact' => __('Email người phụ trách', 'tmt-crm'), // sđt/email phụ trách
             'period'        => __('Hiệu lực', 'tmt-crm'),
             'is_primary'    => __('Chính', 'tmt-crm'),
-            'actions'     => __('Thao tác', 'tmt-crm'), // 👈 cột mới
+            'actions'       => __('Thao tác', 'tmt-crm'), // 👈 cột mới
         ];
     }
 
@@ -111,7 +113,9 @@ final class CompanyContactsListTable extends WP_List_Table
     /** 🔥 Cột “Thao tác” */
     public function column_actions($item): string
     {
+        $company_id = $item->company_id;
         $customer_id = $item->customer_id;
+        $contact_id = $item->id;
 
         // Giữ state & URL quay về màn contacts
         $state    = CompanyContactsScreen::current_state();
@@ -119,9 +123,10 @@ final class CompanyContactsListTable extends WP_List_Table
 
         // 1) Sửa → qua Screen
         $edit_url = CompanyContactsScreen::edit_url(
-            $this->company_id,
+            $company_id,
             $customer_id,
-            $state
+            $contact_id,
+            $state,
         );
 
         // 2) Đặt làm chính → admin-post
@@ -169,6 +174,8 @@ final class CompanyContactsListTable extends WP_List_Table
     protected function column_default($item, $column_name): string
     {
         switch ($column_name) {
+            // case 'id':
+            // return esc_html($item->id ?? '0');
             case 'role':
                 return esc_html($item->role ?? '--');
 
@@ -199,6 +206,10 @@ final class CompanyContactsListTable extends WP_List_Table
 
             case 'is_primary':
                 return $item->is_primary ? '✓' : '—';
+            default:
+                return isset($item->$column_name)
+                    ? esc_html((string) $item->$column_name)
+                    : '';
         }
 
         return '';
