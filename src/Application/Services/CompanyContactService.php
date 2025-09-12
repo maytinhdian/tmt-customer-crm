@@ -49,7 +49,7 @@ final class CompanyContactService
         }
 
         // 3) Đảm bảo primary duy nhất (nếu yêu cầu)
-        if (!empty($dto->is_primary)) {
+        if ($dto->is_primary === 1) {
             $this->contact_repo->unset_primary($company_id);
         }
 
@@ -76,6 +76,7 @@ final class CompanyContactService
             $this->contact_repo->begin();
 
             $this->contact_repo->clear_primary($company_id);
+            
             if (!$this->contact_repo->set_primary($company_id, $customer_id)) {
                 throw new \RuntimeException(__('Không đặt được liên hệ chính.', 'tmt-crm'));
             }

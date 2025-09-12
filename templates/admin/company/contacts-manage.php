@@ -11,6 +11,7 @@ $back_url = admin_url('admin.php?page=' . CompanyScreen::PAGE_SLUG);
 $company_id   = isset($company_id) ? (int) $company_id : 0;
 $contact_id = isset($contact_id) ? (int)$contact_id : 0;
 $company_name = isset($company_name) ? (string)($company_name) : '';
+$edit_contact = isset($edit_contact) ? $edit_contact : '';
 $editing     = (isset($_GET['action']) && $_GET['action'] === 'edit');
 
 // error_log('[TMT CRM] $_GET["action"]: ' . $editing);
@@ -35,21 +36,14 @@ $editing     = (isset($_GET['action']) && $_GET['action'] === 'edit');
 
         <div>
             <h2><?php esc_html_e('Thêm liên hệ', 'tmt-crm'); ?></h2>
-
             <?php
-            /**
-             * Bạn đã upload một box form (CompanyContactsBox.php).
-             * Nếu box này là partial, chỉ việc include vào đây để tái dùng UI/logic.
-             * Box cần chấp nhận prefill company_id.
-             */
-
-            // $prefill_company_id = $company_id;
-
             // ✅ Partial: templates/admin/company/partials/add-contact-form.php
             View::render_admin_partial('company', 'add-contact-form', [
                 'company_id' => (int)$company_id,
                 'contact_id' => (int)$contact_id,
                 'editing' => (int)$editing,
+                'edit_contact' => $edit_contact,
+                'customer_label' => $customer_label,
                 'roles'      => CompanyContactRole::all(), // ví dụ gọi danh sách role
             ]);
             ?>

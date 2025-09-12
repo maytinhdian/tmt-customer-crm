@@ -42,7 +42,7 @@ final class CompanyContactController
     {
         // --- Bảo mật & quyền ---
         $company_id = isset($_POST['company_id']) ? (int)$_POST['company_id'] : 0;
-        check_admin_referer(self::NONCE_PREFIX_ATTACH . $company_id);
+        check_admin_referer(self::NONCE_PREFIX_ATTACH);
 
         if (!current_user_can(Capability::COMPANY_CREATE)) {
             wp_die(__('Bạn không có quyền thực hiện thao tác này.', 'tmt-crm'), 403);
@@ -53,10 +53,19 @@ final class CompanyContactController
         $role        = isset($_POST['role']) ? sanitize_text_field((string)$_POST['role']) : '';
         $title    = isset($_POST['title']) ? sanitize_text_field((string)$_POST['title']) : '';
         $start_date  = sanitize_text_field((string)($_POST['start_date'] ?? NULL)) ?: wp_date('Y-m-d');
-        $is_primary  = !empty($_POST['is_primary']);
+        $is_primary  = isset($_POST['is_primary']) ? 1 : null;  // ✅ chỉ 1 hoặc NULL
 
         if ($company_id <= 0 || $customer_id <= 0) {
-            self::redirect_back($company_id, 'error', __('Thiếu dữ liệu bắt buộc.', 'tmt-crm'));
+            AdminNoticeService::error_for_screen(
+                CompanyContactsScreen::hook_suffix(),
+                sprintf(
+                    /* translators: %d: relation id */
+                    __('Thiếu dữ liệu bắt buộc ( Công ty #%d ) (Liên hệ #%d)', 'tmt-crm'),
+                    $company_id,
+                    $customer_id
+                )
+            );
+            // self::redirect_back($company_id, 'error', __('Thiếu dữ liệu bắt buộc.', 'tmt-crm'));
         }
 
         // --- Build DTO từ Application\DTO ---
@@ -86,8 +95,7 @@ final class CompanyContactController
             self::redirect_back($company_id, 'success');
         } catch (\Throwable $e) {
             error_log('[TMT CRM] company-contact attach error: ' . $e->getMessage());
-            self::redirect_back($company_id, 'error', $e->getMessage());
-            AdminNoticeService::success_for_screen(
+            AdminNoticeService::error_for_screen(
                 CompanyContactsScreen::hook_suffix(),
                 sprintf(
                     /* translators: %s: error message */
@@ -95,6 +103,7 @@ final class CompanyContactController
                     esc_html($e->getMessage())
                 )
             );
+            self::redirect_back($company_id, 'error');
         }
     }
 
@@ -111,9 +120,9 @@ final class CompanyContactController
             $svc->set_primary($company_id, $customer_id);
 
             AdminNoticeService::success_for_screen(CompanyContactsScreen::hook_suffix(), __('Đã đặt liên hệ làm chính.', 'tmt-crm'));
-            self::redirect_back($company_id, 'Success ...');
+            self::redirect_back($company_id, 'success');
         } catch (\Throwable $e) {
-            AdminNoticeService::success_for_screen(
+            AdminNoticeService::error_for_screen(
                 CompanyContactsScreen::hook_suffix(),
                 sprintf(
                     /* translators: %s: error message */
@@ -121,7 +130,7 @@ final class CompanyContactController
                     esc_html($e->getMessage())
                 )
             );
-            self::redirect_back($company_id, '');
+            self::redirect_back($company_id, 'error');
         }
     }
 
@@ -137,9 +146,9 @@ final class CompanyContactController
             $svc = Container::get('company-contact-service');
             $svc->detach($company_id, $customer_id);
             AdminNoticeService::success_for_screen(CompanyContactsScreen::hook_suffix(), __('Đã gỡ liên hệ.', 'tmt-crm'));
-            self::redirect_back($company_id, 'Thành công');
+            self::redirect_back($company_id, 'success');
         } catch (\Throwable $e) {
-            AdminNoticeService::success_for_screen(
+            AdminNoticeService::error_for_screen(
                 CompanyContactsScreen::hook_suffix(),
                 sprintf(
                     /* translators: %s: error message */
@@ -147,20 +156,20 @@ final class CompanyContactController
                     esc_html($e->getMessage())
                 )
             );
-            self::redirect_back($company_id, 'Thất bại');
+            self::redirect_back($company_id, 'error');
         }
     }
 
     public static function update(): void
     {
-        $contact_id = absint($_GET['contact_id'] ?? 0);
-        check_admin_referer(self::NONCE_PREFIX_UPDATE . $contact_id);
-        $company_id = absint($_GET['company_id'] ?? 0);
-        $customer_id = absint($_GET['customer_id'] ?? 0);
-        $role       = sanitize_text_field($_GET['role'] ?? 'other');
-        $title      = sanitize_text_field($_GET['title'] ?? '');
-        $is_primary = !empty($_POST['is_primary']);
-        $start_date = sanitize_text_field($_GET['start_date'] ?? '');
+        check_admin_referer(self::NONCE_PREFIX_UPDATE);
+        $contact_id = absint($_POST['contact_id'] ?? 0);
+        $company_id = absint($_POST['company_id'] ?? 0);
+        $customer_id = absint($_POST['customer_id'] ?? 0);
+        $role       = sanitize_text_field($_POST['role'] ?? 'other');
+        $title      = sanitize_text_field($_POST['title'] ?? '');
+        $is_primary  = isset($_POST['is_primary']) ? 1 : null;  // ✅ chỉ 1 hoặc NULL
+        $start_date = sanitize_text_field($_POST['start_date'] ?? '');
 
         // Chuẩn hoá date: '' -> NULL
         $start_date = $start_date !== '' ? $start_date : null;
@@ -170,6 +179,7 @@ final class CompanyContactController
 
         try {
             $dto = new CompanyContactDTO(
+                id: $contact_id,
                 company_id: $company_id,
                 customer_id: $customer_id,
                 role: $role,
@@ -188,7 +198,7 @@ final class CompanyContactController
                 $svc->set_primary($company_id, $customer_id, get_current_user_id());
             } else {
                 // nếu đang bỏ cờ
-                $svc->unset_primary($company_id);
+                $svc->clear_primary($company_id);
             }
 
             AdminNoticeService::success_for_screen(

@@ -121,7 +121,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         $title   = isset($arr['title']) ? (string)$arr['title'] : null;
         $start_date = isset($arr['start_date']) ? trim((string)$arr['start_date']) : '';
         $end_date   = isset($arr['end_date']) ? trim((string)$arr['end_date']) : '';
-        $is_primary = !empty($arr['is_primary']) ? 1 : 0;
+        $is_primary = $arr['is_primary'];
         $note       = isset($arr['note']) ? (string)$arr['note'] : null;
         $created_by = isset($arr['created_by']) ? (int)$arr['created_by'] : (int)get_current_user_id();
 
@@ -206,11 +206,11 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         $this->db->query('START TRANSACTION');
 
         try {
-            // 2.1) Reset tất cả về 0
+            // 2.1) Reset tất cả về NULL
             $reset = $this->db->query(
                 $this->db->prepare(
                     "UPDATE {$this->t_contacts}
-                     SET is_primary = 0, updated_at = %s
+                     SET is_primary = NULL, updated_at = %s
                      WHERE company_id = %d",
                     $now,
                     $company_id
@@ -478,7 +478,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
 
         return $updated !== false;
     }
-    
+
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
     {
@@ -488,7 +488,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
             (int)$row['customer_id'],
             (string)$row['role'],
             $row['title'] ?? null,
-            (bool)$row['is_primary'],
+            (int)$row['is_primary'] ?? null,
             $row['start_date'] ?? null,
             $row['end_date'] ?? null,
             $row['note'] ?? null,

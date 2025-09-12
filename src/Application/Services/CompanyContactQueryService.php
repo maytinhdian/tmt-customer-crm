@@ -75,11 +75,11 @@ final class CompanyContactQueryService
                 position: $d->title,
                 start_date: $d->start_date,
                 end_date: $d->end_date,
-                is_primary: (bool)$d->is_primary,
+                is_primary: ($d->is_primary ?? null === 1 ? 1 : null),
 
                 owner_id: $d->created_by ? (int)$d->created_by : null,
                 owner_name: $owner?->display_name,
-                owner_phone: $owner?->phone ,    // nếu UserDTO có
+                owner_phone: $owner?->phone,    // nếu UserDTO có
                 owner_email: $owner?->email
             );
         }
