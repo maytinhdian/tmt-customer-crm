@@ -10,6 +10,7 @@ use TMT\CRM\Application\DTO\CompanyDTO;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\ListTable\CompanyListTable;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+use TMT\CRM\Presentation\Admin\Screen\CompanyNotesFilesScreen;
 
 
 defined('ABSPATH') || exit;

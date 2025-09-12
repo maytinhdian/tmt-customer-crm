@@ -10,6 +10,8 @@ use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScree
 use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Domain\Repositories\{
     CompanyRepositoryInterface,
+    FileRepositoryInterface,
+    NoteRepositoryInterface,
     CustomerRepositoryInterface,
     CompanyContactRepositoryInterface
 };
@@ -21,6 +23,8 @@ use TMT\CRM\Infrastructure\Persistence\{
     WpdbEmploymentHistoryRepository,
     WpdbSequenceRepository,
     WpdbQuoteRepository,
+    WpdbFileRepository,
+    WpdbNoteRepository,
     WpdbQuoteQueryRepository
 };
 use TMT\CRM\Application\Services\{
@@ -28,10 +32,13 @@ use TMT\CRM\Application\Services\{
     CompanyService,
     CompanyContactService,
     EmploymentHistoryService,
+    FileService,
+    NoteService,
     NumberingService,
     QuoteService,
     CompanyContactQueryService
 };
+use TMT\CRM\Presentation\Admin\Controller\NotesFilesController;
 
 final class Hooks
 {
@@ -112,6 +119,8 @@ final class Hooks
         // Bind theo Interface
         //---------------------
         Container::set(CustomerRepositoryInterface::class,       fn() => new WpdbCustomerRepository($wpdb));
+        Container::set(NoteRepositoryInterface::class,            fn() => new WpdbNoteRepository($wpdb));
+        Container::set(FileRepositoryInterface::class,            fn() => new WpdbFileRepository($wpdb));
 
 
         // -------------------------
@@ -125,6 +134,8 @@ final class Hooks
         Container::set('quote-query-repo', fn() => new WpdbQuoteQueryRepository($wpdb));
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
         Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
+        Container::set('note-repo',            fn() => new WpdbNoteRepository($wpdb));
+        Container::set('file-repo',            fn() => new WpdbFileRepository($wpdb));
 
         // ------------------------
         // Validator (đăng ký để tái sử dụng ở nhiều service/controller)
@@ -136,6 +147,8 @@ final class Hooks
 
         // Services
         Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
+        Container::set('note-service', fn() => new NoteService(Container::get('note-repo')));
+        Container::set('file-service', fn() => new FileService(Container::get('file-repo')));
         Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo')));
         Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo'), Container::get('company-contact-validator')));

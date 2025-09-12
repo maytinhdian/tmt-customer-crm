@@ -29,6 +29,11 @@ final class Installer
     private string $table_payment_allocations;
     private string $table_sequences;
 
+    //Bảng mới: File/Note 
+    private string $table_notes;
+    private string $table_files;
+
+
     private function __construct(wpdb $db)
     {
         $this->db = $db;
@@ -49,6 +54,8 @@ final class Installer
         $this->table_payments             = $db->prefix . 'tmt_crm_payments';
         $this->table_payment_allocations  = $db->prefix . 'tmt_crm_payment_allocations';
         $this->table_sequences            = $db->prefix . 'tmt_crm_sequences';
+        $this->table_notes                = $db->prefix . 'tmt_crm_notes';
+        $this->table_files                = $db->prefix . 'tmt_crm_files';
     }
 
     /**
@@ -240,6 +247,43 @@ final class Installer
         ) {$collate};";
 
         \dbDelta($sql);
+    }
+
+    /*******Create Note/File table of MODULE NOTE/FILES */
+    private function create_or_update_note_tables(): void
+    {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        $collate = $this->db->get_charset_collate();
+
+        // Notes
+        $notes = "CREATE TABLE {$this->table_notes} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id BIGINT UNSIGNED NOT NULL,
+            content LONGTEXT NOT NULL,
+            created_by BIGINT UNSIGNED NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_entity (entity_type, entity_id)
+        ) {$collate};";
+
+        \dbDelta($notes);
+
+        // Files (tận dụng Media Library -> attachment_id)
+        $files = "CREATE TABLE {$this->table_files} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id BIGINT UNSIGNED NOT NULL,
+            attachment_id BIGINT UNSIGNED NOT NULL,
+            uploaded_by BIGINT UNSIGNED NOT NULL,
+            uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_entity (entity_type, entity_id),
+            KEY idx_attachment (attachment_id)
+        ) {$collate};";
+
+        \dbDelta($files);
     }
 
     // ======================= PHẦN MỚI: QUOTE / ORDER / INVOICE / PAYMENT =======================
@@ -457,6 +501,10 @@ final class Installer
 
         \dbDelta($alloc);
     }
+
+
+
+
 
     /** (Tuỳ chọn) Drop bảng cũ – nếu từng dùng tên bảng khác */
     private function drop_legacy_table(): void

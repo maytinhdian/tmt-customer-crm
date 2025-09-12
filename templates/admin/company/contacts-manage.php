@@ -13,8 +13,8 @@ $contact_id = isset($contact_id) ? (int)$contact_id : 0;
 $company_name = isset($company_name) ? (string)($company_name) : '';
 $editing     = (isset($_GET['action']) && $_GET['action'] === 'edit');
 
-error_log('[TMT CRM] $_GET["action"]: ' . $editing);
-error_log('[TMT CRM] company_id: ' . $company_id);
+// error_log('[TMT CRM] $_GET["action"]: ' . $editing);
+// error_log('[TMT CRM] company_id: ' . $company_id);
 ?>
 <div class="wrap">
     <h1 class="wp-heading-inline">
@@ -43,7 +43,7 @@ error_log('[TMT CRM] company_id: ' . $company_id);
              * Box cần chấp nhận prefill company_id.
              */
 
-            $prefill_company_id = $company_id;
+            // $prefill_company_id = $company_id;
 
             // ✅ Partial: templates/admin/company/partials/add-contact-form.php
             View::render_admin_partial('company', 'add-contact-form', [

@@ -47,11 +47,11 @@ final class View
 
         if ($return) {
             ob_start();
-            extract($vars, EXTR_SKIP);
+            extract($vars, EXTR_OVERWRITE);
             include $abs;
             return (string) ob_get_clean();
         }
-        extract($vars, EXTR_SKIP);
+        extract($vars, EXTR_OVERWRITE);
         include $abs;
         return null;
     }

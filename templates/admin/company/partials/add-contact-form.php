@@ -15,6 +15,7 @@ use TMT\CRM\Application\DTO\CompanyContactDTO;
 
 $company_id   = isset($company_id) ? (int) $company_id : 0;
 $editing      = isset($editing) ? (bool) $editing : false;
+$contact_id   = isset($contact_id) ? (int) $contact_id : 0;  // 👈 THÊM DÒNG NÀY
 $edit_contact = isset($edit_contact)  ? $edit_contact : null;
 // Đầu partial
 if (isset($edit_contact)) {
