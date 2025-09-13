@@ -12,21 +12,16 @@ use TMT\CRM\Presentation\Admin\ListTable\CompanyListTable;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Presentation\Admin\Screen\CompanyNotesFilesScreen;
 
-
 defined('ABSPATH') || exit;
 
-/**
- * Màn hình quản trị: Công ty (Companies)
- */
 final class CompanyScreen
 {
-
     private static ?string $hook_suffix = null;
 
     /** Slug trang companies trên admin.php?page=... */
     public const PAGE_SLUG = 'tmt-crm-companies';
 
-    /** Tên action cho admin-post */
+    /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
     public const ACTION_SAVE   = 'tmt_crm_company_save';
     public const ACTION_DELETE = 'tmt_crm_company_delete';
 
@@ -38,23 +33,18 @@ final class CompanyScreen
     {
         self::$hook_suffix = $hook;
     }
+
     /** Trả về hook_suffix để AdminNoticeService scope đúng screen */
     public static function hook_suffix(): string
     {
         if (!empty(self::$hook_suffix)) {
             return self::$hook_suffix;
         }
-
         // fallback nếu chưa được set (ít xảy ra)
         return 'crm_page_' . self::PAGE_SLUG;
     }
 
-    /** Đăng ký các handler admin_post (submit form) */
-    public static function boot(): void
-    {
-        add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
-        add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
-    }
+    /** (ĐÃ GỠ) admin_post handlers đã tách sang CompanyController */
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
     public static function on_load_companies(): void
@@ -84,7 +74,6 @@ final class CompanyScreen
 
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
-        // ⚠️ Đổi đúng ID theo log current_screen của bạn
         if ($screen->id === self::$hook_suffix) {
             $hidden = array_unique(array_merge($hidden, ['id', 'owner', 'representer', 'created_at']));
         }
@@ -129,7 +118,7 @@ final class CompanyScreen
         self::render_list();
     }
 
-    /** LIST VIEW: dùng CompanyListTable + bulk delete */
+    /** LIST VIEW: dùng CompanyListTable + bulk delete (giữ nguyên flow hiện tại) */
     public static function render_list(): void
     {
         $table = new CompanyListTable();
@@ -138,7 +127,6 @@ final class CompanyScreen
         if (current_user_can(Capability::COMPANY_DELETE) && $table->current_action() === 'bulk-delete') {
             check_admin_referer('bulk-companies');
 
-            // Giống CustomerListTable: CompanyListTable nên có method này.
             $ids = method_exists($table, 'get_selected_ids_for_bulk_delete')
                 ? $table->get_selected_ids_for_bulk_delete()
                 : array_map('absint', (array)($_POST['ids'] ?? []));
@@ -148,26 +136,18 @@ final class CompanyScreen
                 foreach ($ids as $id) {
                     try {
                         $svc->delete((int)$id);
-                        // ✅ Dùng notice theo Screen
-                        AdminNoticeService::success_for_screen(
-                            self::$hook_suffix,
-                            sprintf(
-                                /* translators: %d = số bản ghi đã xóa */
-                                __('Đã xóa %d công ty.', 'tmt-crm'),
-                                count($ids)
-                            )
-                        );
                     } catch (\Throwable $e) {
                         if (defined('WP_DEBUG') && WP_DEBUG) {
-                            AdminNoticeService::error_for_screen(
-                                self::$hook_suffix,
-                                $e->getMessage()
-                            );
+                            AdminNoticeService::error_for_screen(self::$hook_suffix, $e->getMessage());
                             error_log('[tmt-crm] bulk delete companies failed id=' . $id . ' msg=' . $e->getMessage());
                             self::redirect(self::url(['error' => 1]));
                         }
                     }
                 }
+                AdminNoticeService::success_for_screen(
+                    self::$hook_suffix,
+                    sprintf(__('Đã xóa %d công ty.', 'tmt-crm'), count($ids))
+                );
                 wp_safe_redirect(self::url(['deleted' => count($ids)]));
                 exit;
             }
@@ -175,20 +155,6 @@ final class CompanyScreen
 
         // Nạp dữ liệu + phân trang
         $table->prepare_items();
-
-        // // Notices
-        // if (isset($_GET['created'])) {
-        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã tạo công ty.', 'tmt-crm') . '</p></div>';
-        // }
-        // if (isset($_GET['updated'])) {
-        //     echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã cập nhật công ty.', 'tmt-crm') . '</p></div>';
-        // }
-        // if (isset($_GET['deleted'])) {
-        //     echo '<div class="notice notice-success is-dismissible"><p>' . sprintf(esc_html__('Đã xoá %s công ty.', 'tmt-crm'), (int) $_GET['deleted']) . '</p></div>';
-        // }
-        // if (isset($_GET['error']) && !empty($_GET['msg'])) {
-        //     echo '<div class="notice notice-error"><p>' . esc_html(wp_unslash((string) $_GET['msg'])) . '</p></div>';
-        // }
 
         $add_url = self::url(['action' => 'add']); ?>
         <div class="wrap">
@@ -225,118 +191,10 @@ final class CompanyScreen
             }
         }
 
-        // ✅ GỌI BẰNG VIEW:: thay vì include trực tiếp
         View::render_admin_module('company', 'company-form', [
             'company'    => $company,
             'nonce_name' => $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create',
         ]);
-    }
-
-    /** Handler: Save (Create/Update) */
-    public static function  handle_save(): void
-    {
-        $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
-
-        // Phân quyền theo ngữ cảnh: tạo hay cập nhật
-        if ($id > 0) {
-            self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
-        } else {
-            self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
-        }
-
-        // Kiểm nonce
-        $nonce_name = $id > 0 ? 'tmt_crm_company_update_' . $id : 'tmt_crm_company_create';
-        if (!isset($_POST['_wpnonce']) || !wp_verify_nonce((string) $_POST['_wpnonce'], $nonce_name)) {
-            wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
-        }
-
-        // Sanitize input
-        $owner_id = isset($_POST['owner_id'])
-            ? absint(wp_unslash($_POST['owner_id']))
-            : 0;
-        $owner_id = $owner_id > 0 ? $owner_id : null;
-
-        // Nếu "representer" là tên người đại diện (text)
-        $representer = isset($_POST['representer'])
-            ? sanitize_text_field(wp_unslash($_POST['representer']))
-            : '';
-        $representer = ($representer !== '') ? $representer : null;
-        // Sanitize input
-        $data = [
-            'name'     => sanitize_text_field(wp_unslash($_POST['name'] ?? '')),
-            'tax_code' => sanitize_text_field(wp_unslash($_POST['tax_code'] ?? '')),
-            'address'  => sanitize_textarea_field(wp_unslash($_POST['address'] ?? '')),
-            'phone'    => sanitize_text_field(wp_unslash($_POST['phone'] ?? '')),
-            'email'    => sanitize_email(wp_unslash($_POST['email'] ?? '')),
-            'website'  => esc_url_raw(wp_unslash($_POST['website'] ?? '')),
-            'note'     => sanitize_textarea_field(wp_unslash($_POST['note'] ?? '')),
-            'owner_id'    => $owner_id,
-            'representer' => $representer,
-        ];
-
-        $svc = Container::get('company-service');
-
-        try {
-            if ($id > 0) {
-                $svc->update($id, $data);
-                AdminNoticeService::success_for_screen(
-                    self::hook_suffix(),
-                    __('Đã cập nhật công ty.', 'tmt-crm')
-                );
-            } else {
-                $new_id = $svc->create($data);
-                AdminNoticeService::success_for_screen(
-                    self::hook_suffix(),
-                    __('Tạo mới công ty thành công.', 'tmt-crm')
-                );
-            }
-            self::redirect(self::url());
-            exit;
-        } catch (\Throwable $e) {
-            AdminNoticeService::error_for_screen(
-                self::hook_suffix(),
-                sprintf(
-                    /* translators: %s: error message */
-                    __('Thao tác thất bại: %s', 'tmt-crm'),
-                    esc_html($e->getMessage())
-                )
-            );
-        }
-    }
-
-    /** Handler: Delete (single) */
-    public static function handle_delete(): void
-    {
-        self::ensure_capability(Capability::COMPANY_DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
-
-        $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
-        if ($id <= 0) {
-            wp_die(__('Thiếu ID.', 'tmt-crm'));
-        }
-
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce((string) $_GET['_wpnonce'], 'tmt_crm_company_delete_' . $id)) {
-            wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
-        }
-
-        $svc = Container::get('company-service');
-
-        try {
-            $svc->delete($id);
-            AdminNoticeService::success_for_screen(
-                self::hook_suffix(),
-                __('Xóa công ty thành công.', 'tmt-crm')
-            );
-            self::redirect(self::url());
-        } catch (\Throwable $e) {
-            AdminNoticeService::error_for_screen(
-                self::hook_suffix(),
-                sprintf(
-                    /* translators: %s: error message */
-                    __('Xóa thất bại: %s', 'tmt-crm'),
-                    esc_html($e->getMessage())
-                )
-            );
-        }
     }
 
     /* ===================== Helpers ===================== */
