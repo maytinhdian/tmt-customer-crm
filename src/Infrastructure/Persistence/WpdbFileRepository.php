@@ -14,7 +14,7 @@ final class WpdbFileRepository implements FileRepositoryInterface
 
     public function __construct(private wpdb $db)
     {
-        $this->table = $this->db->prefix . 'crm_files';
+        $this->table = $this->db->prefix . 'tmt_crm_files';
     }
 
     public function attach(FileDTO $file): int

@@ -14,7 +14,7 @@ final class WpdbNoteRepository implements NoteRepositoryInterface
 
     public function __construct(private wpdb $db)
     {
-        $this->table = $this->db->prefix . 'crm_notes';
+        $this->table = $this->db->prefix . 'tmt_crm_notes';
     }
 
     public function add(NoteDTO $note): int

@@ -120,8 +120,7 @@ final class CompanyContactsListTable extends WP_List_Table
         // Quy ước 1 | NULL
         $is_primary  = is_object($item) ? $item->is_primary : null;
 
-        $is_primary_bool = ($is_primary === 1);
-
+ 
         // Giữ state & URL quay về màn contacts
         $state    = CompanyContactsScreen::current_state();
         $back_url = CompanyContactsScreen::back_url($this->company_id, $state);

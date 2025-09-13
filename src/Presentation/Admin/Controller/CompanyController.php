@@ -16,6 +16,7 @@ final class CompanyController
     {
         add_action('admin_post_' . CompanyScreen::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . CompanyScreen::ACTION_DELETE, [self::class, 'handle_delete']);
+        add_action('admin_post_' . CompanyScreen::ACTION_BULK_DELETE, [self::class, 'handle_bulk_delete']);
     }
 
     /** Handler: Save (Create/Update) */
@@ -115,6 +116,44 @@ final class CompanyController
             );
             self::redirect(self::url(['error' => 1]));
         }
+    }
+    
+    /** Bulk delete nhiều công ty từ list table */
+    public static function handle_bulk_delete(): void
+    {
+        self::ensure_capability(Capability::COMPANY_DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
+
+        check_admin_referer('bulk-companies');
+
+        $ids = array_map('absint', (array)($_POST['ids'] ?? []));
+        $ids = array_filter($ids, fn($v) => $v > 0);
+
+        if (empty($ids)) {
+            wp_safe_redirect(self::url(['deleted' => 0]));
+            exit;
+        }
+
+        $svc = Container::get('company-service');
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            try {
+                $svc->delete((int)$id);
+                $deleted++;
+            } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[tmt-crm] bulk delete failed id=' . $id . ' msg=' . $e->getMessage());
+                }
+            }
+        }
+
+        AdminNoticeService::success_for_screen(
+            CompanyScreen::hook_suffix(),
+            sprintf(__('Đã xóa %d công ty.', 'tmt-crm'), $deleted)
+        );
+
+        wp_safe_redirect(self::url(['deleted' => $deleted]));
+        exit;
     }
 
     // ================= Helpers =================

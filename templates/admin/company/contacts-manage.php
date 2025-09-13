@@ -43,7 +43,7 @@ $editing     = (isset($_GET['action']) && $_GET['action'] === 'edit');
                 'contact_id' => (int)$contact_id,
                 'editing' => (int)$editing,
                 'edit_contact' => $edit_contact,
-                'customer_label' => $customer_label,
+                // 'customer_label' => $customer_label,
                 'roles'      => CompanyContactRole::all(), // ví dụ gọi danh sách role
             ]);
             ?>

@@ -83,6 +83,10 @@ final class Installer
         $self->create_or_update_invoices_tables();
         $self->create_or_update_payments_tables();
 
+        // ===== BỔ SUNG MỚI: NOTE/FILE =====
+        $self->create_or_update_note_tables();
+
+
         // $self->drop_legacy_table(); // ⚠️ cẩn trọng: chỉ dùng nếu chắc chắn cần xoá bảng cũ
 
         update_option(self::OPTION_DB_VERSION, $targetVersion, true);

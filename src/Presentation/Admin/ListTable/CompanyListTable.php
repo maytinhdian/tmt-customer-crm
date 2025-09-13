@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use TMT\CRM\Shared\Container;
+use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Application\DTO\CompanyContactDTO;
 use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
@@ -156,7 +157,7 @@ final class CompanyListTable extends \WP_List_Table
         if ($name && ($link = get_edit_user_link($oid))) {
             return sprintf('<a href="%s">%s</a>', esc_url($link), esc_html($name));
         }
-        
+
         return $name ? esc_html($name) : sprintf('#%d', $oid);
     }
 
@@ -246,12 +247,12 @@ final class CompanyListTable extends \WP_List_Table
         // 2) Hành động theo quyền
         $manage_url = add_query_arg(
             [
-                'page'       => CompanyContactsScreen::PAGE_SLUG,
-                'company_id' => $company_id,
+                'page'       => CompanyScreen::PAGE_SLUG,
+                'tab'        => 'contacts',
+                'company_id' => (int) $company_id,
             ],
             admin_url('admin.php')
         );
-
         // Nếu có flow “tạo khách hàng mới rồi gắn vào công ty”
         $add_url = add_query_arg(
             [

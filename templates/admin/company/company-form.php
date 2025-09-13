@@ -139,9 +139,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
     <?php
     // Chỉ hiển thị box vai trò khi đã có company_id (trang Edit).
     if (!empty($company?->id)) {
-        // \TMT\CRM\Presentation\Admin\Company\Form\CompanyContactsBox::render((int)$company->id);
-        echo $company->id;
-        // \TMT\CRM\Presentation\Admin\Company\Form\CompanyRolesBox::render((int)$company->id);
+        // echo $company->id;
     } else {
         echo '<p class="description">Lưu công ty trước, sau đó bạn có thể gán liên hệ theo vai trò.</p>';
     }

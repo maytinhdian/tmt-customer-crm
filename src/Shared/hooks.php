@@ -7,6 +7,7 @@ use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Application\Validation\CompanyContactValidator;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
+use TMT\CRM\Presentation\Admin\Controller\{CompanyController, NotesFilesController};
 use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Domain\Repositories\{
     CompanyRepositoryInterface,
@@ -38,7 +39,7 @@ use TMT\CRM\Application\Services\{
     QuoteService,
     CompanyContactQueryService
 };
-use TMT\CRM\Presentation\Admin\Controller\NotesFilesController;
+
 
 final class Hooks
 {
@@ -56,7 +57,7 @@ final class Hooks
 
 
         add_action('admin_init', [CustomerScreen::class, 'boot']);
-        add_action('admin_init', [CompanyScreen::class, 'boot']);
+        // add_action('admin_init', [CompanyScreen::class, 'boot']);
         add_action('admin_init', [QuoteScreen::class, 'boot']);
         add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
 
@@ -64,6 +65,12 @@ final class Hooks
         add_action('admin_init', function () {
             // error_log('[CRM Hooks] CompanyContactController::register() is ready...');
             CompanyContactController::register();
+        });
+        add_action('admin_init', function () {
+            CompanyController::register();
+        });
+        add_action('admin_init', function () {
+            NotesFilesController::register();
         });
 
         //Notice Services
@@ -79,13 +86,6 @@ final class Hooks
         \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
-
-
-        // // Admin-post handlers (chạy khi submit form)
-        // add_action('admin_post_tmt_crm_company_add_contact',    [CompanyContactsBox::class, 'handle_add_contact']);
-        // add_action('admin_post_tmt_crm_company_end_contact',    [CompanyContactsBox::class, 'handle_end_contact']);
-        // add_action('admin_post_tmt_crm_company_set_primary',    [CompanyContactsBox::class, 'handle_set_primary']);
-        // add_action('admin_post_tmt_crm_company_delete_contact', [CompanyContactsBox::class, 'handle_delete_contact']);
 
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);

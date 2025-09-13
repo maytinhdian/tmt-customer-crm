@@ -10,7 +10,7 @@ use TMT\CRM\Shared\Container;
 final class CompanyNotesFilesScreen
 {
     public const MODULE   = 'notes-files';
-    public const TEMPLATE = 'company-tab';
+    public const TEMPLATE = 'company-tabs';
 
     public static function render(int $company_id): void
     {

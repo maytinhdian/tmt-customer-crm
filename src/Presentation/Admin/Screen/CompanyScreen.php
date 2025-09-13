@@ -24,6 +24,16 @@ final class CompanyScreen
     /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
     public const ACTION_SAVE   = 'tmt_crm_company_save';
     public const ACTION_DELETE = 'tmt_crm_company_delete';
+    public const ACTION_BULK_DELETE = 'tmt_crm_company_bulk_delete';
+
+
+    private const TABS = [
+        'overview'    => 'Tổng quan',
+        'contacts'    => 'Liên hệ',
+        'notes-files' => 'Ghi chú/Tài liệu',
+        // thêm các tab khác nếu cần...
+    ];
+
 
     /** Tên option Screen Options: per-page */
     public const OPTION_PER_PAGE = 'tmt_crm_companies_per_page';
@@ -101,59 +111,45 @@ final class CompanyScreen
         self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền truy cập danh sách công ty.', 'tmt-crm'));
 
         $action = isset($_GET['action']) ? sanitize_key((string) $_GET['action']) : 'list';
+        switch ($action) {
+            case 'add':
+                self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
+                self::render_form();
+                break;
 
-        if ($action === 'add') {
-            self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
-            self::render_form();
-            return;
+            case 'edit':
+                self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
+                $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
+                self::render_form($id);
+                break;
+
+            case 'list':
+            default:
+                // Kể từ đây chuyển qua render theo tab
+                $tab        = sanitize_key($_GET['tab'] ?? '');
+                $company_id = isset($_GET['company_id']) ? absint($_GET['company_id']) : 0;
+
+                // Ép URL luôn có tab=overview cho chuẩn
+                if ($tab === '') {
+                    wp_safe_redirect(self::tab_url('overview'));
+                    exit;
+                }
+
+                echo '<div class="wrap">';
+                echo '<h1 class="wp-heading-inline">' . esc_html__('Danh sách công ty', 'tmt-crm') . '</h1>';
+
+                self::render_tab_nav($company_id, $tab);
+                self::render_tab_content($company_id, $tab);
+
+                echo '</div>';
+                return;
         }
-
-        if ($action === 'edit') {
-            self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
-            $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
-            self::render_form($id);
-            return;
-        }
-
-        self::render_list();
     }
-
     /** LIST VIEW: dùng CompanyListTable + bulk delete (giữ nguyên flow hiện tại) */
     public static function render_list(): void
     {
-        $table = new CompanyListTable();
-
-        // Bulk delete (nếu list-table submit)
-        if (current_user_can(Capability::COMPANY_DELETE) && $table->current_action() === 'bulk-delete') {
-            check_admin_referer('bulk-companies');
-
-            $ids = method_exists($table, 'get_selected_ids_for_bulk_delete')
-                ? $table->get_selected_ids_for_bulk_delete()
-                : array_map('absint', (array)($_POST['ids'] ?? []));
-
-            if (!empty($ids)) {
-                $svc = Container::get('company-service');
-                foreach ($ids as $id) {
-                    try {
-                        $svc->delete((int)$id);
-                    } catch (\Throwable $e) {
-                        if (defined('WP_DEBUG') && WP_DEBUG) {
-                            AdminNoticeService::error_for_screen(self::$hook_suffix, $e->getMessage());
-                            error_log('[tmt-crm] bulk delete companies failed id=' . $id . ' msg=' . $e->getMessage());
-                            self::redirect(self::url(['error' => 1]));
-                        }
-                    }
-                }
-                AdminNoticeService::success_for_screen(
-                    self::$hook_suffix,
-                    sprintf(__('Đã xóa %d công ty.', 'tmt-crm'), count($ids))
-                );
-                wp_safe_redirect(self::url(['deleted' => count($ids)]));
-                exit;
-            }
-        }
-
         // Nạp dữ liệu + phân trang
+        $table = new CompanyListTable();
         $table->prepare_items();
 
         $add_url = self::url(['action' => 'add']); ?>
@@ -173,7 +169,7 @@ final class CompanyScreen
                 ?>
             </form>
         </div>
-<?php
+    <?php
     }
 
     /** FORM VIEW: Add/Edit */
@@ -199,6 +195,71 @@ final class CompanyScreen
 
     /* ===================== Helpers ===================== */
 
+    private static function render_tab_nav(int $company_id, string $active_tab): void
+    {
+        echo '<h2 class="nav-tab-wrapper" style="margin-top:12px">';
+        foreach (self::TABS as $slug => $label) {
+            $class = ($slug === $active_tab) ? 'nav-tab nav-tab-active' : 'nav-tab';
+            $url   = self::tab_url($slug, ['company_id' => $company_id]);
+            printf(
+                '<a href="%s" class="%s">%s</a>',
+                esc_url($url),
+                esc_attr($class),
+                esc_html($label)
+            );
+        }
+        echo '</h2>';
+    }
+
+    private static function render_tab_content(int $company_id, string $tab): void
+    {
+        switch ($tab) {
+            case 'contacts':
+                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::render_manage($company_id);
+                break;
+
+            case 'notes-files':
+                // Sprint 1: Notes/Files tab
+                \TMT\CRM\Presentation\Admin\Screen\CompanyNotesFilesScreen::render($company_id);
+                break;
+
+            case 'overview':
+            default:
+                // Dời list vào tab "Tổng quan"
+                self::render_list_inner();
+                break;
+        }
+    }
+    /** Chỉ in phần nội dung list (không bọc <div class="wrap">) */
+    private static function render_list_inner(): void
+    {
+        $table = new CompanyListTable();
+        $table->prepare_items();
+
+        $add_url = self::url(['action' => 'add']);
+
+        // Header dòng trên tabs (tuỳ ý giữ/đổi)
+        echo '<div style="margin:12px 0;">';
+        if (current_user_can(Capability::COMPANY_CREATE)) {
+            printf(
+                '<a href="%s" class="page-title-action">%s</a>',
+                esc_url($add_url),
+                esc_html__('Thêm mới', 'tmt-crm')
+            );
+        }
+        echo '</div>';
+    ?>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_BULK_DELETE); ?>" />
+            <?php
+            $table->search_box(__('Tìm kiếm công ty', 'tmt-crm'), 'company');
+            $table->display();
+            wp_nonce_field('bulk-companies');
+            ?>
+        </form>
+<?php
+    }
+
     /** Build URL admin.php?page=tmt-crm-companies + $args */
     private static function url(array $args = []): string
     {
@@ -220,5 +281,25 @@ final class CompanyScreen
     {
         wp_safe_redirect($url);
         exit;
+    }
+    /** Build base URL admin.php?page=... + args */
+    private static function base_url(array $args = []): string
+    {
+        $base = admin_url('admin.php');
+        $args = array_merge(['page' => self::PAGE_SLUG], $args);
+        return add_query_arg($args, $base);
+    }
+
+    /** Build URL chuyển tab, giữ state hiện tại */
+    private static function tab_url(string $tab, array $args = []): string
+    {
+        $keep = [
+            'company_id' => isset($_GET['company_id']) ? absint($_GET['company_id']) : null,
+            'paged'      => isset($_GET['paged']) ? absint($_GET['paged']) : null,
+            's'          => isset($_GET['s']) ? sanitize_text_field($_GET['s']) : null,
+        ];
+        $keep = array_filter($keep, fn($v) => $v !== null && $v !== '');
+
+        return self::base_url(array_merge($keep, $args, ['tab' => $tab]));
     }
 }
