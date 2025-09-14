@@ -35,10 +35,12 @@ $editing     = (isset($_GET['action']) && $_GET['action'] === 'edit');
         </div>
 
         <div>
-            <h2><?php esc_html_e('Thêm liên hệ', 'tmt-crm'); ?></h2>
+            <h2><?php 
+            // esc_html_e('Thêm liên hệ', 'tmt-crm'); 
+            ?></h2>
             <?php
-            // ✅ Partial: templates/admin/company/partials/add-contact-form.php
-            View::render_admin_partial('company', 'add-contact-form', [
+            // ✅ Partial: templates/admin/company/partials/contact-form.php
+            View::render_admin_partial('company', 'contact-form', [
                 'company_id' => (int)$company_id,
                 'contact_id' => (int)$contact_id,
                 'editing' => (int)$editing,

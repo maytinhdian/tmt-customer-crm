@@ -198,7 +198,7 @@ final class CompanyContactController
                 $svc->set_primary($company_id, $customer_id, get_current_user_id());
             } else {
                 // nếu đang bỏ cờ
-                $svc->clear_primary($company_id);
+                $svc->unset_primary($company_id);
             }
 
             AdminNoticeService::success_for_screen(

@@ -28,7 +28,7 @@ final class CompanyScreen
 
 
     private const TABS = [
-        'overview'    => 'Tổng quan',
+        'overview'    => 'Danh sách công ty',
         'contacts'    => 'Liên hệ',
         'notes-files' => 'Ghi chú/Tài liệu',
         // thêm các tab khác nếu cần...
@@ -53,8 +53,6 @@ final class CompanyScreen
         // fallback nếu chưa được set (ít xảy ra)
         return 'crm_page_' . self::PAGE_SLUG;
     }
-
-    /** (ĐÃ GỠ) admin_post handlers đã tách sang CompanyController */
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
     public static function on_load_companies(): void
@@ -136,7 +134,7 @@ final class CompanyScreen
                 }
 
                 echo '<div class="wrap">';
-                echo '<h1 class="wp-heading-inline">' . esc_html__('Danh sách công ty', 'tmt-crm') . '</h1>';
+                // echo '<h1 class="wp-heading-inline">' . esc_html__('Danh sách công ty', 'tmt-crm') . '</h1>';
 
                 self::render_tab_nav($company_id, $tab);
                 self::render_tab_content($company_id, $tab);
@@ -252,20 +250,65 @@ final class CompanyScreen
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION_BULK_DELETE); ?>" />
             <?php
+            wp_nonce_field('bulk-companies');
             $table->search_box(__('Tìm kiếm công ty', 'tmt-crm'), 'company');
             $table->display();
-            wp_nonce_field('bulk-companies');
             ?>
         </form>
 <?php
     }
-
-    /** Build URL admin.php?page=tmt-crm-companies + $args */
-    private static function url(array $args = []): string
+    /** Lấy state hiện tại để giữ phân trang, sort, filter khi điều hướng */
+    public static function current_state(): array
     {
-        $base = admin_url('admin.php');
-        $args = array_merge(['page' => self::PAGE_SLUG], $args);
-        return add_query_arg($args, $base);
+        $keep = ['paged', 'orderby', 'order', 'role', 'active_only', 's', 'per_page'];
+        $state = [];
+
+        foreach ($keep as $k) {
+            if (!isset($_GET[$k])) {
+                continue;
+            }
+            // active_only có thể là boolean/string; còn lại xử lý về string an toàn
+            if ($k === 'active_only') {
+                $state[$k] = (int) !! $_GET[$k];
+                continue;
+            }
+            $val = wp_unslash($_GET[$k]);
+            $state[$k] = is_array($val)
+                ? array_map('sanitize_text_field', $val)
+                : sanitize_text_field((string) $val);
+        }
+
+        return $state;
+    }
+
+    /** URL mở form Sửa liên hệ (giữ tab + state hiện tại) */
+    public static function edit_url(int $company_id, int $customer_id, int $contact_id, array $state = []): string
+    {
+        return self::url(array_merge([
+            'tab'         => 'contacts',
+            'action'      => 'edit',
+            'company_id'  => (int) $company_id,
+            'customer_id' => (int) $customer_id,
+            'contact_id'  => (int) $contact_id,
+            'view'        => 'edit',
+        ], $state));
+    }
+
+    /** URL quay lại danh sách contacts (đã giữ state) */
+    public static function back_url(int $company_id, array $extra = []): string
+    {
+        return self::url(array_merge([
+            'tab'        => 'contacts',
+            'company_id' => (int) $company_id,
+        ], $extra, self::current_state()));
+    }
+
+    /** Helper build URL (giống CompanyScreen::url) */
+    public static function url(array $args = []): string
+    {
+        $base = ['page' => self::PAGE_SLUG];
+        $args = array_merge($base, $args);
+        return add_query_arg($args, admin_url('admin.php'));
     }
 
     /** Kiểm tra quyền, nếu không đủ -> die với thông báo */
@@ -276,12 +319,6 @@ final class CompanyScreen
         }
     }
 
-    /** Redirect & exit */
-    private static function redirect(string $url): void
-    {
-        wp_safe_redirect($url);
-        exit;
-    }
     /** Build base URL admin.php?page=... + args */
     private static function base_url(array $args = []): string
     {

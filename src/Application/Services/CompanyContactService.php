@@ -110,6 +110,9 @@ final class CompanyContactService
         $this->contact_repo->detach($company_id, $customer_id, $end_date);
     }
 
+    public function unset_primary(int $company_id):void{
+        $this->contact_repo->unset_primary($company_id);
+    }
     // Nếu muốn xoá cứng:
     public function delete(int $customer_id): void
     {

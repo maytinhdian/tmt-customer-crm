@@ -7,7 +7,7 @@ use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Application\Validation\CompanyContactValidator;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
-use TMT\CRM\Presentation\Admin\Controller\{CompanyController, NotesFilesController};
+use TMT\CRM\Presentation\Admin\Controller\{CompanyController,CustomerController, NotesFilesController};
 use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Domain\Repositories\{
     CompanyRepositoryInterface,
@@ -68,6 +68,9 @@ final class Hooks
         });
         add_action('admin_init', function () {
             CompanyController::register();
+        });
+         add_action('admin_init', function () {
+            CustomerController::register();
         });
         add_action('admin_init', function () {
             NotesFilesController::register();

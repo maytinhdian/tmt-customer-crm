@@ -12,9 +12,6 @@ $id        = $is_edit ? (int)$customer->id : 0;
 $title_txt = $is_edit ? __('Chỉnh sửa khách hàng', 'tmt-crm') : __('Thêm khách hàng mới', 'tmt-crm');
 $nonce     = $is_edit ? 'tmt_crm_customer_update_' . $id : 'tmt_crm_customer_create';
 
-// $owner_choices     = isset($owner_choices) && is_array($owner_choices) ? $owner_choices : [];
-
-
 // Helper lấy field an toàn
 $val = function ($prop, $default = '') use ($customer) {
     if (!$customer) return $default;

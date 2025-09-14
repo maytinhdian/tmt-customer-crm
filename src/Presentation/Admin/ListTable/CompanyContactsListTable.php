@@ -6,7 +6,8 @@ namespace TMT\CRM\Presentation\Admin\ListTable;
 
 use WP_List_Table;
 use TMT\CRM\Application\DTO\CompanyContactViewDTO;
-use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
+// use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
+use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Presentation\Admin\Support\AdminPostHelper;
 
 if (!class_exists('\WP_List_Table')) {
@@ -120,18 +121,34 @@ final class CompanyContactsListTable extends WP_List_Table
         // Quy ước 1 | NULL
         $is_primary  = is_object($item) ? $item->is_primary : null;
 
- 
-        // Giữ state & URL quay về màn contacts
-        $state    = CompanyContactsScreen::current_state();
-        $back_url = CompanyContactsScreen::back_url($this->company_id, $state);
 
-        // 1) Sửa → qua Screen
-        $edit_url = CompanyContactsScreen::edit_url(
-            $company_id,
-            $customer_id,
-            $contact_id,
-            $state,
-        );
+        // // Giữ state & URL quay về màn contacts
+        // $state    = CompanyContactsScreen::current_state();
+        // $back_url = CompanyContactsScreen::back_url($this->company_id, $state);
+
+        // Giữ state & URL quay về ngay tab Liên hệ của CompanyScreen
+        $state    = CompanyScreen::current_state();
+        $back_url = CompanyScreen::url(array_merge($state, [
+            'tab'        => 'contacts',
+            'company_id' => (int) $this->company_id,
+        ]));
+
+        // // 1) Sửa → qua Screen
+        // $edit_url = CompanyContactsScreen::edit_url(
+        //     $company_id,
+        //     $customer_id,
+        //     $contact_id,
+        //     $state,
+        // );
+        
+        // 1) Sửa → vẫn ở CompanyScreen (tab=contacts) và bật view=edit
+        $edit_url = CompanyScreen::url(array_merge($state, [
+            'tab'         => 'contacts',
+            'company_id'  => (int) $company_id,
+            'customer_id' => (int) $customer_id,
+            'contact_id'  => (int) $contact_id,
+            'view'        => 'edit',
+        ])) . '#tmt-crm-contact-form'; // (tuỳ chọn) tự cuộn xuống form
 
         // 2) Đặt làm chính → admin-post
         $set_primary_url = AdminPostHelper::url(

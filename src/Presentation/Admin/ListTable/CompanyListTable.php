@@ -257,7 +257,7 @@ final class CompanyListTable extends \WP_List_Table
         $add_url = add_query_arg(
             [
                 'page'       => 'tmt-crm-customers',
-                'action'     => 'new',
+                'action'     => 'add',
                 'company_id' => $company_id,
             ],
             admin_url('admin.php')

@@ -199,7 +199,7 @@ final class CompanyContactsScreen
 
         // ====== Render duy nhất qua View:: ======
         $module = 'company';
-        $file   = 'contacts-manage';
+        $file   = 'contacts-list';
         $vars   = [
             'company_id'   => (int) $company_id,
             'company_name' => $company_name,
