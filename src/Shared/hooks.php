@@ -56,22 +56,22 @@ final class Hooks
         // error_log('[XDEBUG TEST] __FILE__=' . __FILE__);
 
 
-        add_action('admin_init', [CustomerScreen::class, 'boot']);
+        // add_action('admin_init', [CustomerScreen::class, 'boot']);
         // add_action('admin_init', [CompanyScreen::class, 'boot']);
-        add_action('admin_init', [QuoteScreen::class, 'boot']);
-        add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
+        // add_action('admin_init', [QuoteScreen::class, 'boot']);
+        // add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
 
         //Controller 
         add_action('admin_init', function () {
             // error_log('[CRM Hooks] CompanyContactController::register() is ready...');
-            CompanyContactController::register();
+            // CompanyContactController::register();
         });
         add_action('admin_init', function () {
-            CompanyController::register();
+            // CompanyController::register();
         });
 
         add_action('admin_init', function () {
-            NotesFilesController::register();
+            // NotesFilesController::register();
         });
 
         //Notice Services

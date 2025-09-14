@@ -10,7 +10,7 @@
  * - $edit_contact (CompanyContactDTO|null) // prefill khi sửa
  */
 
-use TMT\CRM\Domain\ValueObject\CompanyContactRole;
+use TMT\CRM\Modules\Contact\Domain\ValueObject\CompanyContactRole;
 
 $company_id   = isset($company_id) ? (int) $company_id : 0;
 $editing      = isset($editing) ? (bool) $editing : false;

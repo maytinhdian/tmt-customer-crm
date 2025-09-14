@@ -3,8 +3,8 @@
 /** @var array $company */
 /** @var \TMT\CRM\Presentation\Admin\CompanyContactsListTable $table */
 
-use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
-use TMT\CRM\Domain\ValueObject\CompanyContactRole;
+use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
+use TMT\CRM\Modules\Contact\Domain\ValueObject\CompanyContactRole;
 use TMT\CRM\Presentation\Support\View;
 
 $back_url = admin_url('admin.php?page=' . CompanyScreen::PAGE_SLUG);

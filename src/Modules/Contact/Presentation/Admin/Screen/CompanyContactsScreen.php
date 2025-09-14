@@ -159,7 +159,7 @@ final class CompanyContactsScreen
         $total_items  = $svc->count_view_by_company($company_id, $filters);
         $company_name = $svc->get_company_name($company_id);
 
-        $table = new \TMT\CRM\Presentation\Admin\ListTable\CompanyContactsListTable(
+        $table = new \TMT\CRM\Modules\Contact\Presentation\Admin\ListTable\CompanyContactsListTable(
             $items,
             $total_items,
             $per_page,
@@ -184,7 +184,7 @@ final class CompanyContactsScreen
                 error_log('[CRM] Screen→module edit_contact: ' . (is_object($edit_contact) ? get_class($edit_contact) : gettype($edit_contact)));
                 // Bảo toàn dữ liệu: bắt buộc thuộc đúng company
                 if (
-                    !$edit_contact instanceof \TMT\CRM\Application\DTO\CompanyContactDTO ||
+                    !$edit_contact instanceof \TMT\CRM\Modules\Contact\Application\DTO\CompanyContactDTO ||
                     (int)$edit_contact->company_id !== (int)$company_id
                 ) {
                     // Ghi log để bạn thấy đang nhận kiểu gì

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Domain\ValueObject;
+namespace TMT\CRM\Modules\Contact\Domain\ValueObject;
 
 /**
  * Giá trị chuẩn cho vai trò liên hệ công ty

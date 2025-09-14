@@ -9,8 +9,7 @@ use TMT\CRM\Presentation\Support\View;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\ListTable\CompanyListTable;
-use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
-use TMT\CRM\Presentation\Admin\Screen\CompanyNotesFilesScreen;
+
 
 defined('ABSPATH') || exit;
 
@@ -213,12 +212,12 @@ final class CompanyScreen
     {
         switch ($tab) {
             case 'contacts':
-                \TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen::render_manage($company_id);
+                \TMT\CRM\Modules\Contact\Presentation\Admin\Screen\CompanyContactsScreen::render_manage($company_id);
                 break;
 
             case 'notes-files':
                 // Sprint 1: Notes/Files tab
-                \TMT\CRM\Presentation\Admin\Screen\CompanyNotesFilesScreen::render($company_id);
+                \TMT\CRM\Modules\Note\Presentation\Admin\Screen\CompanyNotesFilesScreen::dispatch($company_id);
                 break;
 
             case 'overview':
