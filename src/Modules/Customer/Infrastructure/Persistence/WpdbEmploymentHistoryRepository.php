@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Infrastructure\Persistence;
+namespace TMT\CRM\Modules\Customer\Infrastructure\Persistence;
 
 use wpdb;
-use TMT\CRM\Application\DTO\EmploymentHistoryDTO;
-use TMT\CRM\Domain\Repositories\EmploymentHistoryRepositoryInterface;
+use TMT\CRM\Modules\Customer\Application\DTO\EmploymentHistoryDTO;
+use TMT\CRM\Modules\Customer\Domain\Repositories\EmploymentHistoryRepositoryInterface;
 
 final class WpdbEmploymentHistoryRepository implements EmploymentHistoryRepositoryInterface
 {

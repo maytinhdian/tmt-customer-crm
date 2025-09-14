@@ -64,10 +64,10 @@ class CustomerService
         return $this->customer_repo->create($dto);
     }
 
-    public function update(CustomerDTO $dto): bool
+    public function update(int $id, CustomerDTO $dto): bool
     {
         $this->validate($dto, true);
-        return $this->customer_repo->update($dto);
+        return $this->customer_repo->update($id, $dto);
     }
 
     public function delete(int $id): bool

@@ -36,21 +36,21 @@ final class Menu
 
         remove_submenu_page('tmt-crm', 'tmt-crm');
 
-        self::$customers_hook = add_submenu_page(
-            'tmt-crm',
-            __('Customers', 'tmt-crm'),
-            __('Customers', 'tmt-crm'),
-            Capability::CUSTOMER_READ,
-            'tmt-crm-customers',
-            [CustomerScreen::class, 'dispatch']
-        );
+        // self::$customers_hook = add_submenu_page(
+        //     'tmt-crm',
+        //     __('Customers', 'tmt-crm'),
+        //     __('Customers', 'tmt-crm'),
+        //     Capability::CUSTOMER_READ,
+        //     'tmt-crm-customers',
+        //     [CustomerScreen::class, 'dispatch']
+        // );
 
-        // 👉 Bàn giao hook_suffix lại cho CustomerScreen
-        CustomerScreen::set_hook_suffix(self::$customers_hook);
+        // // 👉 Bàn giao hook_suffix lại cho CustomerScreen
+        // CustomerScreen::set_hook_suffix(self::$customers_hook);
 
-        // Screen Options cho Customers
-        add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
-        add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
+        // // Screen Options cho Customers
+        // add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
+        // add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
 
         //-- Submenu: Companies (MỚI) ---
         self::$companies_hook = add_submenu_page(
@@ -70,17 +70,17 @@ final class Menu
         add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
 
         // ===== Báo giá / Đơn hàng / Hoá đơn =====
-        self::$quotes_hook = add_submenu_page(
-            'tmt-crm',
-            __('Quotations Test', 'tmt-crm'),
-            __('Quotations', 'tmt-crm'),
-            Capability::QUOTE_READ,
-            'tmt-crm-quotes',
-            [QuoteScreen::class, 'dispatch']
-        );
+        // self::$quotes_hook = add_submenu_page(
+        //     'tmt-crm',
+        //     __('Quotations Test', 'tmt-crm'),
+        //     __('Quotations', 'tmt-crm'),
+        //     Capability::QUOTE_READ,
+        //     'tmt-crm-quotes',
+        //     [QuoteScreen::class, 'dispatch']
+        // );
 
-        // Screen Options cho Quotes 
-        add_action('load-' . self::$contacts_hook, [QuoteScreen::class, 'on_load_quotes']);
+        // // Screen Options cho Quotes 
+        // add_action('load-' . self::$contacts_hook, [QuoteScreen::class, 'on_load_quotes']);
 
 
         self::$contacts_hook = add_submenu_page(

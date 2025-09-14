@@ -7,7 +7,8 @@ namespace TMT\CRM\Modules\Customer\Presentation\Admin\Controller;
 use TMT\CRM\Shared\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
-use TMT\CRM\Presentation\Admin\Screen\CustomerScreen;
+use TMT\CRM\Modules\Customer\Presentation\Admin\Screen\CustomerScreen;
+use TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO;
 
 defined('ABSPATH') || exit;
 
@@ -65,27 +66,24 @@ final class CustomerController
             self::redirect(CustomerScreen::url($id > 0 ? ['action' => 'edit', 'id' => $id] : ['action' => 'add']));
         }
 
-        /** @var \TMT\CRM\Application\Services\CustomerService $svc */
+        /** @var TMT\CRM\Modules\Customer\Application\Services\CustomerService $svc */
         $svc = Container::get('customer-service');
 
         try {
+            $dto = CustomerDTO::from_array([
+                'id'       => $id > 0 ? (int)$id : null,
+                'name'     => (string)$name,
+                'phone'    => (string)$phone,
+                'email'    => (string)$email,
+                'owner_id' => ($owner_id ?? 0) > 0 ? (int)$owner_id : null,
+                'note'     => (string)$note,
+            ]);
+
             if ($id > 0) {
-                $svc->update($id, [
-                    'name'     => $name,
-                    'phone'    => $phone,
-                    'email'    => $email,
-                    'owner_id' => $owner_id,
-                    'note'     => $note,
-                ]);
+                $svc->update($id, $dto);
                 AdminNoticeService::success_for_screen(CustomerScreen::hook_suffix(), __('Đã cập nhật khách hàng.', 'tmt-crm'));
             } else {
-                $svc->create([
-                    'name'     => $name,
-                    'phone'    => $phone,
-                    'email'    => $email,
-                    'owner_id' => $owner_id,
-                    'note'     => $note,
-                ]);
+                $svc->create($dto);
                 AdminNoticeService::success_for_screen(CustomerScreen::hook_suffix(), __('Đã tạo khách hàng.', 'tmt-crm'));
             }
 

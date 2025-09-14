@@ -16,7 +16,7 @@ interface CustomerRepositoryInterface
     public function count_all(array $filters = []): int;
 
     public function create(CustomerDTO $dto): int;     // return new id
-    public function update(CustomerDTO $dto): bool;
+    public function update(int $id,CustomerDTO $dto): bool;
     public function delete(int $id): bool;
     public function find_by_email_or_phone(?string $email = null, ?string $phone = null, ?int $exclude_id = null): ?CustomerDTO;
     public function get_owner_id(int $id): ?int;

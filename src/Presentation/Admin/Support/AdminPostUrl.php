@@ -1,6 +1,6 @@
 <?php
 // src/Presentation/Support/AdminPostUrl.php
-namespace TMT\CRM\Presentation\Support;
+namespace TMT\CRM\Presentation\Admin\Support;
 
 final class AdminPostUrl
 {

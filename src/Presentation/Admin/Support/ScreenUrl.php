@@ -1,6 +1,6 @@
 <?php
 // src/Presentation/Support/ScreenUrl.php
-namespace TMT\CRM\Presentation\Support;
+namespace TMT\CRM\Presentation\Admin\Support;
 
 use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
 

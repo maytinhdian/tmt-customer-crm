@@ -122,9 +122,9 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         return (int)$this->db->insert_id;
     }
 
-    public function update(CustomerDTO $dto): bool
+    public function update(int $id, CustomerDTO $dto): bool
     {
-        if (!$dto->id) return false;
+        if (!$id) return false;
 
         $data = [
             'name'       => $dto->name,
@@ -141,7 +141,7 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         return (bool)$this->db->update(
             $this->table,
             $filtered,
-            ['id' => (int)$dto->id],
+            ['id' => (int)$id],
             $format,
             ['%d']
         );
@@ -278,7 +278,7 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         }
         return $map;
     }
-    
+
     // ──────────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────────

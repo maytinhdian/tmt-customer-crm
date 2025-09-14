@@ -7,7 +7,7 @@ use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Application\Validation\CompanyContactValidator;
 use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
-use TMT\CRM\Presentation\Admin\Controller\{CompanyController,CustomerController, NotesFilesController};
+use TMT\CRM\Presentation\Admin\Controller\{CompanyController, CustomerController, NotesFilesController};
 use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Domain\Repositories\{
     CompanyRepositoryInterface,
@@ -69,9 +69,7 @@ final class Hooks
         add_action('admin_init', function () {
             CompanyController::register();
         });
-         add_action('admin_init', function () {
-            CustomerController::register();
-        });
+
         add_action('admin_init', function () {
             NotesFilesController::register();
         });
@@ -82,7 +80,10 @@ final class Hooks
             AdminNoticeService::boot();
         }, 0);
 
-
+        //Modules
+        // add_action('plugins_loaded', function () {
+        //     \TMT\CRM\Modules\Customer\CustomerModule::register();
+        // }, 1);
 
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
@@ -121,7 +122,7 @@ final class Hooks
         //---------------------
         // Bind theo Interface
         //---------------------
-        Container::set(CustomerRepositoryInterface::class,       fn() => new WpdbCustomerRepository($wpdb));
+        // Container::set(CustomerRepositoryInterface::class,       fn() => new WpdbCustomerRepository($wpdb));
         Container::set(NoteRepositoryInterface::class,            fn() => new WpdbNoteRepository($wpdb));
         Container::set(FileRepositoryInterface::class,            fn() => new WpdbFileRepository($wpdb));
 
@@ -130,9 +131,9 @@ final class Hooks
         // Repositories (aliases)
         // -------------------------
         Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
-        Container::set('customer-repo',  fn() => Container::get(CustomerRepositoryInterface::class));
+        // Container::set('customer-repo',  fn() => Container::get(CustomerRepositoryInterface::class));
         Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
-        Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
+        // Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
         Container::set('quote-query-repo', fn() => new WpdbQuoteQueryRepository($wpdb));
         Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
@@ -155,8 +156,8 @@ final class Hooks
         Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo')));
         Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo'), Container::get('company-contact-validator')));
-        Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
-        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
+        // Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
+        // Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
         Container::set('company-contact-query-service',  fn() => new CompanyContactQueryService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('user-repo'), Container::get('company-repo')));
     }
 
