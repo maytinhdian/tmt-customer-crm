@@ -4,73 +4,87 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Quotation\Presentation\Admin\Screen;
 
-use TMT\CRM\Modules\Quotation\Application\DTO\{QuoteDTO, QuoteItemDTO};
-
 use TMT\CRM\Shared\Container;
-
+use TMT\CRM\Shared\Presentation\Support\View;
 use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Presentation\AdminNoticeService;
+use TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteQueryRepositoryInterface;
+use TMT\CRM\Modules\Quotation\Presentation\Admin\ListTable\QuoteListTable;
 
 final class QuoteScreen
 {
-    private static ?string $hook_suffix = null;
+    // private QuoteQueryRepositoryInterface $query_repo;
 
-    public const PAGE_SLUG   = 'tmt-crm-quotes';
-    public const ACTION_SAVE  = 'tmt_crm_quote_save';
-    public const ACTION_DELETE = 'tmt_crm_quote_delete';
+    public const PAGE_SLUG = 'tmt-crm-quotes';
 
-    public static function boot(): void
-    {
-        // Nếu bạn muốn hook riêng lúc load trang (screen options…)
-        add_action('load-' . self::hook_suffix(), [self::class, 'on_load_quotes']);
-        add_action('admin_post_' . self::ACTION_SAVE, [self::class, 'handle_save']);
-    }
+    /** Tên option Screen Options: per-page */
+    public const OPTION_PER_PAGE = 'tmt_crm_quotes_per_page';
 
-    /** Menu.php sẽ gọi hàm này sau khi đăng ký submenu */
+    /** hook_suffix để scope AdminNotice/Screen Options đúng vào màn này */
+    private static string $hook_suffix = '';
+
     public static function set_hook_suffix(string $hook): void
     {
         self::$hook_suffix = $hook;
     }
 
-    /** Trả về hook_suffix để AdminNoticeService scope đúng screen */
     public static function hook_suffix(): string
     {
-        if (!empty(self::$hook_suffix)) {
-            return self::$hook_suffix;
-        }
-
-        // fallback nếu chưa được set (ít xảy ra)
-        return 'crm_page_' . self::PAGE_SLUG;
+        return self::$hook_suffix ?: 'crm_page_' . self::PAGE_SLUG;
     }
 
+    /** Được gọi khi load trang Quotes để in Screen Options (per-page) */
     public static function on_load_quotes(): void
     {
-        // Enqueue assets riêng cho trang Quotes
-        $page = $_GET['page'] ?? '';
-        if ($page !== self::PAGE_SLUG) return;
+        if (!current_user_can(Capability::QUOTE_READ)) {
+            return;
+        }
 
-        // Screen option: số dòng mỗi trang
-        add_filter('set-screen-option', [self::class, 'set_screen_option'], 10, 3);
         add_screen_option('per_page', [
-            'label'   => __('Báo giá mỗi trang', 'tmt-crm'),
+            'label'   => __('Số báo giá mỗi trang', 'tmt-crm'),
             'default' => 20,
-            'option'  => 'tmt_crm_quotes_per_page',
+            'option'  => self::OPTION_PER_PAGE,
         ]);
 
+        $query_repo = Container::get('quote-query-repo');
+        // ✅ Báo cho Screen Options biết danh sách cột (để hiện checkbox Columns)
+        $screen = get_current_screen();
+        $table  = new QuoteListTable($query_repo);
+        add_filter("manage_{$screen->id}_columns", static function () use ($table) {
+            $cols = $table->get_columns();
+            unset($cols['cb']); // không cho bật/tắt cột checkbox
+            return $cols;
+        });
 
-        add_filter('tmt_crm/quote_list/customer_display', function ($display, $row) {
-            // Ví dụ đọc từ bảng customers của bạn:
-            // return get_customer_name((int)$row['customer_id']) ?: $display;
-            return $display; // giữ mặc định "KH #ID" nếu chưa có
-        }, 10, 2);
+        // ✅ Ẩn/hiện cột theo mặc định cho screen này
+        add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
+    }
 
-
-        // CSS nhẹ (tuỳ chọn)
-        wp_register_style('tmt-crm-ui', plugins_url('assets/admin/css/tmt-crm-ui.css', TMT_CRM_FILE), [], '1.0.0');
-        wp_enqueue_style('tmt-crm-ui');
-
-        // JS tính tổng
-        wp_register_script('tmt-crm-quote-ui', plugins_url('assets/admin/js/quote-ui.js', TMT_CRM_FILE), [], '1.0.0', true);
-        wp_enqueue_script('tmt-crm-quote-ui');
+    public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
+    {
+        // ⚠️ Đổi đúng ID theo log current_screen của bạn
+        if (
+            $screen->id === 'crm_page_tmt-crm-quotes'
+            || $screen->id === 'crm_page_tmt-crm-quotes'
+        ) {
+            $hidden = array_unique(array_merge($hidden, ['id', 'owner_id']));
+        }
+        return $hidden;
+    }
+    /**
+     * Lưu giá trị Screen Options per-page
+     * @param mixed  $status
+     * @param string $option
+     * @param mixed  $value
+     * @return mixed
+     */
+    public static function save_screen_option($status, $option, $value)
+    {
+        if ($option === self::OPTION_PER_PAGE) {
+            $v = max(1, min(200, (int)$value)); // ép kiểu + ràng giới hạn an toàn
+            return $v; // PHẢI trả về giá trị muốn lưu
+        }
+        return $status; // giữ nguyên cho option khác
     }
 
     public static function dispatch(): void
@@ -88,52 +102,44 @@ final class QuoteScreen
             require $base . 'list.php';
         }
     }
+    /** Index (Danh sách báo giá) */
+    // public static function render_index(): void
+    // {
+    //     $table = new QuoteListTable();
+    //     $table->prepare_items();
 
+    //     View::render_admin_module('quote', 'index', [
+    //         'table' => $table,
+    //     ]);
+    // }
 
-    public static function handle_save(): void
+    /** Form tạo/sửa (nếu bạn đang dùng 1 view riêng) */
+    public static function render_form(): void
     {
-        self::guard_cap_nonce('tmt_crm_quote_form');
+        // Lấy id nếu có
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-        /** @var QuoteService $svc */
-        $svc = Container::get('quote-service');
-
-        $dto = new QuoteDTO();
-        $dto->customer_id = (int)($_POST['customer_id'] ?? 0);
-        $dto->company_id  = ($_POST['company_id'] ?? '') !== '' ? (int)$_POST['company_id'] : null;
-        $dto->owner_id    = (int)($_POST['owner_id'] ?? 0);
-        $dto->currency    = sanitize_text_field($_POST['currency'] ?? 'VND');
-        $dto->note        = sanitize_textarea_field($_POST['note'] ?? '');
-        $dto->expires_at  = !empty($_POST['expires_at'])
-            ? new \DateTimeImmutable(sanitize_text_field($_POST['expires_at']))
-            : null;
-
-        $dto->items = [];
-        $skus = $_POST['sku'] ?? [];
-        foreach ($skus as $i => $sku) {
-            $it = new QuoteItemDTO();
-            $it->sku        = sanitize_text_field($sku);
-            $it->name       = sanitize_text_field($_POST['name'][$i] ?? '');
-            $it->qty        = (float)($_POST['qty'][$i] ?? 0);
-            $it->unit_price = (float)($_POST['unit_price'][$i] ?? 0);
-            $it->discount   = (float)($_POST['discount'][$i] ?? 0);
-            $it->tax_rate   = (float)($_POST['tax_rate'][$i] ?? 0);
-            $dto->items[]   = $it;
+        // Tự lấy dữ liệu quote để đổ form (tuỳ service hiện hữu của bạn)
+        $quote = null;
+        if ($id > 0) {
+            /** @var \TMT\CRM\Shared\Container $c */
+            $svc = \TMT\CRM\Shared\Container::get('quote-service');
+            $quote = $svc->find($id); // giả định có hàm find(); nếu không có, thay bằng repo/get hiện có
         }
 
-        $svc->create_draft($dto);
-
-        wp_safe_redirect(add_query_arg(['page' => self::PAGE_SLUG, 'saved' => '1'], admin_url('admin.php')));
-        exit;
+        View::render_admin_module('quote', 'form', [
+            'quote' => $quote,
+        ]);
     }
 
-    /**************************************************************
-     * Helper                                                     *
-     **************************************************************/
-    private static function guard_cap_nonce(string $nonce): void
+    /** (Tuỳ chọn) Screen options – ví dụ per_page cho ListTable */
+    public static function on_load_screen(): void
     {
-        if (! current_user_can(Capability::QUOTE_CREATE)) {
-            wp_die(__('Bạn không có quyền thao tác mục này.', 'tmt-crm'), 403);
-        }
-        check_admin_referer($nonce);
+        // Ví dụ:
+        // add_screen_option('per_page', [
+        //     'label'   => __('Số dòng mỗi trang', 'tmt-crm'),
+        //     'default' => 20,
+        //     'option'  => 'tmt_crm_quotes_per_page',
+        // ]);
     }
 }

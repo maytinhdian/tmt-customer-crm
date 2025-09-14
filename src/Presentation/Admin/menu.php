@@ -52,22 +52,22 @@ final class Menu
         // add_action('load-' . self::$customers_hook, [CustomerScreen::class, 'on_load_customers']);
         // add_filter('set-screen-option', [CustomerScreen::class, 'save_screen_option'], 10, 3);
 
-        //-- Submenu: Companies (MỚI) ---
-        self::$companies_hook = add_submenu_page(
-            'tmt-crm', // slug của menu cha
-            __('Companies Test', 'tmt-crm'), // tiêu đề hiển thị trên <title>
-            __('Companies', 'tmt-crm'), // tiêu đề hiển thị trong menu
-            Capability::COMPANY_READ, // quyền (capability) để xem menu này
-            'tmt-crm-companies',  // slug của trang 
-            [CompanyScreen::class, 'dispatch'] // hàm/class method render nội dung
-        );
+        // //-- Submenu: Companies (MỚI) ---
+        // self::$companies_hook = add_submenu_page(
+        //     'tmt-crm', // slug của menu cha
+        //     __('Companies Test', 'tmt-crm'), // tiêu đề hiển thị trên <title>
+        //     __('Companies', 'tmt-crm'), // tiêu đề hiển thị trong menu
+        //     Capability::COMPANY_READ, // quyền (capability) để xem menu này
+        //     'tmt-crm-companies',  // slug của trang 
+        //     [CompanyScreen::class, 'dispatch'] // hàm/class method render nội dung
+        // );
 
-        // 👉 Bàn giao hook_suffix lại cho CompanyScreen
-        CompanyScreen::set_hook_suffix(self::$companies_hook);
+        // // 👉 Bàn giao hook_suffix lại cho CompanyScreen
+        // CompanyScreen::set_hook_suffix(self::$companies_hook);
 
-        // Screen Options cho Companies
-        add_action('load-' . self::$companies_hook, [CompanyScreen::class, 'on_load_companies']);
-        add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
+        // // Screen Options cho Companies
+        // add_action('load-' . self::$companies_hook, [CompanyScreen::class, 'on_load_companies']);
+        // add_filter('set-screen-option', [CompanyScreen::class, 'save_screen_option'], 10, 3);
 
         // ===== Báo giá / Đơn hàng / Hoá đơn =====
         // self::$quotes_hook = add_submenu_page(
@@ -83,25 +83,25 @@ final class Menu
         // add_action('load-' . self::$contacts_hook, [QuoteScreen::class, 'on_load_quotes']);
 
 
-        self::$contacts_hook = add_submenu_page(
-            'tmt-crm',
-            __('Contacts Test', 'tmt-crm'),
-            __('Contacts', 'tmt-crm'),
-            Capability::COMPANY_READ,
-            'tmt-crm-company-contacts',
-            [CompanyContactsScreen::class, 'dispatch']
-        );
-        // 👉 Bàn giao hook_suffix lại cho CustomerScreen
-        CompanyContactsScreen::set_hook_suffix(self::$contacts_hook);
+        // self::$contacts_hook = add_submenu_page(
+        //     'tmt-crm',
+        //     __('Contacts Test', 'tmt-crm'),
+        //     __('Contacts', 'tmt-crm'),
+        //     Capability::COMPANY_READ,
+        //     'tmt-crm-company-contacts',
+        //     [CompanyContactsScreen::class, 'dispatch']
+        // );
+        // // 👉 Bàn giao hook_suffix lại cho CustomerScreen
+        // CompanyContactsScreen::set_hook_suffix(self::$contacts_hook);
 
-        // Ẩn khỏi menu
-        // remove_submenu_page('tmt-crm', 'tmt-crm-company-contacts');
-        add_action('admin_head', function () {
-            remove_submenu_page('tmt-crm', CompanyContactsScreen::PAGE_SLUG);
-        });
+        // // Ẩn khỏi menu
+        // // remove_submenu_page('tmt-crm', 'tmt-crm-company-contacts');
+        // add_action('admin_head', function () {
+        //     remove_submenu_page('tmt-crm', CompanyContactsScreen::PAGE_SLUG);
+        // });
 
-        // Screen Options cho CompanyContactScreen 
-        add_action('load-' . self::$contacts_hook, [CompanyContactsScreen::class, 'on_load_contacts']);
+        // // Screen Options cho CompanyContactScreen 
+        // add_action('load-' . self::$contacts_hook, [CompanyContactsScreen::class, 'on_load_contacts']);
 
         // // (Tuỳ chọn) log screen id để chắc ID khớp
         add_action('current_screen', function ($s) {

@@ -1,10 +1,10 @@
 <?php
 
-use TMT\CRM\Presentation\Admin\Screen\QuoteScreen;
-use TMT\CRM\Presentation\Admin\ListTable\QuoteListTable;
+use TMT\CRM\Modules\Quotation\Presentation\Admin\Screen\QuoteScreen;
+use TMT\CRM\Modules\Quotation\Presentation\Admin\ListTable\QuoteListTable;
 use TMT\CRM\Shared\Container;
 
-/** @var \TMT\CRM\Domain\Repositories\QuoteQueryRepositoryInterface $repo */
+/** @var \TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteQueryRepositoryInterface $repo */
 $repo  = Container::get('quote-query-repo');
 $table = new QuoteListTable($repo);
 $table->prepare_items();

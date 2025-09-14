@@ -1,9 +1,10 @@
 <?php
 
-use TMT\CRM\Presentation\Admin\Screen\QuoteScreen;
+use TMT\CRM\Modules\Quotation\Presentation\Admin\Screen\QuoteScreen;
+use TMT\CRM\Modules\Quotation\Presentation\Admin\Controller\QuoteController;
 
 $back_url = admin_url('admin.php?page=' . QuoteScreen::PAGE_SLUG);
-$action_url = admin_url('admin-post.php?action=' . QuoteScreen::ACTION_SAVE);
+$action_url = admin_url('admin-post.php?action=' . QuoteController::ACTION_SAVE);
 ?>
 <div class="wrap tmtcrm">
     <h1 class="wp-heading-inline"><?php _e('Tạo/Chỉnh sửa Báo giá', 'tmt-crm'); ?></h1>

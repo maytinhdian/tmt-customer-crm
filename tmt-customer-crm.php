@@ -61,18 +61,50 @@ add_action('plugins_loaded', function () {
 
 use TMT\CRM\Modules\Customer\Menu as CustomerMenu;
 use TMT\CRM\Modules\Customer\CustomerModule as CustomerModule;
+
 add_action('plugins_loaded', function () {
     CustomerModule::register();
     CustomerMenu::register(); // mỗi module tự có Menu::register()
     // \TMT\CRM\Module\Company\Menu::register();
     // \TMT\CRM\Module\Quote\Menu::register();
-},1);
+}, 1);
 
 use TMT\CRM\Modules\Quotation\Menu as QuotationMenu;
 use TMT\CRM\Modules\Quotation\QuotationModule as QuotationModule;
+
 add_action('plugins_loaded', function () {
     QuotationModule::register();
     QuotationMenu::register(); // mỗi module tự có Menu::register()
     // \TMT\CRM\Module\Company\Menu::register();
     // \TMT\CRM\Module\Quote\Menu::register();
-},1);
+}, 1);
+
+use TMT\CRM\Modules\Company\Menu as CompanyMenu;
+use TMT\CRM\Modules\Company\CompanyModule as CompanyModule;
+
+add_action('plugins_loaded', function () {
+    CompanyMenu::register();
+    CompanyModule::register(); // mỗi module tự có Menu::register()
+    // \TMT\CRM\Module\Company\Menu::register();
+    // \TMT\CRM\Module\Quote\Menu::register();
+}, 1);
+
+use TMT\CRM\Modules\Contact\Menu as ContactMenu;
+use TMT\CRM\Modules\Contact\ContactModule as ContactModule;
+
+add_action('plugins_loaded', function () {
+    ContactMenu::register();
+    ContactModule::register(); // mỗi module tự có Menu::register()
+    // \TMT\CRM\Module\Company\Menu::register();
+    // \TMT\CRM\Module\Quote\Menu::register();
+}, 1);
+
+
+use TMT\CRM\Modules\Note\Menu as NotesMenu;
+use TMT\CRM\Modules\Note\NoteModule as NoteModule;
+add_action('plugins_loaded', function () {
+    NotesMenu::register();
+    NoteModule::register(); // mỗi module tự có Menu::register()
+    // \TMT\CRM\Module\Company\Menu::register();
+    // \TMT\CRM\Module\Quote\Menu::register();
+}, 1);
