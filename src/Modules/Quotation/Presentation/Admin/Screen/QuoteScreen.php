@@ -64,10 +64,9 @@ final class QuoteScreen
     {
         // ⚠️ Đổi đúng ID theo log current_screen của bạn
         if (
-            $screen->id === 'crm_page_tmt-crm-quotes'
-            || $screen->id === 'crm_page_tmt-crm-quotes'
+            $screen->id === self::$hook_suffix
         ) {
-            $hidden = array_unique(array_merge($hidden, ['id', 'owner_id']));
+            $hidden = array_unique(array_merge($hidden, ['id']));
         }
         return $hidden;
     }
@@ -94,24 +93,17 @@ final class QuoteScreen
         }
 
         $action = isset($_GET['action']) ? sanitize_key($_GET['action']) : 'list';
-        $base   = trailingslashit(TMT_CRM_PATH) . 'templates/admin/quotes/';
+        // $base   = trailingslashit(TMT_CRM_PATH) . 'templates/admin/quotes/';
 
         if ($action === 'new' || $action === 'edit') {
-            require $base . 'form.php';
+            View::render_admin_module('quotes', 'form', []);
+            // require $base . 'form.php';
         } else {
-            require $base . 'list.php';
+             View::render_admin_module('quotes', 'list', []);
+            // require $base . 'list.php';
         }
     }
-    /** Index (Danh sách báo giá) */
-    // public static function render_index(): void
-    // {
-    //     $table = new QuoteListTable();
-    //     $table->prepare_items();
 
-    //     View::render_admin_module('quote', 'index', [
-    //         'table' => $table,
-    //     ]);
-    // }
 
     /** Form tạo/sửa (nếu bạn đang dùng 1 view riêng) */
     public static function render_form(): void
@@ -127,19 +119,8 @@ final class QuoteScreen
             $quote = $svc->find($id); // giả định có hàm find(); nếu không có, thay bằng repo/get hiện có
         }
 
-        View::render_admin_module('quote', 'form', [
+        View::render_admin_module('quotes', 'form', [
             'quote' => $quote,
         ]);
-    }
-
-    /** (Tuỳ chọn) Screen options – ví dụ per_page cho ListTable */
-    public static function on_load_screen(): void
-    {
-        // Ví dụ:
-        // add_screen_option('per_page', [
-        //     'label'   => __('Số dòng mỗi trang', 'tmt-crm'),
-        //     'default' => 20,
-        //     'option'  => 'tmt_crm_quotes_per_page',
-        // ]);
     }
 }

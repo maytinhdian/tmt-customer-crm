@@ -12,7 +12,8 @@ use TMT\CRM\Modules\Quotation\Application\Services\{QuoteService, NumberingServi
 use TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteQueryRepositoryInterface;
 use TMT\CRM\Modules\Quotation\Infrastructure\Persistence\{
     WpdbQuoteRepository,
-    WpdbQuoteQueryRepository
+    WpdbQuoteQueryRepository,
+    WpdbSequenceRepository
 };
 
 final class QuotationModule
@@ -25,6 +26,7 @@ final class QuotationModule
         Container::set(QuoteRepositoryInterface::class,       fn() => new WpdbQuoteRepository($GLOBALS['wpdb']));
         Container::set(QuoteQueryRepositoryInterface::class,       fn() => new WpdbQuoteQueryRepository($GLOBALS['wpdb']));
         Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
+        Container::set('sequence-repo', fn() => new WpdbSequenceRepository($GLOBALS['wpdb']));
 
         // Container wiring
         Container::set('quote-query-repo', fn() => Container::get(QuoteQueryRepositoryInterface::class));

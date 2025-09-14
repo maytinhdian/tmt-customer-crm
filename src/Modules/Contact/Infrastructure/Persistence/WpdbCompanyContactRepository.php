@@ -479,6 +479,7 @@ final class WpdbCompanyContactRepository implements CompanyContactRepositoryInte
         return $updated !== false;
     }
 
+    
     /** Helper map */
     private function map_row_to_dto(array $row): CompanyContactDTO
     {

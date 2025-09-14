@@ -87,7 +87,7 @@ final class Hooks
 
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
-        \TMT\CRM\Presentation\Admin\Ajax\CompanyAjaxController::bootstrap();
+        
         \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
 
@@ -136,7 +136,7 @@ final class Hooks
         // Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
         // Container::set('quote-query-repo', fn() => new WpdbQuoteQueryRepository($wpdb));
-        Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
+        // Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
         // Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
         // Container::set('note-repo',            fn() => new WpdbNoteRepository($wpdb));
         // Container::set('file-repo',            fn() => new WpdbFileRepository($wpdb));

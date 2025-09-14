@@ -83,6 +83,18 @@ interface CompanyContactRepositoryInterface
   public function update(CompanyContactDTO $d): bool;
 
 
+
+  /**
+   * Tìm kiếm liên hệ theo công ty (paged)
+   * @return array{items: CompanyContactDTO[], total: int}
+   */
+  public function search_by_company_paged(
+    int $company_id,
+    string $term,
+    int $page,
+    int $per_page
+  ): array;
+
   /** Transaction helpers (tuỳ DB) */
   public function begin(): void;
   public function commit(): void;
