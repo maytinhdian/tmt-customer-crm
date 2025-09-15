@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin\Ajax;
+namespace TMT\CRM\Modules\Customer\Presentation\Admin\Ajax;
 
-use TMT\CRM\Shared\Container;
-use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
+use TMT\CRM\Shared\Container\Container;
+use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
 use TMT\CRM\Infrastructure\Security\Capability;
 
 final class OwnerAjaxController
@@ -65,7 +65,7 @@ final class OwnerAjaxController
         }
 
         /** @var \TMT\CRM\Domain\Repositories\UserRepositoryInterface $repo */
-        $repo  = \TMT\CRM\Shared\Container::get('user-repo');
+        $repo  = Container::get('user-repo');
 
         // ⚠️ KHÔNG kiểm tra capability ở đây để vẫn load được “người quản lý cũ”
         $label = $repo->find_label_by_id($id);

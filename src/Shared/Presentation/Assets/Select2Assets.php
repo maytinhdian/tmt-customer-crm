@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin\Assets;
+namespace TMT\CRM\Shared\Presentation\Assets;
 
 /**
  * Gắn Select2 vào khu vực admin TMT-CRM

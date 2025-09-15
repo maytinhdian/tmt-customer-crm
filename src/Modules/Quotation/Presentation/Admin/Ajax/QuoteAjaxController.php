@@ -1,10 +1,10 @@
 <?php
 
-namespace TMT\CRM\Presentation\Admin\Ajax;
+namespace TMT\CRM\Modules\Quotation\Presentation\Admin\Ajax;
 
 use TMT\CRM\Infrastructure\Security\Capability;
-use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;  // use TMT\CRM\Domain\Repositories\
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;  // use TMT\CRM\Domain\Repositories\
+use TMT\CRM\Shared\Container\Container;
 
 
 final class QuoteAjaxController

@@ -30,9 +30,9 @@ final class Hooks
 
 
         //Select2 AJAX Controller 
-        \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
-        \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
-        \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
+        \TMT\CRM\Shared\Presentation\Assets\Select2Assets::bootstrap();
+        \TMT\CRM\Modules\Customer\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
+        \TMT\CRM\Modules\Customer\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
 
         // Enqueue assets cho admin
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin\Ajax;
+namespace TMT\CRM\Modules\Customer\Presentation\Admin\Ajax;
 
-use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
 
 final class CustomerAjaxController
