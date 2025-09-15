@@ -5,40 +5,6 @@ namespace TMT\CRM\Shared;
 use TMT\CRM\Presentation\Admin\Menu;
 use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
-use TMT\CRM\Application\Validation\CompanyContactValidator;
-use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
-use TMT\CRM\Presentation\Admin\Controller\{CompanyController, CustomerController, NotesFilesController};
-use TMT\CRM\Presentation\Admin\Controller\CompanyContactController;
-use TMT\CRM\Domain\Repositories\{
-    CompanyRepositoryInterface,
-    FileRepositoryInterface,
-    NoteRepositoryInterface,
-    CustomerRepositoryInterface,
-    CompanyContactRepositoryInterface
-};
-
-use TMT\CRM\Infrastructure\Persistence\{
-    WpdbCustomerRepository,
-    WpdbCompanyRepository,
-    WpdbCompanyContactRepository,
-    WpdbEmploymentHistoryRepository,
-    WpdbSequenceRepository,
-    WpdbQuoteRepository,
-    WpdbFileRepository,
-    WpdbNoteRepository,
-    WpdbQuoteQueryRepository
-};
-use TMT\CRM\Application\Services\{
-    CustomerService,
-    CompanyService,
-    CompanyContactService,
-    EmploymentHistoryService,
-    FileService,
-    NoteService,
-    NumberingService,
-    QuoteService,
-    CompanyContactQueryService
-};
 
 
 final class Hooks
@@ -55,39 +21,15 @@ final class Hooks
 
         // error_log('[XDEBUG TEST] __FILE__=' . __FILE__);
 
-
-        // add_action('admin_init', [CustomerScreen::class, 'boot']);
-        // add_action('admin_init', [CompanyScreen::class, 'boot']);
-        // add_action('admin_init', [QuoteScreen::class, 'boot']);
-        // add_action('admin_init', [CompanyContactsScreen::class, 'boot']);
-
-        //Controller 
-        add_action('admin_init', function () {
-            // error_log('[CRM Hooks] CompanyContactController::register() is ready...');
-            // CompanyContactController::register();
-        });
-        add_action('admin_init', function () {
-            // CompanyController::register();
-        });
-
-        add_action('admin_init', function () {
-            // NotesFilesController::register();
-        });
-
         //Notice Services
         add_action('admin_init', function () {
             // error_log('[TMT Hooks] AdminNoticeService::boot() is running...');
             AdminNoticeService::boot();
         }, 0);
 
-        //Modules
-        // add_action('plugins_loaded', function () {
-        //     \TMT\CRM\Modules\Customer\CustomerModule::register();
-        // }, 1);
 
         //Select2 AJAX Controller 
         \TMT\CRM\Presentation\Admin\Assets\Select2Assets::bootstrap();
-        
         \TMT\CRM\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
         \TMT\CRM\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
 
@@ -122,43 +64,8 @@ final class Hooks
         //---------------------
         // Bind theo Interface
         //---------------------
-        // Container::set(CustomerRepositoryInterface::class,       fn() => new WpdbCustomerRepository($wpdb));
-        // Container::set(NoteRepositoryInterface::class,            fn() => new WpdbNoteRepository($wpdb));
-        // Container::set(FileRepositoryInterface::class,            fn() => new WpdbFileRepository($wpdb));
 
-
-        // -------------------------
-        // Repositories (aliases)
-        // -------------------------
-        // Container::set('company-repo',   fn() => new WpdbCompanyRepository($wpdb));
-        // Container::set('customer-repo',  fn() => Container::get(CustomerRepositoryInterface::class));
-        // Container::set('company-contact-repo',  fn() => new WpdbCompanyContactRepository($wpdb));
-        // Container::set('employment-history-repo',  fn() => new WpdbEmploymentHistoryRepository($wpdb));
         Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
-        // Container::set('quote-query-repo', fn() => new WpdbQuoteQueryRepository($wpdb));
-        // Container::set('sequence-repo', fn() => new WpdbSequenceRepository($wpdb));
-        // Container::set('quote-repo', fn() => new WpdbQuoteRepository($wpdb));
-        // Container::set('note-repo',            fn() => new WpdbNoteRepository($wpdb));
-        // Container::set('file-repo',            fn() => new WpdbFileRepository($wpdb));
-
-        // ------------------------
-        // Validator (đăng ký để tái sử dụng ở nhiều service/controller)
-        // -------------------------
-        // Container::set('company-contact-validator', fn() => new CompanyContactValidator(
-        //     Container::get('company-contact-repo')
-        // ));
-
-
-        // Services
-        // Container::set('numbering', fn() => new NumberingService(Container::get('sequence-repo')));
-        // Container::set('note-service', fn() => new NoteService(Container::get('note-repo')));
-        // Container::set('file-service', fn() => new FileService(Container::get('file-repo')));
-        // Container::set('quote-service', fn() => new QuoteService(Container::get('quote-repo'), Container::get('numbering')));
-        // Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo')));
-        // Container::set('company-contact-service',  fn() => new CompanyContactService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('company-repo'), Container::get('company-contact-validator')));
-        // Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
-        // Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo'))));
-        // Container::set('company-contact-query-service',  fn() => new CompanyContactQueryService(Container::get('company-contact-repo'), Container::get('customer-repo'), Container::get('user-repo'), Container::get('company-repo')));
     }
 
     public static function enqueue_admin(): void

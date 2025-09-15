@@ -2,7 +2,7 @@
 // src/Application/DTO/UserDTO.php
 declare(strict_types=1);
 
-namespace TMT\CRM\Application\DTO;
+namespace TMT\CRM\Modules\Customer\Application\DTO;
 
 use TMT\CRM\Shared\Traits\AsArrayTrait;
 

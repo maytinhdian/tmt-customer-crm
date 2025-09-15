@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Domain\Repositories;
+namespace TMT\CRM\Modules\Customer\Domain\Repositories;
 
 interface UserRepositoryInterface
 {
