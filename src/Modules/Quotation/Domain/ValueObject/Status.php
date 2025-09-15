@@ -1,6 +1,6 @@
 <?php
 // src/Shared/status.php
-namespace TMT\CRM\Modules\Quotation\Shared;
+namespace TMT\CRM\Modules\Quotation\Domain\ValueObject;
 
 final class Status {
     // Quotation

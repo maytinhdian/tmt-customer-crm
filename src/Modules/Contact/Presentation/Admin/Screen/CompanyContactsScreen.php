@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Contact\Presentation\Admin\Screen;
 
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 use TMT\CRM\Presentation\Support\View;
 use TMT\CRM\Infrastructure\Security\Capability;
@@ -132,7 +132,7 @@ final class CompanyContactsScreen
     public static function render_manage(int $company_id): void
     {
         /** @var \TMT\CRM\Application\Services\CompanyContactQueryService $svc */
-        $svc = \TMT\CRM\Shared\Container::get('company-contact-query-service');
+        $svc = Container::get('company-contact-query-service');
 
         // ====== Parse request (list + filter + sort) ======
         $user_per_page = (int) get_user_option(self::OPTION_PER_PAGE);

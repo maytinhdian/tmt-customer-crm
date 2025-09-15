@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Customer;
 
 use TMT\CRM\Modules\Customer\Domain\Repositories\EmploymentHistoryRepositoryInterface;
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 use TMT\CRM\Modules\Customer\Presentation\Admin\Controller\CustomerController;

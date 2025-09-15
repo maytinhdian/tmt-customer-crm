@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Note\Presentation\Admin\Screen;
 
 use TMT\CRM\Presentation\Support\View;
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 final class CompanyNotesFilesScreen
 {

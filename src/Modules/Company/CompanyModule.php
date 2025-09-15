@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Company;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Company\Presentation\Admin\Controller\CompanyController;

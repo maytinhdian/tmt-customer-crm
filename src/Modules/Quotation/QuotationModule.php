@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Quotation;
 
 use TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteRepositoryInterface;
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 use TMT\CRM\Modules\Quotation\Presentation\Admin\Controller\QuoteController;
 use TMT\CRM\Modules\Quotation\Application\Services\{QuoteService, NumberingService};

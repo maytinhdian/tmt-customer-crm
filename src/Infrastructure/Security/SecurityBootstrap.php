@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Infrastructure\Security;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
 
 defined('ABSPATH') || exit;

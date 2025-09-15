@@ -6,7 +6,7 @@ use TMT\CRM\Modules\Contact\Application\DTO\CompanyContactViewDTO;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
-use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
+use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
 
 final class CompanyContactQueryService
 {

@@ -28,27 +28,32 @@ if (file_exists($composer_autoload)) {
 }
 
 // 1) Activation: chạy migrate + set version + roles
-register_activation_hook(TMT_CRM_FILE, function () {
-    /** @var \wpdb $wpdb */
-    global $wpdb;
+// register_activation_hook(TMT_CRM_FILE, function () {
+//     /** @var \wpdb $wpdb */
+//     global $wpdb;
 
-    if (class_exists(Installer::class)) {
-        Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
-    }
-    update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
-});
+//     if (class_exists(Installer::class)) {
+//         Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
+//     }
+//     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
+// });
+
+add_action('plugins_loaded', function () {
+    \TMT\CRM\Infrastructure\Setup\Installer::register(); // (file chính)
+    // ... gọi Module::register() như hiện tại
+}, 1);
 
 // 2) Auto-upgrade khi plugin load (so sánh version & migrate)
 add_action('plugins_loaded', function () {
-    /** @var \wpdb $wpdb */
-    global $wpdb;
+    // /** @var \wpdb $wpdb */
+    // global $wpdb;
 
-    $installed_ver = (string) get_option('tmt_crm_db_version', '');
+    // $installed_ver = (string) get_option('tmt_crm_db_version', '');
 
-    if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(Installer::class)) {
-        Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
-        update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
-    }
+    // if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(Installer::class)) {
+    //     Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
+    //     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
+    // }
 
     // bật Role packs + map_meta_cap (own/any, DIP)
     SecurityBootstrap::init();
@@ -65,7 +70,7 @@ use TMT\CRM\Modules\Customer\CustomerModule as CustomerModule;
 add_action('plugins_loaded', function () {
     CustomerModule::register();
     CustomerMenu::register(); // mỗi module tự có Menu::register()
-  
+
 }, 1);
 
 use TMT\CRM\Modules\Quotation\Menu as QuotationMenu;
@@ -74,7 +79,7 @@ use TMT\CRM\Modules\Quotation\QuotationModule as QuotationModule;
 add_action('plugins_loaded', function () {
     QuotationModule::register();
     QuotationMenu::register(); // mỗi module tự có Menu::register()
-  
+
 }, 1);
 
 use TMT\CRM\Modules\Company\Menu as CompanyMenu;
@@ -98,6 +103,7 @@ add_action('plugins_loaded', function () {
 
 use TMT\CRM\Modules\Note\Menu as NotesMenu;
 use TMT\CRM\Modules\Note\NoteModule as NoteModule;
+
 add_action('plugins_loaded', function () {
     NotesMenu::register();
     NoteModule::register(); // mỗi module tự có Menu::register()

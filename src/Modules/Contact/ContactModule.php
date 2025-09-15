@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Contact;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Contact\Presentation\Admin\Controller\CompanyContactController;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Modules\Contact\Infrastructure\Persistence\WpdbCompanyContactRepository;

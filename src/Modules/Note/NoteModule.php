@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Note;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Note\Application\Services\{FileService,NoteService};
 use TMT\CRM\Modules\Note\Presentation\Admin\Controller\NotesFilesController;
 use TMT\CRM\Modules\Note\Domain\Repositories\{NoteRepositoryInterface, FileRepositoryInterface};

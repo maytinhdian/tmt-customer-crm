@@ -2,7 +2,7 @@
 
 use TMT\CRM\Modules\Quotation\Presentation\Admin\Screen\QuoteScreen;
 use TMT\CRM\Modules\Quotation\Presentation\Admin\ListTable\QuoteListTable;
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 /** @var \TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteQueryRepositoryInterface $repo */
 $repo  = Container::get('quote-query-repo');

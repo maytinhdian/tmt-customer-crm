@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Customer\Presentation\Admin\Screen;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Infrastructure\Security\Capability;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
 use TMT\CRM\Modules\Customer\Presentation\Admin\ListTable\CustomerListTable;

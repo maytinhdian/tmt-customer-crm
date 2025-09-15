@@ -3,8 +3,9 @@
 namespace TMT\CRM\Shared;
 
 use TMT\CRM\Presentation\Admin\Menu;
-use TMT\CRM\Infrastructure\Users\WpdbUserRepository;
+use TMT\CRM\Modules\Customer\Infrastructure\Persistence\WpdbUserRepository;
 use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+use TMT\CRM\Shared\Container\Container;
 
 
 final class Hooks
