@@ -6,7 +6,7 @@ namespace TMT\CRM\Modules\Company\Presentation\Admin\ListTable;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Contact\Application\DTO\CompanyContactDTO;
 use TMT\CRM\Modules\Contact\Presentation\Admin\Screen\CompanyContactsScreen;
 

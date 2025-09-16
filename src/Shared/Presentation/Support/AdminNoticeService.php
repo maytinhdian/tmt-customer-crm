@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin\Support;
+namespace TMT\CRM\Shared\Presentation\Support;
 
 final class AdminNoticeService
 {

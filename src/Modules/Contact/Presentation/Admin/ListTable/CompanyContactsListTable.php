@@ -8,7 +8,7 @@ use WP_List_Table;
 use TMT\CRM\Modules\Contact\Application\DTO\CompanyContactViewDTO;
 // use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
-use TMT\CRM\Presentation\Admin\Support\AdminPostHelper;
+use TMT\CRM\Shared\Presentation\Support\AdminPostHelper;
 
 if (!class_exists('\WP_List_Table')) {
     require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';

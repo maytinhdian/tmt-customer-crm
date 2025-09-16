@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Note\Infrastructure\Migration;
 
-use TMT\CRM\Infrastructure\Setup\Migration\BaseMigrator;
+use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
 
 final class NoteMigrator extends BaseMigrator
 {

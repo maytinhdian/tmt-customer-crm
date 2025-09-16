@@ -1,9 +1,8 @@
 <?php
 
-namespace TMT\CRM\Presentation\Admin;
+namespace TMT\CRM\Shared\Presentation;
 
-use TMT\CRM\Infrastructure\Security\Capability;
-use TMT\CRM\Presentation\Admin\Screen\{CustomerScreen, CompanyScreen, QuoteScreen, CompanyContactsScreen};
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 
 defined('ABSPATH') || exit;
 

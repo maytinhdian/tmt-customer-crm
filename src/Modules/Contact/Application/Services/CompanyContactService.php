@@ -10,7 +10,7 @@ use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 
-use TMT\CRM\Application\Validation\CompanyContactValidator;
+use TMT\CRM\Modules\Contact\Application\Validation\CompanyContactValidator;
 
 /**
  * Service xử lý nghiệp vụ thêm Customer vào CompanyContact.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Infrastructure\Setup;
+namespace TMT\CRM\Shared\Infrastructure\Setup;
 
-use TMT\CRM\Infrastructure\Setup\Migration\SchemaMigratorInterface;
+use TMT\CRM\Shared\Infrastructure\Setup\Migration\SchemaMigratorInterface;
 
 final class Installer
 {

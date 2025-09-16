@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Company\Presentation\Admin\Screen;
 
-use TMT\CRM\Shared\Container;
-use TMT\CRM\Presentation\Support\View;
+use TMT\CRM\Shared\Container\Container;
+use TMT\CRM\Shared\Presentation\Support\View;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\ListTable\CompanyListTable;
 
 

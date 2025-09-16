@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Contact\Presentation\Admin\Controller;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Contact\Application\DTO\CompanyContactDTO;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Contact\Application\Services\CompanyContactService;
-use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 use TMT\CRM\Modules\Contact\Presentation\Admin\Screen\CompanyContactsScreen;
 
 

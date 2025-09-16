@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TMT\CRM\Presentation\Admin\Support;
+namespace TMT\CRM\Shared\Presentation\Support;
 /**
  * AdminPostHelper: Chuẩn hoá việc sinh URL/hidden fields cho admin-post.php
  * - Dùng cho cả GET (link thao tác nhanh) lẫn POST (form submit).

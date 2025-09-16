@@ -7,8 +7,8 @@ namespace TMT\CRM\Modules\Contact\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container\Container;
 
-use TMT\CRM\Presentation\Support\View;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Presentation\Support\View;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 
 use TMT\CRM\Modules\Contact\Presentation\Admin\ListTable\CompanyContactsListTable;
 
@@ -177,7 +177,7 @@ final class CompanyContactsScreen
         $edit_contact = null;
         if ($is_editing && $contact_id > 0) {
             /** @var \TMT\CRM\Domain\Repositories\CompanyContactRepositoryInterface $repo */
-            $repo = \TMT\CRM\Shared\Container::get('company-contact-repo');
+            $repo = Container::get('company-contact-repo');
             if ($repo && method_exists($repo, 'find_by_id')) {
                 $edit_contact = $repo->find_by_id($contact_id);
                 // Trước khi gọi module

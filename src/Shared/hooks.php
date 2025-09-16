@@ -2,9 +2,9 @@
 
 namespace TMT\CRM\Shared;
 
-use TMT\CRM\Presentation\Admin\Menu;
+use TMT\CRM\Shared\Presentation\Menu;
 use TMT\CRM\Modules\Customer\Infrastructure\Persistence\WpdbUserRepository;
-use TMT\CRM\Presentation\Admin\Support\AdminNoticeService;
+use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 use TMT\CRM\Shared\Container\Container;
 
 

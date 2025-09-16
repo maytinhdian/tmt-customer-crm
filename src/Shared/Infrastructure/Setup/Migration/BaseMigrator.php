@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Infrastructure\Setup\Migration;
+namespace TMT\CRM\Shared\Infrastructure\Setup\Migration;
 
 abstract class BaseMigrator implements SchemaMigratorInterface
 {

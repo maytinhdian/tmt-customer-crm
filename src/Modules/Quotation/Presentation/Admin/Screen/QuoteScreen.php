@@ -6,9 +6,7 @@ namespace TMT\CRM\Modules\Quotation\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Presentation\Support\View;
-use TMT\CRM\Infrastructure\Security\Capability;
-use TMT\CRM\Shared\Presentation\AdminNoticeService;
-use TMT\CRM\Modules\Quotation\Domain\Repositories\QuoteQueryRepositoryInterface;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Quotation\Presentation\Admin\ListTable\QuoteListTable;
 
 final class QuoteScreen
@@ -115,7 +113,7 @@ final class QuoteScreen
         $quote = null;
         if ($id > 0) {
             /** @var \TMT\CRM\Shared\Container $c */
-            $svc = \TMT\CRM\Shared\Container::get('quote-service');
+            $svc = Container::get('quote-service');
             $quote = $svc->find($id); // giả định có hàm find(); nếu không có, thay bằng repo/get hiện có
         }
 

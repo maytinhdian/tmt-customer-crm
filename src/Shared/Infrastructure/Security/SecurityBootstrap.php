@@ -5,10 +5,10 @@
  */
 declare(strict_types=1);
 
-namespace TMT\CRM\Infrastructure\Security;
+namespace TMT\CRM\Shared\Infrastructure\Security;
 
 use TMT\CRM\Shared\Container\Container;
-use TMT\CRM\Domain\Repositories\CustomerRepositoryInterface;
+use TMT\CRM\Modules\Customer\Repositories\CustomerRepositoryInterface;
 
 defined('ABSPATH') || exit;
 

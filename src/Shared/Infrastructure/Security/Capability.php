@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Infrastructure\Security;
+namespace TMT\CRM\Shared\Infrastructure\Security;
 
 /**
  * Khai báo tập capability theo Resource + Action (+ Scope khi cần).

@@ -5,7 +5,7 @@
 
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Modules\Contact\Domain\ValueObject\CompanyContactRole;
-use TMT\CRM\Presentation\Support\View;
+use TMT\CRM\Shared\Presentation\Support\View;
 
 $back_url = admin_url('admin.php?page=' . CompanyScreen::PAGE_SLUG);
 $company_id   = isset($company_id) ? (int) $company_id : 0;

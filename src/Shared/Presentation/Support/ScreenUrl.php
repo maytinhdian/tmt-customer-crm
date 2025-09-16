@@ -1,8 +1,8 @@
 <?php
 // src/Presentation/Support/ScreenUrl.php
-namespace TMT\CRM\Presentation\Admin\Support;
+namespace TMT\CRM\Shared\Presentation\Support;
 
-use TMT\CRM\Presentation\Admin\Screen\CompanyContactsScreen;
+use TMT\CRM\Modules\Contact\Presentation\Admin\Screen\CompanyContactsScreen;
 
 final class ScreenUrl
 {

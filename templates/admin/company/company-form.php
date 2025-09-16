@@ -5,8 +5,8 @@
  */
 defined('ABSPATH') || exit;
 
-use TMT\CRM\Presentation\Admin\Screen\CompanyScreen;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 
 
 $is_edit   = $company && !empty($company->id);

@@ -6,7 +6,7 @@ namespace TMT\CRM\Modules\Customer\Infrastructure\Persistence;
 
 use wpdb;
 use WP_User_Query;
-use TMT\CRM\Application\DTO\UserDTO;
+use TMT\CRM\Modules\Customer\Application\DTO\UserDTO;
 use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
 
 final class WpdbUserRepository implements UserRepositoryInterface
