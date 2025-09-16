@@ -44,7 +44,7 @@ $company_name  = isset($Q->company_name)  ? (string)$Q->company_name  : '';
 // Nếu chưa có, thử lấy từ service (nếu dự án đã có)
 if ($company_id > 0 && ($company_name === '' || ($contact_name === '' && $contact_email === '' && $contact_phone === ''))) {
     try {
-        $svc = \TMT\CRM\Shared\Container::get('company-service');
+        $svc = \TMT\CRM\Shared\Container\Container::get('company-service');
         if (is_object($svc)) {
             // Lấy tên công ty
             if (method_exists($svc, 'find')) {
@@ -221,6 +221,9 @@ $company_search_nonce = wp_create_nonce('tmt_crm_company_search');
                                     <input type="text" name="contact_phone" class="regular-text" placeholder="<?php esc_attr_e('Số điện thoại liên hệ', 'tmt-crm'); ?>"
                                         value="<?php echo esc_attr($contact_phone); ?>">
                                 </div>
+                                <p style="margin-top:8px;">
+                                    <button type="button" class="button" id="tmt-refresh-contact"><?php esc_html_e('Sử dụng liên hệ chính của công ty', 'tmt-crm'); ?></button>
+                                </p>
                                 <p class="description" style="margin:4px 0 0;">
                                     <?php esc_html_e('Khi chọn công ty, hệ thống sẽ tự đề xuất liên hệ chính nếu API trả về primary_contact.', 'tmt-crm'); ?>
                                 </p>
