@@ -22,8 +22,8 @@ final class Menu
             25
         );
 
-        remove_submenu_page('tmt-crm', 'tmt-crm');
 
+        remove_submenu_page('tmt-crm', 'tmt-crm');
 
         // // (Tuỳ chọn) log screen id để chắc ID khớp
         add_action('current_screen', function ($s) {

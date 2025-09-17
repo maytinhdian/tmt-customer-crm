@@ -110,7 +110,9 @@ add_action('plugins_loaded', function () {
 
 }, 1);
 
-use TMT\CRM\Modules\Core\Records\CoreRecordsModule;
+use TMT\CRM\Core\Settings\SettingsPage;
+use TMT\CRM\Core\Records\CoreRecordsModule;
+use TMT\CRM\Core\Capabilities\CoreCapabilitiesModule;
 
 add_action('plugins_loaded', function () {
     CoreRecordsModule::register(); // bootstrap (file chính)
@@ -118,5 +120,7 @@ add_action('plugins_loaded', function () {
 
 add_action('plugins_loaded', function () {
     \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
+    SettingsPage::register();
+    CoreCapabilitiesModule::register();
     // … rồi mới ModuleRegistry::register_enabled_modules();
 }, 1);
