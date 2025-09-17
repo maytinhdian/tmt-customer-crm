@@ -7,11 +7,12 @@ namespace TMT\CRM\Modules\Company\Infrastructure\Persistence;
 use wpdb;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
+use TMT\CRM\Modules\Core\Records\Domain\Repositories\SoftDeletableRepositoryInterface;
 
 /**
  * Repository: wpdb-based cho bảng companies.
  */
-final class WpdbCompanyRepository implements CompanyRepositoryInterface
+final class WpdbCompanyRepository implements CompanyRepositoryInterface, SoftDeletableRepositoryInterface
 {
     private wpdb $db;
     private string $table;
@@ -46,7 +47,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return $row ? $this->map_row_to_dto($row) : null;
     }
 
-    
+
     public function list_paginated(int $page, int $per_page, array $filters = []): array
     {
         $where  = [];
@@ -154,7 +155,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return (bool)$ok;
     }
 
-    
+
     public function search_for_select(string $keyword, int $page, int $per_page = 20): array
     {
         $kw = '%' . $this->db->esc_like($keyword) . '%';
@@ -175,6 +176,39 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
         return $val !== null ? (string)$val : null;
     }
 
+        public function mark_deleted(int $id, int $actor_id, ?string $reason = null): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'crm_companies';
+        $wpdb->update($table, [
+            'deleted_at'   => current_time('mysql'),
+            'deleted_by'   => $actor_id,
+            'delete_reason'=> $reason,
+        ], ['id' => $id], ['%s','%d','%s'], ['%d']);
+    }
+
+    public function restore(int $id, int $actor_id): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'crm_companies';
+        $wpdb->update($table, [
+            'deleted_at'    => null,
+            'deleted_by'    => null,
+            'delete_reason' => null,
+        ], ['id' => $id], ['%s','%d','%s'], ['%d']);
+    }
+
+    public function purge(int $id, int $actor_id): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'crm_companies';
+        $wpdb->delete($table, ['id' => $id], ['%d']);
+    }
+
+    public function exists_active(int $id): bool {
+        global $wpdb;
+        $table = $wpdb->prefix . 'crm_companies';
+        $sql = $wpdb->prepare("SELECT 1 FROM {$table} WHERE id=%d AND deleted_at IS NULL", $id);
+        return (bool) $wpdb->get_var($sql);
+    }
+    
     /******Helper**** */
     private function map_row_to_dto(array $row): CompanyDTO
     {

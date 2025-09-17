@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Core\Records\Presentation\Cron;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 final class RegisterCron
 {

@@ -67,6 +67,7 @@ final class Hooks
         //---------------------
 
         Container::set('user-repo',  fn() => new WpdbUserRepository($wpdb));
+        Container::set('repo.softdelete.company', fn() => new \TMT\CRM\Modules\Company\Infrastructure\Persistence\WpdbCompanyRepository($wpdb));
     }
 
     public static function enqueue_admin(): void

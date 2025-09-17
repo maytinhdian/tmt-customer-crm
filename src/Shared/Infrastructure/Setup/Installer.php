@@ -18,12 +18,12 @@ final class Installer
     private static function migrators(): array
     {
         return [
-            // \TMT\CRM\Modules\Customer\Infrastructure\Persistence\Migration\CustomerMigrator::class,
-            // \TMT\CRM\Modules\Company\Infrastructure\Persistence\Migration\CompanyMigrator::class,
-            // \TMT\CRM\Modules\Contact\Infrastructure\Persistence\Migration\ContactMigrator::class,
-            \TMT\CRM\Modules\Note\Infrastructure\Migration\NoteMigrator::class,
+            \TMT\CRM\Modules\Customer\Infrastructure\Migrations\CustomerMigrator::class,
+            \TMT\CRM\Modules\Company\Infrastructure\Migrations\CompanyMigrator::class,
+            \TMT\CRM\Modules\Contact\Infrastructure\Migrations\ContactMigrator::class,
+            \TMT\CRM\Modules\Note\Infrastructure\Migrations\NoteMigrator::class,
             // \TMT\CRM\Modules\Sequence\Infrastructure\Persistence\Migration\SequenceMigrator::class,
-            // \TMT\CRM\Modules\Quote\Infrastructure\Persistence\Migration\QuoteMigrator::class,
+            \TMT\CRM\Modules\Quotation\Infrastructure\Migrations\QuoteMigrator::class,
             // \TMT\CRM\Modules\Order\Infrastructure\Persistence\Migration\OrderMigrator::class,
             // \TMT\CRM\Modules\Invoice\Infrastructure\Persistence\Migration\InvoiceMigrator::class,
             // \TMT\CRM\Modules\Payment\Infrastructure\Persistence\Migration\PaymentMigrator::class,

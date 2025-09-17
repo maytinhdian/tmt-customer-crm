@@ -109,3 +109,14 @@ add_action('plugins_loaded', function () {
     NoteModule::register(); // mỗi module tự có Menu::register()
 
 }, 1);
+
+use TMT\CRM\Modules\Core\Records\CoreRecordsModule;
+
+add_action('plugins_loaded', function () {
+    CoreRecordsModule::register(); // bootstrap (file chính)
+}, 1);
+
+add_action('plugins_loaded', function () {
+    \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
+    // … rồi mới ModuleRegistry::register_enabled_modules();
+}, 1);

@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Core\Records\Application\Services;
 
+use TMT\CRM\Shared\Container\Container;
+use TMT\CRM\Modules\Core\Records\Domain\Repositories\SoftDeletableRepositoryInterface;
 use RuntimeException;
 
 /**
@@ -22,14 +25,15 @@ final class TrashService
      */
     public function soft_delete(string $entity, int $id, int $actor_id, ?string $reason = null): void
     {
-        // Gợi ý: $repo = $this->resolve_repo($entity); $repo->mark_deleted($id, $actor_id, $reason);
+        $this->resolve_repo($entity)->mark_deleted($id, $actor_id, $reason);
         // Cross-cutting: ghi audit event ngắn nếu muốn (SOFT_DELETE)
     }
 
     /** Khôi phục từ xoá mềm. */
     public function restore(string $entity, int $id, int $actor_id): void
     {
-        // Gợi ý: $repo = $this->resolve_repo($entity); $repo->restore($id, $actor_id);
+        $repo = $this->resolve_repo($entity);
+        $repo->restore($id, $actor_id);
         // Cross-cutting: ghi audit event ngắn nếu muốn (RESTORE)
     }
 
@@ -68,5 +72,12 @@ final class TrashService
         );
 
         // 2) Nghiệp vụ tự DELETE: vd. $repo->purge($id, $actor_id);
+    }
+    private function resolve_repo(string $entity): SoftDeletableRepositoryInterface
+    {
+        $key = 'repo.softdelete.' . strtolower($entity); // ví dụ: repo.softdelete.company
+        /** @var SoftDeletableRepositoryInterface $repo */
+        $repo = Container::get($key);
+        return $repo;
     }
 }

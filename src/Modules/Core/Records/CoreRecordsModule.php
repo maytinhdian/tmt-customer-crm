@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Core\Records;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Core\Records\Application\Services\HistoryService;
 use TMT\CRM\Modules\Core\Records\Application\Services\TrashService;
 use TMT\CRM\Modules\Core\Records\Application\Services\RetentionService;
