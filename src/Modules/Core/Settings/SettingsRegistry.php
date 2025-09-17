@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Settings;
+namespace TMT\CRM\Modules\Core\Settings;
 
 final class SettingsRegistry
 {

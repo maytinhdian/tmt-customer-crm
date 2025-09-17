@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TMT\CRM\Shared\Domain\Repositories;
+namespace TMT\CRM\Modules\Core\Capabilities\Domain\Repositories;
 
 /**
  * Lưu/đọc ma trận quyền theo vai trò (role).
