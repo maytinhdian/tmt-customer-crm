@@ -7,7 +7,7 @@ namespace TMT\CRM\Modules\Company\Infrastructure\Persistence;
 use wpdb;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
-use TMT\CRM\Modules\Core\Records\Domain\Repositories\SoftDeletableRepositoryInterface;
+use TMT\CRM\Domain\Repositories\SoftDeletableRepositoryInterface;
 
 /**
  * Repository: wpdb-based cho bảng companies.

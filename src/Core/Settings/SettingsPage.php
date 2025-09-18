@@ -10,7 +10,7 @@ final class SettingsPage
 {
     public static function register(): void
     {
-        add_action('admin_menu', [self::class, 'add_menu'],20);
+        add_action('admin_menu', [self::class, 'add_menu'], 20);
         add_action('admin_init', [self::class, 'register_settings']);
     }
 
@@ -82,20 +82,10 @@ final class SettingsPage
     public static function render(): void
     {
 
-        // // Luôn dùng View::render_admin_module() (quy ước dự án)
-        // View::render_admin_module('core', 'settings-page', [
-        //     'option_key' => Settings::OPTION_KEY,
-        // ]);
-        // Lấy đường dẫn tuyệt đối đến template
-        $tpl = dirname(__DIR__, 3) . '/templates/admin/core/settings-page.php';
-
-        if (is_file($tpl)) {
-            // Truyền biến option_key xuống template
-            $option_key = Settings::OPTION_KEY;
-            include $tpl;
-        } else {
-            echo '<div class="notice notice-error"><p>Không tìm thấy template: ' . esc_html($tpl) . '</p></div>';
-        }
+        // Luôn dùng View::render_admin_module() (quy ước dự án)
+        View::render_admin_module('core', 'settings-page', [
+            'option_key' => Settings::OPTION_KEY,
+        ]);
     }
 
     public static function render_per_page_field(): void

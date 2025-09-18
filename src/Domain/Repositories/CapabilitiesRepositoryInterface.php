@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Capabilities\Domain\Repositories;
+namespace TMT\CRM\Domain\Repositories;
 
 /**
  * Lưu/đọc ma trận quyền theo vai trò (role).

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Records\Domain\Repositories;
+namespace TMT\CRM\Domain\Repositories;
 
 /**
  * Interface chung cho các Repository hỗ trợ cơ chế xoá mềm.

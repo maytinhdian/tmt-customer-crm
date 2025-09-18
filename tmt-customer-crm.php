@@ -121,6 +121,7 @@ add_action('plugins_loaded', function () {
 add_action('plugins_loaded', function () {
     \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
     SettingsPage::register();
+    \TMT\CRM\Core\Numbering\NumberingModule::register(); // bootstrap (file chính)
     CoreCapabilitiesModule::register();
     // … rồi mới ModuleRegistry::register_enabled_modules();
 }, 1);

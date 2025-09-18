@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Core\Capabilities\Infrastructure\Role;
 
-use TMT\CRM\Core\Capabilities\Domain\Repositories\CapabilitiesRepositoryInterface;
+use TMT\CRM\Domain\Repositories\CapabilitiesRepositoryInterface;
 use TMT\CRM\Core\Capabilities\Domain\Capability;
 
 final class RoleSynchronizer
