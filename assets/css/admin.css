@@ -2,3 +2,33 @@
   color: #777;
   font-style: italic;
 }
+
+.tmt-actions-legend .tmt-legend {
+  opacity: 0.8;
+}
+.tmt-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-left: 6px;
+  vertical-align: baseline;
+}
+.tmt-badge--deleted {
+  background: #eee;
+  color: #a00;
+  border: 1px solid #ddd;
+  font-weight: 600;
+}
+.tmt-text-deleted {
+  color: #777;
+  text-decoration: line-through;
+}
+.tmt-deleted-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #666;
+}
+tr.tmt-row-deleted td {
+  color: #666;
+}

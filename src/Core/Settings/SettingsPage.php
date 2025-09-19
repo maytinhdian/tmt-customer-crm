@@ -30,23 +30,27 @@ final class SettingsPage
     {
         $option_key = Settings::OPTION_KEY;
 
-        // Lấy defaults từ tất cả section (kể cả module) và merge vào options hiện tại.
-        $current = Settings::all();
-        $with_defaults = array_merge(SettingsRegistry::collect_defaults(), $current);
-        if ($with_defaults !== $current) {
-            update_option($option_key, $with_defaults);
+        $current  = Settings::all(); // [] nếu chưa có
+        $defaults = SettingsRegistry::collect_defaults(); // ví dụ: ['per_page' => 20]
+
+        if ($current === []) {
+            // Chỉ tạo lần đầu
+            add_option($option_key, is_array($defaults) ? $defaults : []);
+        } else {
+            // Chỉ bổ sung key MỚI, không ghi đè giá trị đang có
+            // (toán tử + sẽ giữ nguyên $current nếu key đã tồn tại)
+            $with_defaults = $current + (is_array($defaults) ? $defaults : []);
+            if ($with_defaults !== $current) {
+                update_option($option_key, $with_defaults);
+            }
         }
 
         register_setting(
             'tmt_crm_settings_group',
             $option_key,
             [
-                'sanitize_callback' => function ($input) use ($option_key) {
-                    $input_arr = is_array($input) ? $input : [];
-                    $current   = Settings::all();
-                    $sanitized = SettingsRegistry::sanitize_all($input_arr, $current);
-                    return is_array($sanitized) ? $sanitized : $current;
-                }
+                'sanitize_callback' => [self::class, 'sanitize_all']
+
             ]
         );
 
@@ -78,6 +82,22 @@ final class SettingsPage
             $section->register_fields('tmt-crm-settings', $option_key);
         }
     }
+    public static function sanitize_all($input): array
+    {
+        $in  = is_array($input) ? $input : [];
+        $out = Settings::all(); // copy giá trị hiện có
+
+        // per_page (GENERAL)
+        if (array_key_exists('per_page', $in)) {
+            $pp = (int) $in['per_page'];
+            $out['per_page'] = max(5, min(200, $pp)); // ghi đè hợp lệ
+        }
+
+        // Các section/module khác do Registry quản
+        $out = SettingsRegistry::sanitize_all($in, $out);
+
+        return $out; // PHẢI return mảng mới để WP update_option()
+    }
 
     public static function render(): void
     {
@@ -90,7 +110,7 @@ final class SettingsPage
 
     public static function render_per_page_field(): void
     {
-        $value = (int) Settings::get('per_page', 20);
+        $value = (int) Settings::get('per_page', 10);
         echo '<input type="number" min="5" max="200" name="' . esc_attr(Settings::OPTION_KEY) . '[per_page]" value="' . esc_attr($value) . '" />';
         echo '<p class="description">' . esc_html__('Áp dụng mặc định khi chưa cấu hình Per Page ở Screen Options.', 'tmt-crm') . '</p>';
     }

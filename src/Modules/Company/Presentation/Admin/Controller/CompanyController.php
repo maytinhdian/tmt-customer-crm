@@ -16,6 +16,7 @@ final class CompanyController
     {
         add_action('admin_post_' . CompanyScreen::ACTION_SAVE,   [self::class, 'handle_save']);
         add_action('admin_post_' . CompanyScreen::ACTION_DELETE, [self::class, 'handle_delete']);
+        add_action('admin_post_' . CompanyScreen::ACTION_SOFT_DELETE, [self::class, 'handle_soft_delete']);
         add_action('admin_post_' . CompanyScreen::ACTION_BULK_DELETE, [self::class, 'handle_bulk_delete']);
     }
 
@@ -117,7 +118,41 @@ final class CompanyController
             self::redirect(self::url(['error' => 1]));
         }
     }
-    
+
+    /** Handler: Soft Delete (single) */
+    public static function handle_soft_delete(): void
+    {
+        self::ensure_capability(Capability::COMPANY_DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
+
+        $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
+        $actor_id = get_current_user_id(); // WP user đang thao tác
+
+        if ($id <= 0) {
+            wp_die(__('Thiếu ID.', 'tmt-crm'));
+        }
+
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce((string) $_GET['_wpnonce'], 'tmt_crm_company_soft_delete_' . $id)) {
+            wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
+        }
+
+        $svc = Container::get('company-service');
+
+        try {
+            $svc->soft_delete($id, $actor_id);
+            AdminNoticeService::success_for_screen(
+                CompanyScreen::hook_suffix(),
+                __('Xóa công ty thành công.', 'tmt-crm')
+            );
+            self::redirect(self::url());
+        } catch (\Throwable $e) {
+            AdminNoticeService::error_for_screen(
+                CompanyScreen::hook_suffix(),
+                sprintf(__('Xóa thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
+            );
+            self::redirect(self::url(['error' => 1]));
+        }
+    }
+
     /** Bulk delete nhiều công ty từ list table */
     public static function handle_bulk_delete(): void
     {

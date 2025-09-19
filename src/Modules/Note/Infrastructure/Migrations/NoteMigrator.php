@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Note\Infrastructure\Migrations;
 
 use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
+use TMT\CRM\Core\Records\Infrastructure\Migration\SoftDeleteColumnsHelper;
 
 final class NoteMigrator extends BaseMigrator
 {
@@ -14,7 +15,7 @@ final class NoteMigrator extends BaseMigrator
     }
     public static function target_version(): string
     {
-        return '1.1.7';
+        return '1.1.8';
     }
 
     public function install(): void
@@ -70,7 +71,7 @@ SQL;
         $table = $this->db->prefix . 'tmt_crm_notes';
 
         // Ví dụ: nếu trước đây bảng chưa có 2 cột soft-delete → thêm vào tại 1.1.0
-        if (version_compare($from_version,'1.1.7', '<')) {
+        if (version_compare($from_version, '1.1.8', '<')) {
             // status: active/inactive
             if (!$this->column_exists($table, 'status')) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -79,18 +80,13 @@ SQL;
                 );
             }
 
-            // deleted_at: DATETIME NULL
-            if (!$this->column_exists($table, 'deleted_at')) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $this->db->query(
-                    "ALTER TABLE `{$table}` ADD COLUMN `deleted_at` DATETIME NULL AFTER `status`"
-                );
-            }
+            // Lưu ý: helper nhận tên bảng KHÔNG prefix
+            SoftDeleteColumnsHelper::ensure('tmt_crm_notes');
         }
         $table = $this->db->prefix . 'tmt_crm_files';
 
         // Ví dụ: nếu trước đây bảng chưa có 2 cột soft-delete → thêm vào tại 1.1.0
-        if (version_compare($from_version, '1.1.7', '<')) {
+        if (version_compare($from_version, '1.1.8', '<')) {
             // status: active/inactive
             if (!$this->column_exists($table, 'status')) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -99,13 +95,8 @@ SQL;
                 );
             }
 
-            // deleted_at: DATETIME NULL
-            if (!$this->column_exists($table, 'deleted_at')) {
-                // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-                $this->db->query(
-                    "ALTER TABLE `{$table}` ADD COLUMN `deleted_at` DATETIME NULL AFTER `status`"
-                );
-            }
+            // Lưu ý: helper nhận tên bảng KHÔNG prefix
+            SoftDeleteColumnsHelper::ensure('tmt_crm_files');
         }
         $this->set_version(self::target_version());
     }

@@ -18,10 +18,19 @@ final class CompanyDTO implements \JsonSerializable
     public ?string $email;
     public ?string $website;
     public ?string $note;
-    public ?int $owner_id;       // ⬅️ mới
-    public ?string $representer; // ⬅️ mới
+    public ?int $owner_id;         // ⬅️ mới
+    public ?string $representer;   // ⬅️ mới
     public ?string $created_at;
     public ?string $updated_at;
+
+    // 🔽 bổ sung các field soft-delete
+    public ?string $status = null;          // 'active' | 'inactive'
+    public ?string $deleted_at = null;
+    public ?int $deleted_by = null;
+    public ?string $deleted_by_name = null; // join sang bảng users khi query
+    public ?string $delete_reason = null;
+    public ?string $restored_at = null;
+    public ?int $restored_by = null;
 
     public function __construct(
         ?int $id,
@@ -37,18 +46,18 @@ final class CompanyDTO implements \JsonSerializable
         ?string $created_at = null,
         ?string $updated_at = null
     ) {
-        $this->id         = $id;
-        $this->name       = trim($name);
-        $this->tax_code   = trim($tax_code);
-        $this->address    = trim($address);
-        $this->phone      = $this->nn($phone);
-        $this->email      = $this->nn($email);
-        $this->website    = $this->nn($website);
-        $this->note       = $this->nn($note);
-        $this->owner_id = $owner_id;
+        $this->id          = $id;
+        $this->name        = trim($name);
+        $this->tax_code    = trim($tax_code);
+        $this->address     = trim($address);
+        $this->phone       = $this->nn($phone);
+        $this->email       = $this->nn($email);
+        $this->website     = $this->nn($website);
+        $this->note        = $this->nn($note);
+        $this->owner_id    = $owner_id;
         $this->representer = $representer;
-        $this->created_at = $created_at;
-        $this->updated_at = $updated_at;
+        $this->created_at  = $created_at;
+        $this->updated_at  = $updated_at;
     }
 
     /**
@@ -65,7 +74,7 @@ final class CompanyDTO implements \JsonSerializable
      */
     public static function from_array(array $data): self
     {
-        return new self(
+        $dto = new self(
             id: isset($data['id']) ? (int)$data['id'] : null,
             name: array_key_exists('name', $data)
                 ? (string)$data['name']
@@ -81,6 +90,17 @@ final class CompanyDTO implements \JsonSerializable
             created_at: isset($data['created_at']) ? (string)$data['created_at'] : null,
             updated_at: isset($data['updated_at']) ? (string)$data['updated_at'] : null
         );
+
+        // map thêm các field soft-delete
+        $dto->status          = $data['status']          ?? null;
+        $dto->deleted_at      = $data['deleted_at']      ?? null;
+        $dto->deleted_by      = isset($data['deleted_by']) ? (int)$data['deleted_by'] : null;
+        $dto->deleted_by_name = $data['deleted_by_name'] ?? null;
+        $dto->delete_reason   = $data['delete_reason']   ?? null;
+        $dto->restored_at     = $data['restored_at']     ?? null;
+        $dto->restored_by     = isset($data['restored_by']) ? (int)$data['restored_by'] : null;
+
+        return $dto;
     }
 
     private function nn(?string $v): ?string

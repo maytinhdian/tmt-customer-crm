@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Company\Domain\Repositories;
 
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
-
-interface CompanyRepositoryInterface
+use TMT\CRM\Domain\Repositories\SoftDeletableRepositoryInterface;
+interface CompanyRepositoryInterface extends SoftDeletableRepositoryInterface
 {
     public function find_by_id(int $id): ?CompanyDTO;
 

@@ -7,15 +7,17 @@ namespace TMT\CRM\Modules\Company\Infrastructure\Persistence;
 use wpdb;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
-use TMT\CRM\Domain\Repositories\SoftDeletableRepositoryInterface;
+use TMT\CRM\Core\Records\Infrastructure\Persistence\Wpdb\Traits\WpdbSoftDeleteTrait;
 
 /**
  * Repository: wpdb-based cho bảng companies.
  */
-final class WpdbCompanyRepository implements CompanyRepositoryInterface, SoftDeletableRepositoryInterface
+final class WpdbCompanyRepository implements CompanyRepositoryInterface
 {
-    private wpdb $db;
-    private string $table;
+    use WpdbSoftDeleteTrait;
+
+    // private wpdb $db;
+    // private string $table;
 
     public function __construct(wpdb $db, string $table_name = '')
     {
@@ -176,39 +178,43 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface, SoftDel
         return $val !== null ? (string)$val : null;
     }
 
-        public function mark_deleted(int $id, int $actor_id, ?string $reason = null): void {
+    public function mark_deleted(int $id, int $actor_id, ?string $reason = null): void
+    {
         global $wpdb;
-        $table = $wpdb->prefix . 'crm_companies';
+        $table = $wpdb->prefix . 'tmt_crm_companies';
         $wpdb->update($table, [
             'deleted_at'   => current_time('mysql'),
             'deleted_by'   => $actor_id,
-            'delete_reason'=> $reason,
-        ], ['id' => $id], ['%s','%d','%s'], ['%d']);
+            'delete_reason' => $reason,
+        ], ['id' => $id], ['%s', '%d', '%s'], ['%d']);
     }
 
-    public function restore(int $id, int $actor_id): void {
+    public function restore(int $id, int $actor_id): void
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'crm_companies';
         $wpdb->update($table, [
             'deleted_at'    => null,
             'deleted_by'    => null,
             'delete_reason' => null,
-        ], ['id' => $id], ['%s','%d','%s'], ['%d']);
+        ], ['id' => $id], ['%s', '%d', '%s'], ['%d']);
     }
 
-    public function purge(int $id, int $actor_id): void {
+    public function purge(int $id, int $actor_id): void
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'crm_companies';
         $wpdb->delete($table, ['id' => $id], ['%d']);
     }
 
-    public function exists_active(int $id): bool {
+    public function exists_active(int $id): bool
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'crm_companies';
         $sql = $wpdb->prepare("SELECT 1 FROM {$table} WHERE id=%d AND deleted_at IS NULL", $id);
         return (bool) $wpdb->get_var($sql);
     }
-    
+
     /******Helper**** */
     private function map_row_to_dto(array $row): CompanyDTO
     {

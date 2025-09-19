@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Company\Presentation\Admin\Screen;
 
+use TMT\CRM\Core\Settings\Settings;
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Presentation\Support\View;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
@@ -23,6 +24,7 @@ final class CompanyScreen
     /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
     public const ACTION_SAVE   = 'tmt_crm_company_save';
     public const ACTION_DELETE = 'tmt_crm_company_delete';
+    public const ACTION_SOFT_DELETE = 'tmt_crm_company_soft_delete';
     public const ACTION_BULK_DELETE = 'tmt_crm_company_bulk_delete';
 
 
@@ -59,12 +61,16 @@ final class CompanyScreen
         if (!current_user_can(Capability::COMPANY_CREATE)) {
             return;
         }
+        // Lấy mặc định từ Core Settings (nếu chưa có thì 10)
+        $default_per_page = (int) Settings::get('per_page', 10);
 
         add_screen_option('per_page', [
             'label'   => __('Số công ty mỗi trang', 'tmt-crm'),
-            'default' => 20,
+            'default' => $default_per_page,
             'option'  => self::OPTION_PER_PAGE,
         ]);
+
+        add_filter('set-screen-option', [self::class, 'save_screen_options'], 10, 3);
 
         // ✅ Báo cho Screen Options biết danh sách cột (để hiện checkbox Columns)
         $screen = get_current_screen();
@@ -97,7 +103,14 @@ final class CompanyScreen
     public static function save_screen_option($status, $option, $value)
     {
         if ($option === self::OPTION_PER_PAGE) {
-            return (int) $value;
+            $v = (int) $value;
+            if ($v < 5) {
+                $v = 5;
+            }
+            if ($v > 200) {
+                $v = 200;
+            }
+            return $v;
         }
         return $status;
     }

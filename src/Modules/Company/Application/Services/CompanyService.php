@@ -67,6 +67,32 @@ final class CompanyService
         return ['items' => $items, 'total' => $total];
     }
 
+    /** Xoá mềm (mark_deleted) */
+    public function soft_delete(int $company_id, int $actor_id, ?string $reason = null): void
+    {
+        // $this->policy->ensure_can('company_soft_delete', $actor_id, $company_id);
+        $this->company_repo->mark_deleted($company_id, $actor_id, $reason);
+    }
+
+    /** Khôi phục */
+    public function restore(int $company_id, int $actor_id): void
+    {
+        // $this->policy->ensure_can('company_restore', $actor_id, $company_id);
+        $this->company_repo->restore($company_id, $actor_id);
+    }
+
+    /** Xoá vĩnh viễn */
+    public function purge(int $company_id, int $actor_id): void
+    {
+        // $this->policy->ensure_can('company_purge', $actor_id, $company_id);
+        $this->company_repo->purge($company_id, $actor_id);
+    }
+
+    /** Kiểm tra còn hoạt động */
+    public function exists_active(int $company_id): bool
+    {
+        return $this->company_repo->exists_active($company_id);
+    }
 
     // ================== helpers ==================
 

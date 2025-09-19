@@ -4,11 +4,12 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Contact\Infrastructure\Migrations;
 
 use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
+use TMT\CRM\Core\Records\Infrastructure\Migration\SoftDeleteColumnsHelper; 
 
 final class ContactMigrator extends BaseMigrator
 {
     public static function module_key(): string { return 'contact'; }
-    public static function target_version(): string { return '1.0.0'; }
+    public static function target_version(): string { return '1.0.2'; }
 
     public function install(): void
     {
@@ -69,6 +70,8 @@ SQL;
     public function upgrade(string $from_version): void
     {
         if ($from_version === '') { $this->install(); return; }
+          // Lưu ý: helper nhận tên bảng KHÔNG prefix
+        SoftDeleteColumnsHelper::ensure('tmt_crm_company_contacts');
         $this->set_version(self::target_version());
     }
 }

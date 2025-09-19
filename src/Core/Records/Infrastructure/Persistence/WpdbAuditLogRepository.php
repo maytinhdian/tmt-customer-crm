@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Core\Records\Infrastructure\Persistence;
 
 use TMT\CRM\Core\Records\Application\DTO\AuditLogDTO;
-use TMT\CRM\Core\Records\Domain\Repositories\AuditLogRepositoryInterface;
+use TMT\CRM\Domain\Repositories\AuditLogRepositoryInterface;
 
 final class WpdbAuditLogRepository implements AuditLogRepositoryInterface
 {

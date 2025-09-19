@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Core\Records\Infrastructure\Persistence;
 
 use TMT\CRM\Core\Records\Application\DTO\ArchiveDTO;
-use TMT\CRM\Core\Records\Domain\Repositories\ArchiveRepositoryInterface;
+use TMT\CRM\Domain\Repositories\ArchiveRepositoryInterface;
 
 final class WpdbArchiveRepository implements ArchiveRepositoryInterface
 {

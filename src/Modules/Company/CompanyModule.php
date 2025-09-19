@@ -33,5 +33,6 @@ final class CompanyModule
         add_action('admin_init', function () {
             CompanyController::register();
         });
+        
     }
 }

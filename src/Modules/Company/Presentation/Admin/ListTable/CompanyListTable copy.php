@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Company\Presentation\Admin\ListTable;
 
-use TMT\CRM\Core\Settings\Settings;
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Shared\Infrastructure\Security\Capability;
-use TMT\CRM\Shared\Presentation\Support\AdminPostHelper;
 use TMT\CRM\Modules\Contact\Application\DTO\CompanyContactDTO;
 
 defined('ABSPATH') || exit;
@@ -22,29 +20,20 @@ if (!class_exists('\WP_List_Table')) {
  */
 final class CompanyListTable extends \WP_List_Table
 {
-    /** @var 'active'|'deleted'|'all' */
-    private string $status_view = 'active';
+    private string $status_view; // active|deleted|all
     private array $items_data = [];
     private int $total_items = 0;
     private array $counts = ['all' => 0, 'active' => 0, 'deleted' => 0];
     private int $per_page = 20;
 
-    private function normalize_status_view(?string $v): string
-    {
-        $v = sanitize_key((string) $v);
-        return in_array($v, ['active', 'deleted', 'all'], true) ? $v : 'active';
-    }
-
-    public function __construct(?string $status_view = null)
+    public function __construct()
     {
         parent::__construct([
             'singular' => 'company',
             'plural'   => 'companies',
             'ajax'     => false,
         ]);
-
-        $request_status   = isset($_GET['status']) ? (string) $_GET['status'] : null;
-        $this->status_view = $this->normalize_status_view($request_status ?? $status_view);
+        // $this->status_view = in_array(['active', 'deleted', 'all'],string) ;
     }
 
     /**
@@ -89,50 +78,11 @@ final class CompanyListTable extends \WP_List_Table
      */
     protected function get_bulk_actions(): array
     {
-        if ($this->status_view === 'deleted') {
-            return [
-                'restore' => esc_html__('Khôi phục', 'tmt-crm'),
-                'purge'   => esc_html__('Xoá vĩnh viễn', 'tmt-crm'),
-            ];
-        }
-
         return [
             'bulk-delete' => 'Xoá đã chọn',
-            'soft_delete' => esc_html__('Xoá mềm', 'tmt-crm'),
         ];
     }
 
-    /** Tabs Tất cả / Đang hoạt động / Đã xoá */
-    protected function get_views(): array
-    {
-        $base = add_query_arg(['page' => sanitize_key($_GET['page'] ?? '')]);
-        $make = function (string $key, string $label) use ($base) {
-            $url    = esc_url(add_query_arg(['status' => $key], $base));
-            $active = $this->status_view === $key ? ' class="current"' : '';
-            $count  = (int) ($this->counts[$key] ?? 0);
-            return "<a href='{$url}'{$active}>{$label} <span class='count'>({$count})</span></a>";
-        };
-
-        return [
-            'all'     => $make('all',     esc_html__('Tất cả', 'tmt-crm')),
-            'active'  => $make('active',  esc_html__('Đang hoạt động', 'tmt-crm')),
-            'deleted' => $make('deleted', esc_html__('Đã xoá', 'tmt-crm')),
-        ];
-    }
-
-    /** Dải chú thích/legend + filter nho nhỏ ở thanh trên (giống ảnh) */
-    protected function extra_tablenav($which)
-    {
-        if ($which !== 'top') {
-            return;
-        }
-
-        echo '<div class="alignleft actions tmt-actions-legend">';
-        echo '<label class="tmt-legend"><input type="checkbox" disabled checked> ' . esc_html__('Bản ghi hoạt động', 'tmt-crm') . '</label>';
-        echo ' &nbsp; ';
-        echo '<label class="tmt-legend"><input type="checkbox" disabled ' . ($this->status_view === 'deleted' ? 'checked' : '') . '> ' . esc_html__('Bản ghi đã xoá mềm (có thể khôi phục)', 'tmt-crm') . '</label>';
-        echo '</div>';
-    }
     /**
      * Checkbox
      */
@@ -172,7 +122,7 @@ final class CompanyListTable extends \WP_List_Table
     protected function column_name($item): string
     {
         $id   = (int)$item['id'];
-        $title = esc_html((string)$item['name']);
+        $name = esc_html((string)$item['name']);
 
         $edit_url = add_query_arg([
             'page'   => 'tmt-crm-companies',
@@ -180,46 +130,20 @@ final class CompanyListTable extends \WP_List_Table
             'id'     => $id,
         ], admin_url('admin.php'));
 
-        if (empty($item['deleted_at'])) {
-
-            // URLs hành động
-            $edit_url = '#'; // tuỳ màn hình chỉnh sửa của bạn
-            $del_url  = AdminPostHelper::url(
-                'tmt_crm_company_soft_delete',
-                [
-                    'id' =>  $id,
-                ],
-                'tmt_crm_company_soft_delete_' . $id,
-            );
-            $manage_url = add_query_arg([
-                'page' => CompanyScreen::PAGE_SLUG,
-                'view' => 'overview',
-                'id'   => $id,
-            ], admin_url('admin.php'));
-
-            $actions['edit'] = sprintf('<a href="%s">Sửa</a>', esc_url($edit_url));
-            $actions['del']  = sprintf('<a href="%s" onclick="return confirm(\'Xoá công ty này?\')">Xoá</a>', esc_url($del_url));
-            $actions['more'] = '<a href="#">' . esc_html__('Quản lý', 'tmt-crm') . '</a>';
-
-            return "<strong>{$title}</strong>" . $this->row_actions($actions);
-        }
-
-        // Hàng đã xoá mềm
-        $badge = '<span class="tmt-badge tmt-badge--deleted">' . esc_html__('ĐÃ XOÁ', 'tmt-crm') . '</span>';
-        $actions['restore'] = '<a class="tmt-restore" href="#">' . esc_html__('Khôi phục', 'tmt-crm') . '</a>';
-        $actions['purge']   = '<a class="tmt-purge" href="#" onclick="return confirm(\'' . esc_js(__('Xoá vĩnh viễn?', 'tmt-crm')) . '\')">' . esc_html__('Xoá vĩnh viễn', 'tmt-crm') . '</a>';
-
-        $meta = sprintf(
-            '<div class="tmt-deleted-meta">%s <b>%s</b> • %s %s • %s %s</div>',
-            esc_html__('Bởi:', 'tmt-crm'),
-            esc_html($item['deleted_by_name'] ?? '—'),
-            esc_html__('Lý do:', 'tmt-crm'),
-            esc_html($item['delete_reason'] ?? '—'),
-            esc_html__('Lúc:', 'tmt-crm'),
-            esc_html($item['deleted_at'])
+        $delete_url = wp_nonce_url(
+            add_query_arg([
+                'action' => 'tmt_crm_company_delete',
+                'id'     => $id,
+            ], admin_url('admin-post.php')),
+            'tmt_crm_company_delete_' . $id
         );
 
-        return "<strong class='tmt-text-deleted'>{$title}</strong> {$badge}" . $this->row_actions($actions) . $meta;
+        $actions = [
+            'edit'   => sprintf('<a href="%s">Sửa</a>', esc_url($edit_url)),
+            'delete' => sprintf('<a href="%s" onclick="return confirm(\'Xoá công ty này?\')">Xoá</a>', esc_url($delete_url)),
+        ];
+
+        return sprintf('<strong><a href="%s">%s</a></strong> %s', esc_url($edit_url), $name, $this->row_actions($actions));
     }
 
     // Hiển thị tên người phụ trách từ owner_id
@@ -380,11 +304,10 @@ final class CompanyListTable extends \WP_List_Table
         $svc = Container::get('company-service');
 
         // per_page từ Screen Options
-        $default_per_page = (int) Settings::get('per_page', 20);
-        // $this->per_page = (int) get_user_meta(get_current_user_id(), 'tmt_crm_companies_per_page', true);
-        $this->per_page = $this->get_items_per_page(CompanyScreen::OPTION_PER_PAGE, $default_per_page);
+        $this->per_page = (int) get_user_meta(get_current_user_id(), 'tmt_crm_companies_per_page', true);
+        if ($this->per_page <= 0) $this->per_page = 20;
+
         $current_page = $this->get_pagenum();
-        
 
         $orderby = isset($_GET['orderby']) ? sanitize_key($_GET['orderby']) : 'id';
         $order   = isset($_GET['order']) ? strtoupper(sanitize_text_field($_GET['order'])) : 'DESC';
@@ -394,14 +317,9 @@ final class CompanyListTable extends \WP_List_Table
             'keyword' => sanitize_text_field($_GET['s'] ?? ''),
             'orderby' => $orderby,
             'order'   => $order,
-            'status_view' => $this->status_view, // 👈 thêm dòng này
         ];
 
         $result = $svc->get_paged($current_page, $this->per_page, $filters);
-
-        $this->counts = method_exists($svc, 'count_for_tabs')
-            ? $svc->count_for_tabs()
-            : ['all' => $this->total_items, 'active' => $this->total_items, 'deleted' => 0];
 
         // Convert DTO -> array để hiển thị nhanh
         $this->items_data = array_map(function ($dto) {
@@ -416,12 +334,6 @@ final class CompanyListTable extends \WP_List_Table
                 'representer' => $dto->representer,
                 'created_at' => $dto->created_at,
                 'updated_at' => $dto->updated_at,
-
-                // 👇 các field cho xoá mềm
-                'deleted_at'     => $dto->deleted_at,
-                'deleted_by'     => $dto->deleted_by,
-                'deleted_by_name' => $dto->deleted_by_name,
-                'delete_reason'  => $dto->delete_reason,
             ];
         }, $result['items']);
 
@@ -447,14 +359,7 @@ final class CompanyListTable extends \WP_List_Table
     }
 
 
-    /** Thêm class cho hàng đã xoá mềm để style mờ */
-    public function single_row($item)
-    {
-        $classes = !empty($item['deleted_at']) ? ' class="tmt-row-deleted"' : '';
-        echo "<tr{$classes}>";
-        $this->single_row_columns($item);
-        echo '</tr>';
-    }
+
 
 
 

@@ -113,6 +113,7 @@ add_action('plugins_loaded', function () {
 use TMT\CRM\Core\Settings\SettingsPage;
 use TMT\CRM\Core\Records\CoreRecordsModule;
 use TMT\CRM\Core\Capabilities\CoreCapabilitiesModule;
+use TMT\CRM\Core\Notifications\NotificationsModule;
 
 add_action('plugins_loaded', function () {
     CoreRecordsModule::register(); // bootstrap (file chính)
@@ -123,5 +124,6 @@ add_action('plugins_loaded', function () {
     SettingsPage::register();
     \TMT\CRM\Core\Numbering\NumberingModule::register(); // bootstrap (file chính)
     CoreCapabilitiesModule::register();
+    NotificationsModule::register();
     // … rồi mới ModuleRegistry::register_enabled_modules();
 }, 1);

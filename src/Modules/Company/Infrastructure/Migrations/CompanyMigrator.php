@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Company\Infrastructure\Migrations;
 
 use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
+use TMT\CRM\Core\Records\Infrastructure\Migration\SoftDeleteColumnsHelper;
 
 final class CompanyMigrator extends BaseMigrator
 {
@@ -14,7 +15,7 @@ final class CompanyMigrator extends BaseMigrator
     }
     public static function target_version(): string
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     public function install(): void
@@ -55,6 +56,8 @@ SQL;
             $this->install();
             return;
         }
+        // Lưu ý: helper nhận tên bảng KHÔNG prefix
+        SoftDeleteColumnsHelper::ensure('tmt_crm_companies');
         $this->set_version(self::target_version());
     }
 }
