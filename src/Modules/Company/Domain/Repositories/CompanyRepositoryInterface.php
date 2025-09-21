@@ -6,6 +6,7 @@ namespace TMT\CRM\Modules\Company\Domain\Repositories;
 
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Domain\Repositories\SoftDeletableRepositoryInterface;
+
 interface CompanyRepositoryInterface extends SoftDeletableRepositoryInterface
 {
     public function find_by_id(int $id): ?CompanyDTO;
@@ -30,6 +31,10 @@ interface CompanyRepositoryInterface extends SoftDeletableRepositoryInterface
      */
     public function search_for_select(string $keyword, int $page, int $per_page = 20): array;
 
+    /** @return array{active:int,deleted:int} */
+    public function count_by_status(): array;
+
+    public function count_for_tabs(): array; // ['all'=>int,'active'=>int,'deleted'=>int]
 
     /** Lấy owner_id của công ty. Không ném exception khi không có. */
     // public function get_owner_id(int $company_id): ?int;

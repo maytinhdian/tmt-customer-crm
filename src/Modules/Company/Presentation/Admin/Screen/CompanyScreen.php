@@ -7,6 +7,7 @@ namespace TMT\CRM\Modules\Company\Presentation\Admin\Screen;
 use TMT\CRM\Core\Settings\Settings;
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Presentation\Support\View;
+use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Shared\Infrastructure\Security\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\ListTable\CompanyListTable;
@@ -23,9 +24,10 @@ final class CompanyScreen
 
     /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
     public const ACTION_SAVE   = 'tmt_crm_company_save';
-    public const ACTION_DELETE = 'tmt_crm_company_delete';
+    public const ACTION_HARD_DELETE = 'tmt_crm_company_delete';
     public const ACTION_SOFT_DELETE = 'tmt_crm_company_soft_delete';
     public const ACTION_BULK_DELETE = 'tmt_crm_company_bulk_delete';
+    public const ACTION_RESTORE = 'tmt_crm_company_restore';
 
 
     private const TABS = [
@@ -55,6 +57,18 @@ final class CompanyScreen
         return 'crm_page_' . self::PAGE_SLUG;
     }
 
+    /**
+     * Screen ID ổn định để enqueue/print notices.
+     * - Với submenu dưới menu cha 'crm' => "crm_page_{slug}"
+     * - Nếu sau này đổi sang top-level, cập nhật prefix ở đây là đủ.
+     */
+    public static function screen_id(): string
+    {
+        return self::$hook_suffix ?: ('crm_page_' . self::PAGE_SLUG);
+    }
+
+
+
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
     public static function on_load_companies(): void
     {
@@ -83,7 +97,12 @@ final class CompanyScreen
 
         // ✅ Ẩn/hiện cột theo mặc định cho screen này
         add_filter('default_hidden_columns', [self::class, 'default_hidden_columns'], 10, 2);
+
+        add_action('admin_notices', static function () {
+            \TMT\CRM\Shared\Presentation\Support\AdminNoticeService::print_for_screen(self::screen_id());
+        }, 1);
     }
+
 
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
@@ -172,6 +191,7 @@ final class CompanyScreen
 
             <form method="post">
                 <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE_SLUG); ?>" />
+                <input type="hidden" name="status" value="<?php echo esc_attr(sanitize_key($_GET['status'] ?? 'active')); ?>">
                 <?php
                 $table->search_box(__('Tìm kiếm công ty', 'tmt-crm'), 'company');
                 $table->display();

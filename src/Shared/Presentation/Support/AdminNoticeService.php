@@ -7,87 +7,106 @@ namespace TMT\CRM\Shared\Presentation\Support;
 final class AdminNoticeService
 {
     private const TRANSIENT_PREFIX = 'tmt_crm_notice_';
-    private const TTL_SECONDS      = 120;
+    private const TTL_SECONDS      = 180; // 3 phút
 
-    /** Khởi tạo hook in notice ở mọi trang WP Admin */
+    /** Gắn vào sớm (plugins_loaded hoặc module::register) */
     public static function boot(): void
     {
-        add_action('all_admin_notices', [self::class, 'print_notices'], 20);
-        error_log('[TMT CRM] AdminNoticeService::boot() is running...');
+        // In theo screen hiện tại (ngoài mọi tab/partial)
+        add_action('all_admin_notices', [self::class, 'print_current_screen'], 20);
     }
 
-    /** Thông báo thành công (không ràng buộc screen) */
+    /** API ngắn gọn (không ràng buộc screen) */
     public static function success(string $message): void
     {
         self::flash('success', $message, null);
     }
-
-    /** Thông báo lỗi (không ràng buộc screen) */
     public static function error(string $message): void
     {
-        self::flash('error', $message, null);
+        self::flash('error',   $message, null);
+    }
+    public static function warning(string $message): void
+    {
+        self::flash('warning', $message, null);
+    }
+    public static function info(string $message): void
+    {
+        self::flash('info',    $message, null);
     }
 
-    /** Thông báo thành công cho 1 screen cụ thể */
+    /** API theo screen_id (khuyên dùng cho admin-post redirect về screen) */
     public static function success_for_screen(string $screen_id, string $message): void
     {
-        $temp_flash = self::flash('success', $message, $screen_id);
-        error_log('[AD]' . $screen_id);
+        self::flash('success', $message, $screen_id);
     }
-
-    /** Thông báo lỗi cho 1 screen cụ thể */
     public static function error_for_screen(string $screen_id, string $message): void
     {
-        self::flash('error', $message, $screen_id);
+        self::flash('error',   $message, $screen_id);
+    }
+    public static function warning_for_screen(string $screen_id, string $message): void
+    {
+        self::flash('warning', $message, $screen_id);
+    }
+    public static function info_for_screen(string $screen_id, string $message): void
+    {
+        self::flash('info',    $message, $screen_id);
     }
 
-    /** In ra notice + dọn transient */
-    public static function print_notices(): void
+    /**
+     * In tất cả notice dành cho screen hiện tại (và các notice global).
+     * Gắn trên all_admin_notices để đứng trước nội dung tab.
+     */
+    public static function print_current_screen(): void
+    {
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        $screen_id = $screen ? (string) $screen->id : '';
+        self::print_for_screen($screen_id ?: null); // nếu trống vẫn in notice global
+    }
+
+    /**
+     * In notice cho 1 screen cụ thể + notice global (screen_id=null).
+     * Có thể gọi thủ công trong load-{$hook_suffix} nếu muốn.
+     */
+    public static function print_for_screen(?string $screen_id): void
     {
         $key   = self::get_key();
         $stash = get_transient($key);
-        if (empty($stash) || !is_array($stash)) {
+        if (!is_array($stash) || empty($stash)) {
             return;
         }
 
-        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        $curr_id = $screen ? (string)$screen->id : '';
-
         $remain = [];
-        foreach ($stash as $row) {
-            $type      = (string)($row['type'] ?? 'success');
-            $message   = (string)($row['message'] ?? '');
-            $screen_id = $row['screen_id'] ?? null;
+        foreach ($stash as $notice) {
+            // notice format: ['type'=>'success|error|warning|info','message'=>'..','screen_id'=>string|null]
+            $n_type  = $notice['type']      ?? 'info';
+            $n_msg   = (string) ($notice['message']   ?? '');
+            $n_sid   = $notice['screen_id'] ?? null;
 
-            // Lọc: nếu có screen_id thì chỉ hiển thị ở đúng screen
-            $match_screen = (empty($screen_id) || $screen_id === $curr_id);
+            // In nếu: (notice global) hoặc (trùng screen)
+            $match = ($n_sid === null) || ($screen_id !== null && $n_sid === $screen_id);
 
-            if ($match_screen && $message !== '') {
-                $class = $type === 'success'
-                    ? 'notice notice-success is-dismissible'
-                    : 'notice notice-error is-dismissible';
-
-                printf(
-                    '<div class="%s"><p>%s</p></div>',
-                    esc_attr($class),
-                    wp_kses_post($message)
-                );
+            if ($match) {
+                $class = match ($n_type) {
+                    'success' => 'notice notice-success is-dismissible',
+                    'error'   => 'notice notice-error is-dismissible',
+                    'warning' => 'notice notice-warning is-dismissible',
+                    default   => 'notice notice-info is-dismissible',
+                };
+                echo '<div class="' . esc_attr($class) . '"><p>' . wp_kses_post($n_msg) . '</p></div>';
             } else {
-                $remain[] = $row;
+                // Giữ lại để in ở screen khác
+                $remain[] = $notice;
             }
         }
 
-        if (empty($remain)) {
-            delete_transient($key);
-        } else {
+        if ($remain) {
             set_transient($key, $remain, self::TTL_SECONDS);
+        } else {
+            delete_transient($key);
         }
     }
 
-    // =======================
-    // Internals
-    // =======================
-
+    /** Lưu notice vào transient theo user */
     private static function flash(string $type, string $message, ?string $screen_id): void
     {
         $key   = self::get_key();
@@ -95,19 +114,17 @@ final class AdminNoticeService
         if (!is_array($stash)) {
             $stash = [];
         }
-
         $stash[] = [
             'type'      => $type,
             'message'   => $message,
-            'screen_id' => $screen_id, // null = hiện ở mọi screen
+            'screen_id' => $screen_id, // null = global
         ];
-
         set_transient($key, $stash, self::TTL_SECONDS);
     }
 
     private static function get_key(): string
     {
-        $user_id = get_current_user_id();
-        return self::TRANSIENT_PREFIX . (int)$user_id;
+        $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
+        return self::TRANSIENT_PREFIX . $user_id;
     }
 }

@@ -22,15 +22,12 @@ final class CompanyDTO implements \JsonSerializable
     public ?string $representer;   // ⬅️ mới
     public ?string $created_at;
     public ?string $updated_at;
+    //Soft-delete fields  
+    public ?string $deleted_at;
+    public ?int $deleted_by;
+    public ?string $deleted_by_name;
+    public ?string $delete_reason;
 
-    // 🔽 bổ sung các field soft-delete
-    public ?string $status = null;          // 'active' | 'inactive'
-    public ?string $deleted_at = null;
-    public ?int $deleted_by = null;
-    public ?string $deleted_by_name = null; // join sang bảng users khi query
-    public ?string $delete_reason = null;
-    public ?string $restored_at = null;
-    public ?int $restored_by = null;
 
     public function __construct(
         ?int $id,
@@ -44,7 +41,11 @@ final class CompanyDTO implements \JsonSerializable
         ?int $owner_id = null,
         ?string $representer = null,
         ?string $created_at = null,
-        ?string $updated_at = null
+        ?string $updated_at = null,
+        ?string $deleted_at = null,
+        ?int $deleted_by = null,
+        ?string $deleted_by_name = null,
+        ?string $delete_reason = null,
     ) {
         $this->id          = $id;
         $this->name        = trim($name);
@@ -58,6 +59,10 @@ final class CompanyDTO implements \JsonSerializable
         $this->representer = $representer;
         $this->created_at  = $created_at;
         $this->updated_at  = $updated_at;
+        $this->deleted_at = $deleted_at;
+        $this->deleted_by = $deleted_by;
+        $this->deleted_by_name = $deleted_by_name;
+        $this->delete_reason = $delete_reason;
     }
 
     /**
@@ -88,17 +93,13 @@ final class CompanyDTO implements \JsonSerializable
             owner_id: isset($data['owner_id']) ? (int)$data['owner_id'] : null,
             representer: isset($data['representer']) ? (string)$data['representer'] : null,
             created_at: isset($data['created_at']) ? (string)$data['created_at'] : null,
-            updated_at: isset($data['updated_at']) ? (string)$data['updated_at'] : null
+            updated_at: isset($data['updated_at']) ? (string)$data['updated_at'] : null,
+            deleted_at: $data['deleted_at']      ?? null,
+            deleted_by: isset($data['deleted_by']) ? (int)$data['deleted_by'] : null,
+            deleted_by_name: isset($data['deleted_by_name']) ? (string)$data['deleted_by_name'] : null,
+            delete_reason: isset($data['delete_reason']) ?  (string)$data['delete_reason'] : null,
         );
 
-        // map thêm các field soft-delete
-        $dto->status          = $data['status']          ?? null;
-        $dto->deleted_at      = $data['deleted_at']      ?? null;
-        $dto->deleted_by      = isset($data['deleted_by']) ? (int)$data['deleted_by'] : null;
-        $dto->deleted_by_name = $data['deleted_by_name'] ?? null;
-        $dto->delete_reason   = $data['delete_reason']   ?? null;
-        $dto->restored_at     = $data['restored_at']     ?? null;
-        $dto->restored_by     = isset($data['restored_by']) ? (int)$data['restored_by'] : null;
 
         return $dto;
     }

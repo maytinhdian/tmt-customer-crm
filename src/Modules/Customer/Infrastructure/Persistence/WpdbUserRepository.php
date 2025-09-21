@@ -82,6 +82,24 @@ final class WpdbUserRepository implements UserRepositoryInterface
         }
         return null;
     }
+
+    public function map_display_names(array $user_ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $user_ids)));
+        if (!$ids) return [];
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $sql = "SELECT ID, display_name FROM {$this->db->users} WHERE ID IN ($placeholders)";
+        $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int) $r['ID']] = (string) $r['display_name'];
+        }
+        return $map;
+    }
+
+
     /** @inheritDoc */
     public function find_by_ids(array $ids): array
     {

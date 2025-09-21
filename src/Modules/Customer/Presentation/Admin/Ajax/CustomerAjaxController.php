@@ -6,7 +6,7 @@ namespace TMT\CRM\Modules\Customer\Presentation\Admin\Ajax;
 
 use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 use TMT\CRM\Shared\Container\Container;
-use TMT\CRM\Infrastructure\Security\Capability;
+use TMT\CRM\Shared\Infrastructure\Security\Capability;
 
 final class CustomerAjaxController
 {

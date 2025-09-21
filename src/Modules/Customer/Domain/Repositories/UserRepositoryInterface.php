@@ -21,14 +21,17 @@ interface UserRepositoryInterface
      * Lấy nhãn hiển thị (label) theo ID (để preload Select2).
      */
     public function find_label_by_id(int $user_id): ?string;
-    
+
     /** Lấy tên hiển thị của user (display_name hoặc user_login). */
     public function get_display_name(int $user_id): ?string;
 
-        /**
+    /**
      * Trả về map [id => UserDTO]
      * @param int[] $ids
      * @return array<int, UserDTO>
      */
     public function find_by_ids(array $ids): array;
+    
+    /** @return array<int,string> map [user_id => display_name] */
+    public function map_display_names(array $user_ids): array;
 }

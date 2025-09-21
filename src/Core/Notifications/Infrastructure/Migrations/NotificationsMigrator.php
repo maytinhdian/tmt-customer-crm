@@ -40,10 +40,10 @@ final class NotificationsMigrator extends BaseMigrator
         $prefix = $this->db->prefix;
         $charset = $this->charset_collate;
 
-        $tbl_notifications          = $prefix . 'crm_notifications';
-        $tbl_deliveries             = $prefix . 'crm_notification_deliveries';
-        $tbl_templates              = $prefix . 'crm_notification_templates';
-        $tbl_preferences            = $prefix . 'crm_notification_preferences';
+        $tbl_notifications          = $prefix . 'tmt_crm_notifications';
+        $tbl_deliveries             = $prefix . 'tmt_crm_notification_deliveries';
+        $tbl_templates              = $prefix . 'tmt_crm_notification_templates';
+        $tbl_preferences            = $prefix . 'tmt_crm_notification_preferences';
 
         // ======= notifications =======
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery

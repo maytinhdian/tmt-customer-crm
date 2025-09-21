@@ -15,8 +15,9 @@ final class CompanyController
     public static function register(): void
     {
         add_action('admin_post_' . CompanyScreen::ACTION_SAVE,   [self::class, 'handle_save']);
-        add_action('admin_post_' . CompanyScreen::ACTION_DELETE, [self::class, 'handle_delete']);
+        add_action('admin_post_' . CompanyScreen::ACTION_HARD_DELETE, [self::class, 'handle_hard_delete']);
         add_action('admin_post_' . CompanyScreen::ACTION_SOFT_DELETE, [self::class, 'handle_soft_delete']);
+        add_action('admin_post_' . CompanyScreen::ACTION_RESTORE, [self::class, 'handle_restore']);
         add_action('admin_post_' . CompanyScreen::ACTION_BULK_DELETE, [self::class, 'handle_bulk_delete']);
     }
 
@@ -67,28 +68,30 @@ final class CompanyController
             if ($id > 0) {
                 $svc->update($id, $data);
                 AdminNoticeService::success_for_screen(
-                    CompanyScreen::hook_suffix(),
+                    CompanyScreen::screen_id(),
                     __('Đã cập nhật công ty.', 'tmt-crm')
                 );
             } else {
                 $svc->create($data);
                 AdminNoticeService::success_for_screen(
-                    CompanyScreen::hook_suffix(),
+                    CompanyScreen::screen_id(),
                     __('Tạo mới công ty thành công.', 'tmt-crm')
                 );
             }
-            self::redirect(self::url());
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+            wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
+            exit;
         } catch (\Throwable $e) {
             AdminNoticeService::error_for_screen(
-                CompanyScreen::hook_suffix(),
+                CompanyScreen::screen_id(),
                 sprintf(__('Thao tác thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
             );
             self::redirect(self::url(['error' => 1]));
         }
     }
 
-    /** Handler: Delete (single) */
-    public static function handle_delete(): void
+    /** Handler: Delete - Purge (single) */
+    public static function handle_hard_delete(): void
     {
         self::ensure_capability(Capability::COMPANY_DELETE, __('Bạn không có quyền xoá công ty.', 'tmt-crm'));
 
@@ -97,22 +100,22 @@ final class CompanyController
             wp_die(__('Thiếu ID.', 'tmt-crm'));
         }
 
-        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce((string) $_GET['_wpnonce'], 'tmt_crm_company_delete_' . $id)) {
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce((string) $_GET['_wpnonce'], 'tmt_crm_company_purge_' . $id)) {
             wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
         }
 
         $svc = Container::get('company-service');
 
         try {
-            $svc->delete($id);
+            $svc->purge($id);
             AdminNoticeService::success_for_screen(
-                CompanyScreen::hook_suffix(),
+                CompanyScreen::screen_id(),
                 __('Xóa công ty thành công.', 'tmt-crm')
             );
             self::redirect(self::url());
         } catch (\Throwable $e) {
             AdminNoticeService::error_for_screen(
-                CompanyScreen::hook_suffix(),
+                CompanyScreen::screen_id(),
                 sprintf(__('Xóa thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
             );
             self::redirect(self::url(['error' => 1]));
@@ -140,13 +143,15 @@ final class CompanyController
         try {
             $svc->soft_delete($id, $actor_id);
             AdminNoticeService::success_for_screen(
-                CompanyScreen::hook_suffix(),
+                CompanyScreen::screen_id(),
                 __('Xóa công ty thành công.', 'tmt-crm')
             );
-            self::redirect(self::url());
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+            wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
+            exit;
         } catch (\Throwable $e) {
             AdminNoticeService::error_for_screen(
-                CompanyScreen::hook_suffix(),
+                CompanyScreen::screen_id(),
                 sprintf(__('Xóa thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
             );
             self::redirect(self::url(['error' => 1]));
@@ -183,7 +188,7 @@ final class CompanyController
         }
 
         AdminNoticeService::success_for_screen(
-            CompanyScreen::hook_suffix(),
+            CompanyScreen::screen_id(),
             sprintf(__('Đã xóa %d công ty.', 'tmt-crm'), $deleted)
         );
 
@@ -191,6 +196,39 @@ final class CompanyController
         exit;
     }
 
+    //Khôi phục bản ghi bị xóa mềm ( soft-delete)
+    public static function handle_restore(): void
+    {
+        self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền khôi phục công ty đã xóa.', 'tmt-crm'));
+
+        $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
+        $actor_id = get_current_user_id(); // WP user đang thao tác
+
+        if ($id <= 0) {
+            wp_die(__('Thiếu ID.', 'tmt-crm'));
+        }
+
+        if (!isset($_GET['_wpnonce']) || !wp_verify_nonce((string) $_GET['_wpnonce'], 'tmt_crm_company_restore_' . $id)) {
+            wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
+        }
+
+        $svc = Container::get('company-service');
+
+        try {
+            $svc->restore($id, $actor_id);
+            AdminNoticeService::success_for_screen(
+                CompanyScreen::screen_id(),
+                __('Khôi phục công ty thành công.', 'tmt-crm')
+            );
+            self::redirect(self::url());
+        } catch (\Throwable $e) {
+            AdminNoticeService::error_for_screen(
+                CompanyScreen::screen_id(),
+                sprintf(__('Khôi phục thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
+            );
+            self::redirect(self::url(['error' => 1]));
+        }
+    }
     // ================= Helpers =================
 
     private static function ensure_capability(string $capability, string $message): void

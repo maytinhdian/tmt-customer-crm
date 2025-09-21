@@ -29,7 +29,7 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
     {
         $sql = "SELECT * FROM {$this->table} WHERE id = %d";
         $row = $this->db->get_row($this->db->prepare($sql, $id), ARRAY_A);
-        return $row ? $this->map_row_to_dto($row) : null;
+        return $row ? CompanyDTO::from_array($row) : null;
     }
 
     public function find_by_tax_code(string $tax_code, ?int $exclude_id = null): ?CompanyDTO
@@ -46,62 +46,129 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
             $sql = "SELECT * FROM {$this->table} WHERE tax_code = %s";
             $row = $this->db->get_row($this->db->prepare($sql, $tax_code), ARRAY_A);
         }
-        return $row ? $this->map_row_to_dto($row) : null;
+        return $row ? CompanyDTO::from_array($row) : null;
     }
 
 
     public function list_paginated(int $page, int $per_page, array $filters = []): array
     {
+        // Chuẩn hoá phân trang
+        $page     = max(1, $page);
+        $per_page = max(1, $per_page);
+        $offset   = ($page - 1) * $per_page;
+
+        // Bảng (đã prefix). Nếu có full_table() thì dùng cho gọn.
+        $t = method_exists($this, 'full_table')
+            ? $this->full_table()
+            : ($this->db->prefix . $this->table);
+
+        // --- WHERE ---
         $where  = [];
         $params = [];
 
+        // Lọc theo soft-delete: active|deleted|all (mặc định active)
+        $status = $filters['status_view'] ?? 'active';
+        if ($status === 'active') {
+            $where[] = 'deleted_at IS NULL';
+        } elseif ($status === 'deleted') {
+            $where[] = 'deleted_at IS NOT NULL';
+        }
+
+        // Từ khoá
         if (!empty($filters['keyword'])) {
-            $kw = '%' . $this->db->esc_like(trim((string)$filters['keyword'])) . '%';
-            $where[] = "(name LIKE %s OR tax_code LIKE %s OR email LIKE %s OR phone LIKE %s)";
+            $kw = '%' . $this->db->esc_like(trim((string) $filters['keyword'])) . '%';
+            $where[] = '(name LIKE %s OR tax_code LIKE %s OR email LIKE %s OR phone LIKE %s)';
             array_push($params, $kw, $kw, $kw, $kw);
         }
 
         $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
-        $orderby = $filters['orderby'] ?? 'id';
-        $order   = strtoupper((string)($filters['order'] ?? 'DESC'));
-        $allowed = ['id', 'name', 'tax_code', 'email', 'phone', 'owner_id', 'representer', 'created_at', 'updated_at'];
+        // --- ORDER BY ---
+        $orderby = (string) ($filters['orderby'] ?? 'id');
+        $allowed = ['id', 'name', 'tax_code', 'email', 'phone', 'owner_id', 'representer', 'created_at', 'updated', 'updated_at'];
         if (!in_array($orderby, $allowed, true)) {
             $orderby = 'id';
         }
+        if ($orderby === 'updated') $orderby = 'updated_at';
+
+        $order = strtoupper((string) ($filters['order'] ?? 'DESC'));
         if (!in_array($order, ['ASC', 'DESC'], true)) {
             $order = 'DESC';
         }
 
-        $offset = ($page - 1) * $per_page;
+        // --- COUNT tổng ---
+        $sql_count = "SELECT COUNT(*) FROM `{$this->table}` {$where_sql}";
+        $total = $params
+            ? (int) $this->db->get_var($this->db->prepare($sql_count, ...$params))
+            : (int) $this->db->get_var($sql_count);
 
-        $sql = "SELECT * FROM {$this->table} {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
-        $params[] = $per_page;
-        $params[] = $offset;
+        // --- ITEMS (KHÔNG join user) ---
+        $sql_items = "
+        SELECT
+            id, name, tax_code, email, phone, address,
+            owner_id, representer, created_at, updated_at,
+            deleted_at, deleted_by, delete_reason
+        FROM `{$this->table}`
+        {$where_sql}
+        ORDER BY {$orderby} {$order}
+        LIMIT %d OFFSET %d
+    ";
+        $params_items = array_merge($params, [$per_page, $offset]);
 
-        $rows = $this->db->get_results($this->db->prepare($sql, ...$params), ARRAY_A);
-        return array_map([$this, 'map_row_to_dto'], $rows ?: []);
+        $rows = $this->db->get_results($this->db->prepare($sql_items, ...$params_items), ARRAY_A) ?: [];
+
+        // Map -> DTO (hàm bạn đã có)
+        $items = array_map(fn($row) => CompanyDTO::from_array($row), $rows);
+
+        return $items;
     }
 
+
+    /**
+     * Đếm Company theo 2 điều kiện soft-delete:
+     * - deleted = 'exclude' (mặc định): chỉ bản ghi chưa xóa mềm
+     * - deleted = 'only'            : chỉ bản ghi đã xóa mềm
+     * Cách dùng nhanh :
+     * - $total_active = $repo->count_all(['deleted' => 'exclude']); // đang hoạt động
+     * - $total_trashed = $repo->count_all(['deleted' => 'only']);   // đã xóa mềm
+     * - $total_all = $repo->count_all(['deleted' => 'include']);    // mọi bản ghi
+     */
     public function count_all(array $filters = []): int
     {
-        $where  = [];
-        $params = [];
+        /** @var \wpdb $db */
+        $db = $this->db;
 
-        if (!empty($filters['keyword'])) {
-            $kw = '%' . $this->db->esc_like(trim((string)$filters['keyword'])) . '%';
-            $where[] = "(name LIKE %s OR tax_code LIKE %s OR email LIKE %s OR phone LIKE %s)";
-            array_push($params, $kw, $kw, $kw, $kw);
+        $where = [];
+        $deleted = $filters['deleted'] ?? 'exclude';
+
+        if ($deleted === 'exclude') {
+            $where[] = "deleted_at IS NULL";
+        } elseif ($deleted === 'only') {
+            $where[] = "deleted_at IS NOT NULL";
         }
+        // Nếu truyền gì khác, coi như 'include' -> không thêm điều kiện
 
         $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
         $sql = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
 
-        if (!empty($params)) {
-            return (int)$this->db->get_var($this->db->prepare($sql, ...$params));
-        }
-        return (int)$this->db->get_var($sql);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        return (int) $db->get_var($sql);
     }
+
+
+    /**
+     * Chuẩn hoá 'Y-m-d' thành 'Y-m-d 00:00:00' (start) hoặc '23:59:59' (end).
+     */
+    private function normalize_datetime(string $value, string $mode = 'start'): string
+    {
+        $value = trim($value);
+        if (strpos($value, ' ') === false) {
+            return $mode === 'end' ? ($value . ' 23:59:59') : ($value . ' 00:00:00');
+        }
+        return $value;
+    }
+
+
 
     public function insert(CompanyDTO $dto): int
     {
@@ -180,9 +247,8 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
 
     public function mark_deleted(int $id, int $actor_id, ?string $reason = null): void
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'tmt_crm_companies';
-        $wpdb->update($table, [
+
+        $this->db->update($this->table, [
             'deleted_at'   => current_time('mysql'),
             'deleted_by'   => $actor_id,
             'delete_reason' => $reason,
@@ -191,9 +257,8 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
 
     public function restore(int $id, int $actor_id): void
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'crm_companies';
-        $wpdb->update($table, [
+
+        $this->db->update($this->table, [
             'deleted_at'    => null,
             'deleted_by'    => null,
             'delete_reason' => null,
@@ -202,35 +267,66 @@ final class WpdbCompanyRepository implements CompanyRepositoryInterface
 
     public function purge(int $id, int $actor_id): void
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'crm_companies';
-        $wpdb->delete($table, ['id' => $id], ['%d']);
+
+        $this->db->delete($this->table, ['id' => $id], ['%d']);
     }
 
     public function exists_active(int $id): bool
     {
-        global $wpdb;
-        $table = $wpdb->prefix . 'crm_companies';
-        $sql = $wpdb->prepare("SELECT 1 FROM {$table} WHERE id=%d AND deleted_at IS NULL", $id);
-        return (bool) $wpdb->get_var($sql);
+
+        $sql = $this->db->prepare("SELECT 1 FROM {$this->table} WHERE id=%d AND deleted_at IS NULL", $id);
+        return (bool)  $this->db->get_var($sql);
     }
 
-    /******Helper**** */
-    private function map_row_to_dto(array $row): CompanyDTO
+    /** @return array{active:int,deleted:int} */
+    public function count_by_status(): array
     {
-        return new CompanyDTO(
-            (int)$row['id'],
-            (string)$row['name'],
-            (string)$row['tax_code'],
-            (string)$row['address'],
-            $row['phone']   ?? null,
-            $row['email']   ?? null,
-            $row['website'] ?? null,
-            $row['note']    ?? null,
-            isset($row['owner_id']) ? (int)$row['owner_id'] : null,     // ⬅️
-            $row['representer'] ?? null,                                 // ⬅️
-            $row['created_at'] ?? null,
-            $row['updated_at'] ?? null
-        );
+
+        $active  = (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->table} WHERE deleted_at IS NULL");
+        $deleted = (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->table} WHERE deleted_at IS NOT NULL");
+        return ['active' => $active, 'deleted' => $deleted];
     }
+    public function count_for_tabs(): array
+    {
+        $t = $this->full_table();
+        // 1 query: COUNT(*) + SUM(CASE WHEN)
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $row = $this->db->get_row("
+        SELECT 
+            COUNT(*) AS all_count,
+            SUM(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) AS active_count,
+            SUM(CASE WHEN deleted_at IS NOT NULL THEN 1 ELSE 0 END) AS deleted_count
+        FROM `{$this->table}`
+    ", ARRAY_A);
+
+        return [
+            'all'     => (int) ($row['all_count'] ?? 0),
+            'active'  => (int) ($row['active_count'] ?? 0),
+            'deleted' => (int) ($row['deleted_count'] ?? 0),
+        ];
+    }
+
+
+    // /******Helper**** */
+    // private function map_row_to_dto(array $row): CompanyDTO
+    // {
+    //     return new CompanyDTO(
+    //         (int)$row['id'],
+    //         (string)$row['name'],
+    //         (string)$row['tax_code'],
+    //         (string)$row['address'],
+    //         $row['phone']   ?? null,
+    //         $row['email']   ?? null,
+    //         $row['website'] ?? null,
+    //         $row['note']    ?? null,
+    //         isset($row['owner_id']) ? (int)$row['owner_id'] : null,     // ⬅️
+    //         $row['representer'] ?? null,                                 // ⬅️
+    //         $row['created_at'] ?? null,
+    //         $row['updated_at'] ?? null,
+    //         $row['deleted_at'] ?? null,
+    //         (int)$row['deleted_by'] ?? null,
+    //         $row['deleted_reason'] ?? null,
+
+    //     );
+    // }
 }

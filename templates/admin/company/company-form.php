@@ -125,7 +125,7 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
             <?php
             $del_url = wp_nonce_url(
                 add_query_arg([
-                    'action' => CompanyScreen::ACTION_DELETE,
+                    'action' => CompanyScreen::ACTION_SOFT_DELETE,
                     'id'     => (int) $company->id,
                 ], admin_url('admin-post.php')),
                 'tmt_crm_company_delete_' . (int) $company->id

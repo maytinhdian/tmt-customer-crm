@@ -8,6 +8,7 @@ use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
+use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
 
 
 
@@ -20,7 +21,8 @@ final class CompanyService
 
     public function __construct(
         private CompanyRepositoryInterface $company_repo,
-        private CompanyContactRepositoryInterface $contact_repo
+        private CompanyContactRepositoryInterface $contact_repo,
+        private UserRepositoryInterface $user_repo
     ) {}
 
 
@@ -62,6 +64,8 @@ final class CompanyService
         $per_page = max(1, $per_page);
 
         $items = $this->company_repo->list_paginated($page, $per_page, $filters);
+        $items = $this->enrich_deleted_meta($items); // 👈 gắn tên người xoá
+
         $total = $this->company_repo->count_all($filters);
 
         return ['items' => $items, 'total' => $total];
@@ -94,28 +98,46 @@ final class CompanyService
         return $this->company_repo->exists_active($company_id);
     }
 
+
+    /** Dùng cho Views: Tất cả / Đang hoạt động / Đã xoá */
+    public function count_for_tabs(): array
+    {
+        return $this->company_repo->count_for_tabs();
+    }
+
+
     // ================== helpers ==================
+
+    /** @param CompanyDTO[] $items */
+    private function enrich_deleted_meta(array $items): array
+    {
+        // Thu thập các user id cần tra
+        $ids = [];
+        foreach ($items as $dto) {
+            if (!empty($dto->deleted_by)) {
+                $ids[(int) $dto->deleted_by] = true;
+            }
+        }
+        if (!$ids) {
+            return $items;
+        }
+
+        $user_ids = array_keys($ids);
+
+        // Giả sử UserRepo có hàm này: trả về [user_id => display_name]
+        $name_map = $this->user_repo->map_display_names($user_ids);
+
+        foreach ($items as $dto) {
+            if (!empty($dto->deleted_by) && isset($name_map[(int) $dto->deleted_by])) {
+                $dto->deleted_by_name = (string) $name_map[(int) $dto->deleted_by];
+            }
+        }
+        return $items;
+    }
 
     private function build_dto_from_array(array $data, ?int $id = null): CompanyDTO
     {
-        $name     = trim((string)($data['name'] ?? ''));
-        $tax_code = trim((string)($data['tax_code'] ?? ''));
-        $address  = trim((string)($data['address'] ?? ''));
-        $owner_id = isset($data['owner_id']) ? (int)$data['owner_id'] : 0;
-        $owner_id = $owner_id > 0 ? $owner_id : null;
-
-        return new CompanyDTO(
-            $id,
-            $name,
-            $tax_code,
-            $address,
-            $this->nn($data['phone'] ?? null),
-            $this->nn($data['email'] ?? null),
-            $this->nn($data['website'] ?? null),
-            $this->nn($data['note'] ?? null),
-            $owner_id,
-            $this->nn($data['representer'] ?? null)
-        );
+        return CompanyDTO::from_array($data);
     }
 
     private function validate_required(CompanyDTO $dto): void
