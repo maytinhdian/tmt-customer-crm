@@ -10,7 +10,9 @@ use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
 
-
+use TMT\CRM\Shared\EventBus;
+use TMT\CRM\Core\Notifications\Domain\EventKeys;
+use TMT\CRM\Core\Notifications\Domain\DTO\EventContextDTO;
 
 final class CompanyService
 {
@@ -32,7 +34,24 @@ final class CompanyService
         $dto = $this->build_dto_from_array($data);
         $this->validate_required($dto);
         $this->ensure_unique_tax_code($dto->tax_code, null);
-        return $this->company_repo->insert($dto);
+        $company_id = $this->company_repo->insert($dto);
+
+        // 4) PHÁT SỰ KIỆN – CompanyCreated
+        //    Chèn ngay dưới phần create/commit thành công
+        $ctx = new EventContextDTO();
+        $ctx->payload = [
+            'company_id'   => (int) $company_id,
+            'company_name' => (string) ($data['name'] ?? ''),
+            // có thể thêm các field hay dùng làm placeholder:
+            // 'company_number' => (string) $generated_number, // nếu Core/Numbering đã chạy
+        ];
+        $ctx->actor_id    = (int) get_current_user_id();
+        $ctx->occurred_at = (string) current_time('mysql');
+
+        EventBus::dispatch(EventKeys::COMPANY_CREATED, $ctx);
+
+        // 5) Trả về
+        return $company_id;
     }
 
     /** Cập nhật công ty */
@@ -76,6 +95,20 @@ final class CompanyService
     {
         // $this->policy->ensure_can('company_soft_delete', $actor_id, $company_id);
         $this->company_repo->mark_deleted($company_id, $actor_id, $reason);
+
+        // 4) PHÁT SỰ KIỆN – CompanyCreated
+        //    Chèn ngay dưới phần create/commit thành công
+        $ctx = new EventContextDTO();
+        $ctx->payload = [
+            'company_id'   => (int) $company_id,
+            'actor_id' => (int) ($actor_id ?? NULL),
+            // có thể thêm các field hay dùng làm placeholder:
+            // 'company_number' => (string) $generated_number, // nếu Core/Numbering đã chạy
+        ];
+        $ctx->actor_id    = (int) get_current_user_id();
+        $ctx->occurred_at = (string) current_time('mysql');
+
+        EventBus::dispatch(EventKeys::COMPANY_CREATED, $ctx);
     }
 
     /** Khôi phục */

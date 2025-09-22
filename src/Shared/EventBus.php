@@ -39,6 +39,7 @@ final class EventBus
                 }
                 // Gọi subscriber
                 call_user_func($subscriber, $ctx);
+                error_log('[Notify] Received CompanyCreated with company_id='.($ctx->payload['company_id'] ?? ''));
             } catch (\Throwable $e) {
                 // Không làm chết các subscriber khác; log lỗi nhẹ nhàng
                 error_log('[EventBus] Subscriber error for ' . $event_key . ': ' . $e->getMessage());

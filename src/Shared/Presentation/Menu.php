@@ -19,7 +19,7 @@ final class Menu
             'tmt-crm',
             [self::class, 'render_dashboard'],
             'dashicons-groups',
-            25
+            56
         );
 
 

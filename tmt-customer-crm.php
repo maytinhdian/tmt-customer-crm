@@ -125,5 +125,9 @@ add_action('plugins_loaded', function () {
     \TMT\CRM\Core\Numbering\NumberingModule::register(); // bootstrap (file chính)
     CoreCapabilitiesModule::register();
     NotificationsModule::register();
+    \TMT\CRM\Core\Notifications\Presentation\Admin\Screen\NotificationCenterScreen::register();
+    \TMT\CRM\Core\Notifications\Infrastructure\Providers\NotificationsServiceProvider::register();
+
+
     // … rồi mới ModuleRegistry::register_enabled_modules();
 }, 1);
