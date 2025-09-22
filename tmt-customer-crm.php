@@ -118,15 +118,19 @@ use TMT\CRM\Core\Notifications\NotificationsModule;
 add_action('plugins_loaded', function () {
     CoreRecordsModule::register(); // bootstrap (file chính)
 }, 1);
+// Bridge WP action -> EventBus (đăng ký càng sớm càng tốt)
+add_action('plugins_loaded', static function () {
+    \TMT\CRM\Shared\EventBus\EventBusBridge::register();
+}, 0);
 
 add_action('plugins_loaded', function () {
     \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
     SettingsPage::register();
     \TMT\CRM\Core\Numbering\NumberingModule::register(); // bootstrap (file chính)
     CoreCapabilitiesModule::register();
+
     NotificationsModule::register();
-    \TMT\CRM\Core\Notifications\Presentation\Admin\Screen\NotificationCenterScreen::register();
-    \TMT\CRM\Core\Notifications\Infrastructure\Providers\NotificationsServiceProvider::register();
+
 
 
     // … rồi mới ModuleRegistry::register_enabled_modules();

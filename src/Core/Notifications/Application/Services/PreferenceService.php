@@ -1,17 +1,17 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Notifications\Application\Services;
 
-use TMT\CRM\Domain\Repositories\PreferenceRepositoryInterface;
-
+/**
+ * P0: luôn cho phép, để đơn giản hoá.
+ * P1: bạn có thể đọc setting và kiểm tra allow(event_key, channel).
+ */
 final class PreferenceService
 {
-    public function __construct(private PreferenceRepositoryInterface $prefs) {}
-
-    /** @return array [channel => enabled] */
-    public function channels_for_user(int $user_id, string $event_key): array
+    public function allow(string $event_key, string $channel): bool
     {
-        return $this->prefs->resolve_for_user($user_id, $event_key);
+        return true;
     }
 }

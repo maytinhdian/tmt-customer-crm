@@ -1,134 +1,189 @@
 <?php
-// ============================================================================
-// File: src/Core/Notifications/Application/Services/NotificationDispatcher.php (cập nhật on_event)
-// ============================================================================
-
 
 declare(strict_types=1);
 
-
 namespace TMT\CRM\Core\Notifications\Application\Services;
 
+use TMT\CRM\Core\Notifications\Domain\DTO\EventContextDTO;
+use TMT\CRM\Core\Notifications\Domain\DTO\TemplateDTO;
+use TMT\CRM\Core\Notifications\Domain\DTO\DeliveryDTO;
+use TMT\CRM\Core\Notifications\Domain\DTO\NotificationDTO;
 
-use TMT\CRM\Core\Notifications\Domain\DTO\{NotificationDTO, DeliveryDTO, EventContextDTO};
-use TMT\CRM\Domain\Repositories\{NotificationRepositoryInterface, DeliveryRepositoryInterface, TemplateRepositoryInterface};
-use TMT\CRM\Core\Notifications\Domain\EventKeys;
-
+/**
+ * Nhận event → lấy template → render → gửi qua DeliveryService.
+ * P0: không lưu DB để gọn. P1 sẽ ghép repo lưu Notification/Delivery.
+ */
 final class NotificationDispatcher
 {
     public function __construct(
-        private NotificationRepositoryInterface $notifications,
-        private DeliveryRepositoryInterface $deliveries,
-        private TemplateRepositoryInterface $templates,
-        private PreferenceService $preferences,
         private TemplateRenderer $renderer,
-        private DeliveryService $sender
+        private DeliveryService $delivery,
+        private PreferenceService $preferences
     ) {}
 
-    /** Điểm vào khi có event domain */
-    public function on_event(string $event_key, EventContextDTO $ctx): void
+    /** Callback cho EventBus (subscribe trong ServiceProvider) */
+    // public function handle(array|object $payload): void
+    // {
+    //     // Suy diễn chuẩn hoá input
+    //     $event_key = '';
+    //     $ctx_data  = [];
+
+    //     if (is_array($payload)) {
+    //         $event_key = (string)($payload['event_key'] ?? 'unknown_event');
+    //         $ctx_data  = (array)($payload['context'] ?? []);
+    //     } elseif (is_object($payload)) {
+    //         $event_key = (string)($payload->event_key ?? 'unknown_event');
+    //         $ctx_data  = (array)($payload->context ?? []);
+    //     }
+
+    //     error_log("[Notif] Dispatcher::handle {$event_key}");
+
+    //     // P0: template cứng (có thể map theo event_key)
+    //     $tpl = new TemplateDTO(
+    //         subject: 'Sự kiện: {{event_key}}',
+    //         body: 'Một sự kiện vừa diễn ra cho công ty #{{company_id}} bởi user #{{actor_id}}.'
+    //     );
+
+    //     $ctx = new EventContextDTO(
+    //         actor_id: (int)($ctx_data['actor_id'] ?? get_current_user_id()),
+    //         company_id: (int)($ctx_data['company_id'] ?? 0)
+    //     );
+
+    //     // Preference
+    //     if (!$this->preferences->allow($event_key, 'notice') && !$this->preferences->allow($event_key, 'email')) {
+    //         error_log("[Notif] Preference blocked for {$event_key}");
+    //         return;
+    //     }
+
+    //     // Render
+    //     $rendered = $this->renderer->render($tpl, [
+    //         'event_key'  => $event_key,
+    //         'actor_id'   => $ctx->actor_id,
+    //         'company_id' => $ctx->company_id,
+    //     ]);
+
+    //     // Recipients tối thiểu: actor + admin
+    //     $recipients = $this->resolve_recipients_basic($ctx->actor_id);
+
+    //     // Gửi
+    //     foreach ($recipients as $user_id) {
+    //         foreach (['notice', 'email'] as $channel) {
+    //             if (!$this->preferences->allow($event_key, $channel)) {
+    //                 continue;
+    //             }
+
+    //             $delivery = new DeliveryDTO(
+    //                 id: null,
+    //                 notification_id: null, // P0: chưa lưu DB
+    //                 channel: $channel,
+    //                 recipient_id: (int)$user_id,
+    //                 status: 'pending',
+    //                 created_at: current_time('mysql')
+    //             );
+
+    //             $ok = $this->delivery->send($delivery, $rendered);
+    //             error_log("[Notif] send {$channel} -> user={$user_id} => " . ($ok ? 'OK' : 'FAIL'));
+    //         }
+    //     }
+    // }
+
+    /** Callback cho EventBus */
+    public function handle(array|object $payload): void
     {
-        // 0) Chuẩn hoá entity
-        $entity_type = $this->guess_entity_type($event_key); // ví dụ 'company' cho Company*
-        $entity_id = (int) ($ctx->payload['company_id'] ?? 0);
+        // Chuẩn hoá input
+        $event_key = '';
+        $ctx_data  = [];
 
+        if (is_array($payload)) {
+            $event_key = (string)($payload['event_key'] ?? 'unknown_event');
+            $ctx_data  = (array)($payload['context']   ?? []);
+        } else {
+            $event_key = (string)($payload->event_key ?? 'unknown_event');
+            $ctx_data  = (array)($payload->context   ?? []);
+        }
 
-        // 1) Tạo notification tổng quát (summary ngắn)
-        $n = new NotificationDTO();
-        $n->event_key = $event_key;
-        $n->entity_type = $entity_type;
-        $n->entity_id = $entity_id;
-        $n->template_key = '';
-        $n->summary = $this->build_summary($event_key, $ctx);
-        $n->created_at = $ctx->occurred_at ?: current_time('mysql');
-        $n->created_by = $ctx->actor_id;
-        $notification_id = $this->notifications->create($n);
+        error_log("[Notif] Dispatcher::handle {$event_key}");
 
+        // Build context DTO (thêm delete_reason nếu có)
+        $ctx = new EventContextDTO(
+            actor_id: (int)($ctx_data['actor_id']   ?? 0),
+            company_id: (int)($ctx_data['company_id'] ?? 0)
+        );
+        $delete_reason = isset($ctx_data['delete_reason']) ? (string)$ctx_data['delete_reason'] : '';
 
-        // 2) Xây context render (placeholders)
-        $context = $this->build_context_placeholders($event_key, $ctx);
+        // Kiểm tra preferences cho 2 kênh mặc định
+        if (!$this->preferences->allow($event_key, 'notice') && !$this->preferences->allow($event_key, 'email')) {
+            error_log("[Notif] Preference blocked for {$event_key}");
+            return;
+        }
 
+        // Chọn template theo event
+        $tpl = $this->choose_template($event_key);
 
-        // 3) Chọn người nhận: actor + tất cả admin (demo P0)
+        // Render với placeholders mở rộng
+        $rendered = $this->renderer->render($tpl, [
+            'event_key'     => $event_key,
+            'actor_id'      => $ctx->actor_id,
+            'company_id'    => $ctx->company_id,
+            'delete_reason' => $delete_reason,
+        ]);
+
+        // Người nhận: actor + admin (P0)
         $recipients = $this->resolve_recipients_basic($ctx->actor_id);
 
-
-        // 4) Duyệt từng người nhận → kênh nào bật theo preference → render theo template → tạo delivery + gửi
+        // Gửi qua các kênh được phép
         foreach ($recipients as $user_id) {
-            $channels = $this->preferences->channels_for_user($user_id, $event_key);
-            foreach ($channels as $channel => $enabled) {
-                if (!$enabled) continue;
-                // Lấy template theo key: "{$event_key}:{$channel}"
-                $tpl_key = $event_key . ':' . $channel;
-                $tpl = $this->templates->find_by_key($tpl_key);
-                if (!$tpl) continue; // không có template cho kênh này
-
-
-                if (!PolicyGuard::can_receive($entity_type, $entity_id, $user_id)) {
+            foreach (['notice', 'email'] as $channel) {
+                if (!$this->preferences->allow($event_key, $channel)) {
                     continue;
                 }
-
-
-                $rendered = $this->renderer->render($tpl, $context);
-
-
-                $d = new DeliveryDTO();
-                $d->notification_id = $notification_id;
-                $d->channel = $channel; // 'notice'|'email'|...
-                $d->recipient_type = 'user';
-                $d->recipient_value = (string) $user_id;
-                $d->status = 'queued';
-                $delivery_id = $this->deliveries->create($d);
-                $d->id = $delivery_id;
-
-
-                // Gửi ngay (P0)
-                $this->sender->send($d, $rendered);
+                $delivery = new DeliveryDTO(
+                    id: null,
+                    notification_id: null, // P0 chưa lưu DB
+                    channel: $channel,
+                    recipient_id: (int)$user_id,
+                    status: 'pending',
+                    created_at: current_time('mysql'),
+                );
+                $ok = $this->delivery->send($delivery, $rendered);
+                error_log("[Notif] send {$channel} -> user={$user_id} => " . ($ok ? 'OK' : 'FAIL'));
             }
         }
     }
-    private function guess_entity_type(string $event_key): string
-    {
-        if (str_starts_with($event_key, 'Company')) return 'company';
-        if (str_starts_with($event_key, 'Quote')) return 'quote';
-        return 'entity';
-    }
 
 
-    private function build_summary(string $event_key, EventContextDTO $ctx): string
+    /** Chọn template theo event (P0 hard-code; P1 có thể đọc từ DB/Settings) */
+    private function choose_template(string $event_key): TemplateDTO
     {
         return match ($event_key) {
-            EventKeys::COMPANY_CREATED => 'Company mới được tạo',
-            EventKeys::COMPANY_SOFT_DELETED => 'Company bị xoá mềm',
-            EventKeys::QUOTE_SENT => 'Đã gửi báo giá',
-            default => $event_key,
+            'CompanySoftDeleted' => new TemplateDTO(
+                subject: 'Xoá mềm công ty #{{company_id}}',
+                body: 'Công ty #{{company_id}} đã bị xoá mềm bởi user #{{actor_id}}. Lý do: {{delete_reason}}.'
+            ),
+            'CompanyCreated' => new TemplateDTO(
+                subject: 'Tạo công ty mới #{{company_id}}',
+                body: 'User #{{actor_id}} vừa tạo công ty #{{company_id}}.'
+            ),
+            default => new TemplateDTO(
+                subject: 'Sự kiện: {{event_key}}',
+                body: 'Một sự kiện vừa diễn ra cho công ty #{{company_id}} bởi user #{{actor_id}}.'
+            ),
         };
     }
 
-
-    private function build_context_placeholders(string $event_key, EventContextDTO $ctx): array
-    {
-        $company_name = (string) ($ctx->payload['company_name'] ?? '');
-        return [
-            'actor_id' => (string)$ctx->actor_id,
-            'occurred_at' => (string)$ctx->occurred_at,
-            'company_id' => (string)($ctx->payload['company_id'] ?? ''),
-            'company_name' => $company_name,
-        ];
-    }
-
-
-    /**
-     * P0: người nhận cơ bản = actor + tất cả admin
-     * Sau này thay bằng PreferenceService/Rule nâng cao
-     * @return int[] user ids
-     */
+    /** @return int[] */
     private function resolve_recipients_basic(int $actor_id): array
     {
-        $ids = [$actor_id];
+        $ids = [];
+        if ($actor_id > 0) {
+            $ids[] = $actor_id;
+        }
         $admins = get_users(['role' => 'administrator', 'fields' => 'ID']);
         foreach ($admins as $id) {
-            if (!in_array((int)$id, $ids, true)) $ids[] = (int)$id;
+            $id = (int)$id;
+            if (!in_array($id, $ids, true)) {
+                $ids[] = $id;
+            }
         }
         return $ids;
     }

@@ -1,63 +1,38 @@
 <?php
 
+/**
+ * NotificationsModule (file chính)
+ * Entry point khởi động module Notifications
+ */
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Notifications;
 
-use TMT\CRM\Core\Notifications\Presentation\Admin\Screen\NotificationCenterScreen;
-use TMT\CRM\Core\Notifications\Presentation\Admin\Screen\SettingsScreen;
-use TMT\CRM\Core\Notifications\Application\Services\NotificationDispatcher;
-use TMT\CRM\Core\Notifications\Domain\EventKeys;
-use TMT\CRM\Core\Notifications\Domain\DTO\EventContextDTO;
-use TMT\CRM\Shared\EventBus;             // ← dùng wrapper mới
-use TMT\CRM\Shared\Container\Container;            // DI container của dự án (nếu có)
-
-use TMT\CRM\Domain\Repositories\NotificationRepositoryInterface;
-use TMT\CRM\Core\Notifications\Infrastructure\Repositories\DbNotificationRepository;
-
-use TMT\CRM\Domain\Repositories\DeliveryRepositoryInterface;
-use TMT\CRM\Core\Notifications\Infrastructure\Repositories\DbDeliveryRepository;
-
-use TMT\CRM\Domain\Repositories\TemplateRepositoryInterface;
-use TMT\CRM\Core\Notifications\Infrastructure\Repositories\DbTemplateRepository;
-
-use TMT\CRM\Domain\Repositories\PreferenceRepositoryInterface;
-use TMT\CRM\Core\Notifications\Infrastructure\Repositories\DbPreferenceRepository;
+use TMT\CRM\Core\Notifications\Infrastructure\Providers\NotificationsServiceProvider;
 
 final class NotificationsModule
 {
-    /** Gọi 1 lần ở bootstrap plugin (file chính) */
+    /** Khởi động module: bind container, đăng ký hooks, subscribe events */
     public static function register(): void
     {
-        NotificationCenterScreen::register();
-        SettingsScreen::register();
+        NotificationsServiceProvider::register();
 
-        Container::set(NotificationRepositoryInterface::class, fn() => new DbNotificationRepository($GLOBALS['wpdb']));
-        Container::set(DeliveryRepositoryInterface::class, fn() => new DbDeliveryRepository($GLOBALS['wpdb']));
-        Container::set(TemplateRepositoryInterface::class, fn() => new DbTemplateRepository($GLOBALS['wpdb']));
-        Container::set(PreferenceRepositoryInterface::class, fn() => new DbPreferenceRepository($GLOBALS['wpdb']));
+        add_action('init', [self::class, 'on_init'], 1);
+        add_action('admin_init', [self::class, 'on_admin_init'], 1);
+    }
 
-        // CompanyCreated
-        EventBus::listen(EventKeys::COMPANY_CREATED, function (EventContextDTO $ctx) {
-            /** @var NotificationDispatcher $dispatcher */
-            $dispatcher = Container::get(NotificationDispatcher::class);
-            $dispatcher->on_event(EventKeys::COMPANY_CREATED, $ctx);
-        });
+    public static function on_init(): void
+    {
+        // Chỗ cho routes/ajax nếu cần
+    }
 
-        // CompanySoftDeleted
-        EventBus::listen(EventKeys::COMPANY_SOFT_DELETED, function (EventContextDTO $ctx) {
-            $dispatcher = Container::get(NotificationDispatcher::class);
-            $dispatcher->on_event(EventKeys::COMPANY_SOFT_DELETED, $ctx);
-        });
-
-        // QuoteSent
-        EventBus::listen(EventKeys::QUOTE_SENT, function (EventContextDTO $ctx) {
-            $dispatcher = Container::get(NotificationDispatcher::class);
-            $dispatcher->on_event(EventKeys::QUOTE_SENT, $ctx);
-        });
-
-
-        // \TMT\CRM\Core\Notifications\Infrastructure\Seeder\NotificationsSeeder::seed();
-
+    public static function on_admin_init(): void
+    {
+        // (Tuỳ chọn) Test nhanh pipeline bằng admin_notices
+        // add_action('admin_notices', function () {
+        //     echo '<div class="notice notice-info"><p>TMT NotificationsModule đã khởi động.</p></div>';
+        // });
+        
     }
 }

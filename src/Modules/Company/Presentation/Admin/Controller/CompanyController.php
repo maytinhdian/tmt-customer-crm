@@ -105,20 +105,25 @@ final class CompanyController
         }
 
         $svc = Container::get('company-service');
-
+        // Sanitize input
+        $owner_id = get_current_user_id();
         try {
-            $svc->purge($id);
+            $svc->purge($id, $owner_id);
             AdminNoticeService::success_for_screen(
                 CompanyScreen::screen_id(),
                 __('Xóa công ty thành công.', 'tmt-crm')
             );
-            self::redirect(self::url());
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+            wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
+            exit;
         } catch (\Throwable $e) {
             AdminNoticeService::error_for_screen(
                 CompanyScreen::screen_id(),
                 sprintf(__('Xóa thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
             );
-            self::redirect(self::url(['error' => 1]));
+            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+            wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
+            exit;
         }
     }
 

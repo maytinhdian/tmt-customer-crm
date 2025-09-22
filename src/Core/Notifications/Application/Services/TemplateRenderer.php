@@ -1,21 +1,29 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Notifications\Application\Services;
 
 use TMT\CRM\Core\Notifications\Domain\DTO\TemplateDTO;
 
+/** Renderer tối giản: thay {{key}} trong subject/body */
 final class TemplateRenderer
 {
-    /** Thay placeholder đơn giản theo context (MVP) */
+    /**
+     * @param array<string,mixed> $context
+     * @return array{subject:string, body:string}
+     */
     public function render(TemplateDTO $tpl, array $context): array
     {
-        $subject = $tpl->subject ?? '';
-        $body = $tpl->body;
+        $subject = (string)($tpl->subject ?? '');
+        $body    = (string)($tpl->body ?? '');
+
         foreach ($context as $k => $v) {
-            $subject = str_replace('{{' . $k . '}}', (string)$v, $subject);
-            $body = str_replace('{{' . $k . '}}', (string)$v, $body);
+            $needle = '{{' . $k . '}}';
+            $subject = str_replace($needle, (string)$v, $subject);
+            $body    = str_replace($needle, (string)$v, $body);
         }
+
         return ['subject' => $subject, 'body' => $body];
     }
 }

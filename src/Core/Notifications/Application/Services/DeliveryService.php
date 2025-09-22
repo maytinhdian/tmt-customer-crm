@@ -1,23 +1,32 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Notifications\Application\Services;
 
+use TMT\CRM\Core\Notifications\Application\Contracts\ChannelAdapterInterface;
 use TMT\CRM\Core\Notifications\Domain\DTO\DeliveryDTO;
 
 final class DeliveryService
 {
-    /** @param array<string, object> $channels map channel id => adapter */
-    public function __construct(private array $channels, private \TMT\CRM\Domain\Repositories\DeliveryRepositoryInterface $deliveries) {}
+    /**
+     * @param array<string,ChannelAdapterInterface> $channels map channel id => adapter
+     */
+    public function __construct(
+        private array $channels
+    ) {}
 
+    /**
+     * @param array<string,mixed> $rendered
+     */
     public function send(DeliveryDTO $delivery, array $rendered): bool
     {
-        $channel_id = $delivery->channel; // 'notice' | 'email' | ...
+        $channel_id = $delivery->channel;
         if (!isset($this->channels[$channel_id])) {
+            error_log('[Notif] Channel not found: ' . $channel_id);
             return false;
         }
-        $ok = $this->channels[$channel_id]->send($delivery, $rendered);
-        $this->deliveries->update_status($delivery->id, $ok ? 'sent' : 'failed', $ok ? null : 'send_error');
-        return $ok;
+
+        return $this->channels[$channel_id]->send($delivery, $rendered);
     }
 }

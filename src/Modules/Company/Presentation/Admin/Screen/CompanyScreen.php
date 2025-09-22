@@ -24,7 +24,7 @@ final class CompanyScreen
 
     /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
     public const ACTION_SAVE   = 'tmt_crm_company_save';
-    public const ACTION_HARD_DELETE = 'tmt_crm_company_delete';
+    public const ACTION_HARD_DELETE = 'tmt_crm_company_purge';
     public const ACTION_SOFT_DELETE = 'tmt_crm_company_soft_delete';
     public const ACTION_BULK_DELETE = 'tmt_crm_company_bulk_delete';
     public const ACTION_RESTORE = 'tmt_crm_company_restore';
