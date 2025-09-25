@@ -22,72 +22,7 @@ final class NotificationDispatcher
     ) {}
 
     /** Callback cho EventBus (subscribe trong ServiceProvider) */
-    // public function handle(array|object $payload): void
-    // {
-    //     // Suy diễn chuẩn hoá input
-    //     $event_key = '';
-    //     $ctx_data  = [];
-
-    //     if (is_array($payload)) {
-    //         $event_key = (string)($payload['event_key'] ?? 'unknown_event');
-    //         $ctx_data  = (array)($payload['context'] ?? []);
-    //     } elseif (is_object($payload)) {
-    //         $event_key = (string)($payload->event_key ?? 'unknown_event');
-    //         $ctx_data  = (array)($payload->context ?? []);
-    //     }
-
-    //     error_log("[Notif] Dispatcher::handle {$event_key}");
-
-    //     // P0: template cứng (có thể map theo event_key)
-    //     $tpl = new TemplateDTO(
-    //         subject: 'Sự kiện: {{event_key}}',
-    //         body: 'Một sự kiện vừa diễn ra cho công ty #{{company_id}} bởi user #{{actor_id}}.'
-    //     );
-
-    //     $ctx = new EventContextDTO(
-    //         actor_id: (int)($ctx_data['actor_id'] ?? get_current_user_id()),
-    //         company_id: (int)($ctx_data['company_id'] ?? 0)
-    //     );
-
-    //     // Preference
-    //     if (!$this->preferences->allow($event_key, 'notice') && !$this->preferences->allow($event_key, 'email')) {
-    //         error_log("[Notif] Preference blocked for {$event_key}");
-    //         return;
-    //     }
-
-    //     // Render
-    //     $rendered = $this->renderer->render($tpl, [
-    //         'event_key'  => $event_key,
-    //         'actor_id'   => $ctx->actor_id,
-    //         'company_id' => $ctx->company_id,
-    //     ]);
-
-    //     // Recipients tối thiểu: actor + admin
-    //     $recipients = $this->resolve_recipients_basic($ctx->actor_id);
-
-    //     // Gửi
-    //     foreach ($recipients as $user_id) {
-    //         foreach (['notice', 'email'] as $channel) {
-    //             if (!$this->preferences->allow($event_key, $channel)) {
-    //                 continue;
-    //             }
-
-    //             $delivery = new DeliveryDTO(
-    //                 id: null,
-    //                 notification_id: null, // P0: chưa lưu DB
-    //                 channel: $channel,
-    //                 recipient_id: (int)$user_id,
-    //                 status: 'pending',
-    //                 created_at: current_time('mysql')
-    //             );
-
-    //             $ok = $this->delivery->send($delivery, $rendered);
-    //             error_log("[Notif] send {$channel} -> user={$user_id} => " . ($ok ? 'OK' : 'FAIL'));
-    //         }
-    //     }
-    // }
-
-    /** Callback cho EventBus */
+   
     public function handle(array|object $payload): void
     {
         // Chuẩn hoá input
