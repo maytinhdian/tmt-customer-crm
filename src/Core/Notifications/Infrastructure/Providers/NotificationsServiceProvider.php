@@ -15,10 +15,28 @@ use TMT\CRM\Core\Notifications\Application\Services\PreferenceService;
 use TMT\CRM\Core\Notifications\Infrastructure\Channels\NoticeChannelAdapter;
 use TMT\CRM\Core\Notifications\Infrastructure\Channels\EmailChannelAdapter;
 
+// 🔄 Đã chuyển sang namespace Persistence
+use TMT\CRM\Core\Notifications\Infrastructure\Persistence\{
+    WpdbNotificationLogRepository,
+    WpdbNotificationTemplateRepository,
+    WpdbNotificationPreferenceRepository
+};
+use TMT\CRM\Core\Notifications\Domain\Repositories\{
+    NotificationLogRepositoryInterface,
+    NotificationTemplateRepositoryInterface,
+    NotificationPreferenceRepositoryInterface
+};
 final class NotificationsServiceProvider
 {
     public static function register(): void
     {
+         global $wpdb;
+         
+         // Repositories
+        Container::set(NotificationLogRepositoryInterface::class, fn() => new WpdbNotificationLogRepository($wpdb));
+        Container::set(NotificationTemplateRepositoryInterface::class, fn() => new WpdbNotificationTemplateRepository($wpdb));
+        Container::set(NotificationPreferenceRepositoryInterface::class, fn() => new WpdbNotificationPreferenceRepository($wpdb));
+
         // Adapters
         Container::set(NoticeChannelAdapter::class, static fn() => new NoticeChannelAdapter());
         Container::set(EmailChannelAdapter::class, static fn() => new EmailChannelAdapter());
