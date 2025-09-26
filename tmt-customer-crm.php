@@ -56,7 +56,7 @@ add_action('plugins_loaded', function () {
     // }
 
     // bật Role packs + map_meta_cap (own/any, DIP)
-    SecurityBootstrap::init();
+    // SecurityBootstrap::init();
 
     // Khởi động hệ thống sau khi schema OK
     if (class_exists(\TMT\CRM\Shared\Hooks::class)) {
@@ -134,4 +134,10 @@ add_action('plugins_loaded', function () {
 
 
     // … rồi mới ModuleRegistry::register_enabled_modules();
+}, 1);
+
+use TMT\CRM\Modules\Password\PasswordModule;
+
+add_action('plugins_loaded', function () {
+    PasswordModule::register(); // bootstrap (file chính)
 }, 1);

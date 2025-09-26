@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\Note\Presentation\Admin\Controller;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 
 final class NotesFilesController
 {

@@ -13,7 +13,7 @@ final class WpdbNotificationTemplateRepository implements NotificationTemplateRe
 
     public function find_by_code(string $code): ?array
     {
-        $table = $this->db->prefix . 'tmt_notification_templates';
+        $table = $this->db->prefix . 'tmt_crm_notification_templates';
         $sql   = $this->db->prepare("SELECT * FROM {$table} WHERE code = %s LIMIT 1", $code);
         $row   = $this->db->get_row($sql, ARRAY_A);
 
@@ -22,7 +22,7 @@ final class WpdbNotificationTemplateRepository implements NotificationTemplateRe
 
     public function upsert(array $tpl): int
     {
-        $table = $this->db->prefix . 'tmt_notification_templates';
+        $table = $this->db->prefix . 'tmt_crm_notification_templates';
         $now   = current_time('mysql');
 
         $existing = $this->find_by_code((string) $tpl['code']);
@@ -46,7 +46,7 @@ final class WpdbNotificationTemplateRepository implements NotificationTemplateRe
 
     public function list(array $filters = [], int $page = 1, int $per_page = 20): array
     {
-        $table  = $this->db->prefix . 'tmt_notification_templates';
+        $table  = $this->db->prefix . 'tmt_crm_notification_templates';
         $where  = [];
         $params = [];
 

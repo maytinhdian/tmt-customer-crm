@@ -25,6 +25,7 @@ final class Installer
             // \TMT\CRM\Modules\Sequence\Infrastructure\Persistence\Migration\SequenceMigrator::class,
             \TMT\CRM\Modules\Quotation\Infrastructure\Migrations\QuoteMigrator::class,
             \TMT\CRM\Core\Notifications\Infrastructure\Migrations\NotificationsMigrator::class,
+            \TMT\CRM\Modules\Password\Infrastructure\Migrations\PasswordMigrator::class,
             // \TMT\CRM\Modules\Order\Infrastructure\Persistence\Migration\OrderMigrator::class,
             // \TMT\CRM\Modules\Invoice\Infrastructure\Persistence\Migration\InvoiceMigrator::class,
             // \TMT\CRM\Modules\Payment\Infrastructure\Persistence\Migration\PaymentMigrator::class,

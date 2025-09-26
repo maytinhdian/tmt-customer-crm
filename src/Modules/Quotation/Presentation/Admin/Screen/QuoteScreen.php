@@ -6,7 +6,7 @@ namespace TMT\CRM\Modules\Quotation\Presentation\Admin\Screen;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Presentation\Support\View;
-use TMT\CRM\Shared\Infrastructure\Security\Capability;
+use TMT\CRM\Core\Capabilities\Domain\Capability;
 use TMT\CRM\Modules\Quotation\Presentation\Admin\ListTable\QuoteListTable;
 
 final class QuoteScreen

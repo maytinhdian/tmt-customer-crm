@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Capabilities\Domain;
@@ -15,10 +16,20 @@ final class Capability
     public const COMPANY_UPDATE = 'tmt_crm_company_update';
     public const COMPANY_DELETE = 'tmt_crm_company_delete'; // xoá mềm
 
+    // Password
+    public const PASSWORD_READ    = 'tmt_crm_password_read';
+    public const PASSWORD_CREATE  = 'tmt_crm_password_create';
+    public const PASSWORD_UPDATE  = 'tmt_crm_password_update';
+    public const PASSWORD_DELETE  = 'tmt_crm_password_delete';
+    public const PASSWORD_RESTORE = 'tmt_crm_password_restore';
+    public const PASSWORD_REVEAL  = 'tmt_crm_password_reveal'; // hành động nhạy cảm
+
+
     // Customer
     public const CUSTOMER_READ   = 'tmt_crm_customer_read';
     public const CUSTOMER_CREATE = 'tmt_crm_customer_create';
     public const CUSTOMER_UPDATE = 'tmt_crm_customer_update';
+    public const CUSTOMER_UPDATE_ANY = 'tmt_crm_customer_update';
     public const CUSTOMER_DELETE = 'tmt_crm_customer_delete';
 
     // Company Contact
@@ -68,21 +79,55 @@ final class Capability
     {
         return [
             // Company
-            self::COMPANY_READ, self::COMPANY_CREATE, self::COMPANY_UPDATE, self::COMPANY_DELETE,
+            self::COMPANY_READ,
+            self::COMPANY_CREATE,
+            self::COMPANY_UPDATE,
+            self::COMPANY_DELETE,
             // Customer
-            self::CUSTOMER_READ, self::CUSTOMER_CREATE, self::CUSTOMER_UPDATE, self::CUSTOMER_DELETE,
+            self::CUSTOMER_READ,
+            self::CUSTOMER_CREATE,
+            self::CUSTOMER_UPDATE,
+            self::CUSTOMER_DELETE,
             // Company Contact
-            self::COMPANY_CONTACT_READ, self::COMPANY_CONTACT_CREATE, self::COMPANY_CONTACT_UPDATE, self::COMPANY_CONTACT_DELETE,
+            self::COMPANY_CONTACT_READ,
+            self::COMPANY_CONTACT_CREATE,
+            self::COMPANY_CONTACT_UPDATE,
+            self::COMPANY_CONTACT_DELETE,
             // Notes & Files
-            self::NOTE_READ, self::NOTE_CREATE, self::NOTE_UPDATE, self::NOTE_DELETE,
-            self::FILE_READ, self::FILE_ATTACH, self::FILE_DELETE,
+            self::NOTE_READ,
+            self::NOTE_CREATE,
+            self::NOTE_UPDATE,
+            self::NOTE_DELETE,
+            self::FILE_READ,
+            self::FILE_ATTACH,
+            self::FILE_DELETE,
+            //Password 
+            self::PASSWORD_CREATE,
+            self::PASSWORD_READ,
+            self::PASSWORD_RESTORE,
+            self::PASSWORD_DELETE,
+            self::PASSWORD_REVEAL,
             // Quotes/Orders/Invoices/Payments
-            self::QUOTE_READ, self::QUOTE_CREATE, self::QUOTE_UPDATE, self::QUOTE_DELETE,
-            self::ORDER_READ, self::ORDER_CREATE, self::ORDER_UPDATE, self::ORDER_DELETE,
-            self::INVOICE_READ, self::INVOICE_CREATE, self::INVOICE_UPDATE, self::INVOICE_DELETE,
-            self::PAYMENT_READ, self::PAYMENT_CREATE, self::PAYMENT_UPDATE, self::PAYMENT_DELETE,
+            self::QUOTE_READ,
+            self::QUOTE_CREATE,
+            self::QUOTE_UPDATE,
+            self::QUOTE_DELETE,
+            self::ORDER_READ,
+            self::ORDER_CREATE,
+            self::ORDER_UPDATE,
+            self::ORDER_DELETE,
+            self::INVOICE_READ,
+            self::INVOICE_CREATE,
+            self::INVOICE_UPDATE,
+            self::INVOICE_DELETE,
+            self::PAYMENT_READ,
+            self::PAYMENT_CREATE,
+            self::PAYMENT_UPDATE,
+            self::PAYMENT_DELETE,
             // Admin & Records
-            self::RECORDS_PURGE, self::SETTINGS_MANAGE, self::CAPABILITIES_MANAGE,
+            self::RECORDS_PURGE,
+            self::SETTINGS_MANAGE,
+            self::CAPABILITIES_MANAGE,
         ];
     }
 
@@ -100,6 +145,7 @@ final class Capability
             'Invoice' => [self::INVOICE_READ, self::INVOICE_CREATE, self::INVOICE_UPDATE, self::INVOICE_DELETE],
             'Payment' => [self::PAYMENT_READ, self::PAYMENT_CREATE, self::PAYMENT_UPDATE, self::PAYMENT_DELETE],
             'Admin' => [self::SETTINGS_MANAGE, self::CAPABILITIES_MANAGE, self::RECORDS_PURGE],
+            'Password' => [self::PASSWORD_CREATE, self::PASSWORD_READ, self::PASSWORD_RESTORE, self::PASSWORD_DELETE, self::PASSWORD_REVEAL]
         ];
     }
 }

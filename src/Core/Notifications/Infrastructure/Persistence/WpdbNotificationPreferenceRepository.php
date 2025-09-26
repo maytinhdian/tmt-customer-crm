@@ -13,7 +13,7 @@ final class WpdbNotificationPreferenceRepository implements NotificationPreferen
 
     public function get_user_pref(int $user_id, string $event, string $channel): ?array
     {
-        $table = $this->db->prefix . 'tmt_notification_preferences';
+        $table = $this->db->prefix . 'tmt_crm_notification_preferences';
         $sql   = $this->db->prepare(
             "SELECT * FROM {$table} WHERE user_id = %d AND event_name = %s AND channel = %s LIMIT 1",
             $user_id,
@@ -27,7 +27,7 @@ final class WpdbNotificationPreferenceRepository implements NotificationPreferen
 
     public function set_user_pref(int $user_id, string $event, string $channel, bool $enabled, ?string $quiet_hours = null): void
     {
-        $table = $this->db->prefix . 'tmt_notification_preferences';
+        $table = $this->db->prefix . 'tmt_crm_notification_preferences';
 
         $existing = $this->get_user_pref($user_id, $event, $channel);
         $data = [

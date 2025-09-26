@@ -2,7 +2,7 @@
 
 namespace TMT\CRM\Shared\Presentation;
 
-use TMT\CRM\Shared\Infrastructure\Security\Capability;
+use TMT\CRM\Core\Capabilities\Domain\Capability;
 
 defined('ABSPATH') || exit;
 
@@ -15,7 +15,7 @@ final class Menu
         add_menu_page(
             __('CRM', 'tmt-crm'),
             __('CRM', 'tmt-crm'),
-            Capability::CUSTOMER_READ,               // Cha & con cùng cap
+            Capability::CUSTOMER_READ,             // Cha & con cùng cap
             'tmt-crm',
             [self::class, 'render_dashboard'],
             'dashicons-groups',

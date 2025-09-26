@@ -13,7 +13,7 @@ final class WpdbNotificationLogRepository implements NotificationLogRepositoryIn
 
     public function create(array $data): int
     {
-        $table = $this->db->prefix . 'tmt_notification_logs';
+        $table = $this->db->prefix . 'tmt_crm_notification_logs';
 
         $insert = [
             'template_code'   => $data['template_code']   ?? null,
@@ -35,7 +35,7 @@ final class WpdbNotificationLogRepository implements NotificationLogRepositoryIn
 
     public function find_recent_by_idempotency(string $key, int $ttl_seconds): ?array
     {
-        $table = $this->db->prefix . 'tmt_notification_logs';
+        $table = $this->db->prefix . 'tmt_crm_notification_logs';
         $since = gmdate('Y-m-d H:i:s', time() - $ttl_seconds);
 
         $sql = $this->db->prepare(
@@ -58,7 +58,7 @@ final class WpdbNotificationLogRepository implements NotificationLogRepositoryIn
 
     public function stats_daily(string $since_date): array
     {
-        $table = $this->db->prefix . 'tmt_notification_logs';
+        $table = $this->db->prefix . 'tmt_crm_notification_logs';
         $sql = $this->db->prepare(
             "SELECT DATE(created_at) AS day, channel, status, COUNT(*) AS cnt
              FROM {$table}
