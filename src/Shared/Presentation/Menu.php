@@ -29,6 +29,33 @@ final class Menu
         add_action('current_screen', function ($s) {
             error_log('SCREEN: ' . $s->id);
         });
+
+        add_action('admin_menu', function () {
+            $parent = 'tmt-crm'; // slug menu CRM
+            $order  = [
+                'tmt-crm',             // CRM (mục dashboard của menu cha)
+                'tmt-crm-contacts',    // Liên hệ – Khách hàng
+                'tmt-crm-quotes',      // Báo giá – Đơn hàng
+                'tmt-crm-companies',   // Công ty
+                'tmt-crm-passwords',   // Quản lý mật khẩu
+                'tmt-crm-settings',    // Cài đặt
+            ];
+
+            global $submenu;
+            if (empty($submenu[$parent]) || !is_array($submenu[$parent])) {
+                return;
+            }
+
+            // Sắp xếp theo mảng $order
+            usort($submenu[$parent], function ($a, $b) use ($order) {
+                // $a[2] và $b[2] là menu_slug
+                $ai = array_search($a[2], $order, true);
+                $bi = array_search($b[2], $order, true);
+                $ai = ($ai === false) ? PHP_INT_MAX : $ai;
+                $bi = ($bi === false) ? PHP_INT_MAX : $bi;
+                return $ai <=> $bi;
+            });
+        }, 99);
     }
 
     public static function render_dashboard(): void

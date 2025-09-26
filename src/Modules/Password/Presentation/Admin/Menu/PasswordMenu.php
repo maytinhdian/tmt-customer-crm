@@ -12,8 +12,8 @@ final class PasswordMenu
     {
         add_submenu_page(
             'tmt-crm',
-            __('Passwords', 'tmt-crm'),
-            __('Passwords', 'tmt-crm'),
+            __('Quản lý mật khẩu', 'tmt-crm'),
+            __('Quản lý mật khẩu', 'tmt-crm'),
             'manage_options',
             PasswordScreen::PAGE_SLUG,
             [PasswordScreen::class, 'render'],
