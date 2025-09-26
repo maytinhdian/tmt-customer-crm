@@ -6,7 +6,7 @@ namespace TMT\CRM\Modules\Company\Presentation\Admin\Ajax;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
-use TMT\CRM\Shared\Infrastructure\Security\Capability;
+use TMT\CRM\Core\Capabilities\Domain\Capability;
 
 defined('ABSPATH') || exit;
 
@@ -77,7 +77,6 @@ final class CompanyAjaxController
             'pagination' => ['more' => $more],
         ]);
     }
-
 
 
 

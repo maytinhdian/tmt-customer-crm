@@ -17,7 +17,7 @@ final class PasswordScreen
             wp_die(__('Bạn không có quyền.', 'tmt-crm'));
         }
 
-        echo '<div class="wrap"><h1 class="wp-heading-inline">' . esc_html__('Passwords', 'tmt-crm') . '</h1>';
+        echo '<div class="wrap"><h1 class="wp-heading-inline">' . esc_html__('Passwords Manage', 'tmt-crm') . '</h1>';
 
         $table = new PasswordListTable();
         $table->prepare_items();

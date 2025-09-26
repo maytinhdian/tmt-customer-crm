@@ -77,7 +77,7 @@
   }
 
   //Customer (user có quyền COMPANY_CREATE)
-  const $customer = $("#customer_id");
+  const $customer = $("select#customer_id");
   if ($customer.length) {
     $customer.select2({
       width: "100%",
@@ -106,7 +106,7 @@
     ensureInitialValue($customer, "tmt_crm_get_customer_label");
   }
   // Company (tìm kiếm công ty – dùng cho Báo giá, v.v.)
-  const $company = $("#company_id");
+  const $company = $("select#company_id");
   if ($company.length) {
     $company.select2({
       width: "100%",

@@ -128,10 +128,12 @@ final class WpdbPasswordRepository implements PasswordRepositoryInterface
             'owner_id'    => $e->owner_id,
             'company_id'  => $e->company_id,
             'customer_id' => $e->customer_id,
+            'subject'     => $e->subject,
+            'category'    => $e->category,
             'created_at'  => current_time('mysql'),
             'updated_at'  => current_time('mysql'),
             'deleted_at'  => null,
-        ], ['%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s']);
+        ], ['%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s']);
         return (int)$this->db->insert_id;
     }
 

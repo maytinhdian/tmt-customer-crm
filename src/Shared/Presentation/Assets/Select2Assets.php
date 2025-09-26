@@ -35,11 +35,11 @@ final class Select2Assets
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('tmt_crm_select2_nonce'),
             'i18n'     => [
-                'placeholder_company' => __('— Chọn công ty —', 'tmt-crm'),
-                'placeholder_owner'   => __('— Chọn người phụ trách —', 'tmt-crm'),
-                 'placeholder_customer'   => __('— Chọn người liên hệ  —', 'tmt-crm'),
-                'searching'           => __('Đang tìm...', 'tmt-crm'),
-                'no_results'          => __('Không có kết quả', 'tmt-crm'),
+                'placeholder_company'       => __('— Chọn công ty —', 'tmt-crm'),
+                'placeholder_owner'         => __('— Chọn người phụ trách —', 'tmt-crm'),
+                'placeholder_customer'      => __('— Chọn người liên hệ  —', 'tmt-crm'),
+                'searching'                 => __('Đang tìm...', 'tmt-crm'),
+                'no_results'                => __('Không có kết quả', 'tmt-crm'),
             ],
         ]);
 

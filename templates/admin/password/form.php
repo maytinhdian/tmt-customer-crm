@@ -17,27 +17,50 @@ use TMT\CRM\Shared\Presentation\Support\View;
             <input type="hidden" name="id" value="<?php echo (int) $id; ?>">
         <?php endif; ?>
         <table class="form-table">
+            <?php
+            // Giá trị khi edit (nếu có)
+            $subject     = isset($Q->subject) && in_array($Q->subject, ['company', 'customer'], true) ? $Q->subject : 'company';
+            $company_id  = isset($Q->company_id) ? (int)$Q->company_id : 0;
+            $customer_id = isset($Q->customer_id) ? (int)$Q->customer_id : 0;
+            ?>
             <tr>
                 <th><?php esc_html_e('Đối tượng', 'tmt-crm'); ?></th>
                 <td>
-                    <label><input type="radio" name="subject" value="company" checked> <?php esc_html_e('Công ty', 'tmt-crm'); ?></label>
-                    &nbsp;&nbsp;
-                    <label><input type="radio" name="subject" value="customer"> <?php esc_html_e('Khách hàng', 'tmt-crm'); ?></label>
+                    <label style="margin-right:16px;">
+                        <input type="radio" name="subject" value="company" <?php checked($subject, 'company'); ?> />
+                        <?php esc_html_e('Công ty', 'tmt-crm'); ?>
+                    </label>
+                    <label>
+                        <input type="radio" name="subject" value="customer" <?php checked($subject, 'customer'); ?> />
+                        <?php esc_html_e('Khách hàng', 'tmt-crm'); ?>
+                    </label>
 
-                    <div class="tmt-subject-picker" data-for="company" style="margin-top:8px;">
-                        <label><?php esc_html_e('Chọn công ty', 'tmt-crm'); ?></label>
-                        <input type="number" name="company_id" min="1" class="small-text" />
-                        <!-- hoặc Select2 ajax -->
+                    <div id="tmt-picker-company" class="tmt-subject-picker" style="margin-top:8px; width: 25%;">
+                        <label for="company_id" style="display: none;"><strong><?php esc_html_e('Công ty', 'tmt-crm'); ?></strong></label>
+                        <select id="company_id" name="company_id"
+                            data-placeholder="Chọn công ty..."
+                            data-ajax-action="tmt_crm_search_companies"
+                            data-initial-id="1">
+                            <?php if (!empty($company_id)) : ?>
+                                <option value="<?php echo (int)$company_id; ?>" selected>
+                                    <?php echo esc_html($company_name ?? ('ID #' . $company_id)); ?>
+                                </option>
+                            <?php endif; ?>
+                        </select>
+                        <p class="description"><?php esc_html_e('Chọn công ty (có thể dùng Select2 AJAX).', 'tmt-crm'); ?></p>
                     </div>
 
-                    <div class="tmt-subject-picker" data-for="customer" style="margin-top:8px; display:none;">
-                        <label><?php esc_html_e('Chọn khách hàng', 'tmt-crm'); ?></label>
-                        <input type="number" name="customer_id" min="1" class="small-text" />
-                        <!-- hoặc Select2 ajax -->
+                    <div id="tmt-picker-customer" class="tmt-subject-picker" style="margin-top:8px; width: 25%;">
+                        <label for="customer_id" style="display:none;"><?php esc_html_e('Khách hàng', 'tmt-crm'); ?></label>
+                        <select id="customer_id" name="customer_id" style="min-width:320px;">
+                            <?php if ($customer_id > 0): ?>
+                                <option value="<?php echo (int)$customer_id; ?>" selected><?php echo esc_html(get_post_meta($customer_id, '_customer_name', true) ?: 'ID #' . $customer_id); ?></option>
+                            <?php endif; ?>
+                        </select>
+                        <p class="description"><?php esc_html_e('Chọn khách hàng (có thể dùng Select2 AJAX).', 'tmt-crm'); ?></p>
                     </div>
                 </td>
             </tr>
-
             <tr>
                 <th><label for="tmt-category"><?php esc_html_e('Phân loại', 'tmt-crm'); ?></label></th>
                 <td>
@@ -95,3 +118,55 @@ use TMT\CRM\Shared\Presentation\Support\View;
         <?php submit_button(__('Lưu', 'tmt-crm')); ?>
     </form>
 </div>
+<script>
+    (function() {
+        function updateSubjectUI(value) {
+            var companyBox = document.getElementById('tmt-picker-company');
+            var customerBox = document.getElementById('tmt-picker-customer');
+            var companySel = document.getElementById('tmt-company-id');
+            var customerSel = document.getElementById('tmt-customer-id');
+
+            var isCompany = value === 'company';
+            var isCustomer = value === 'customer';
+
+            // Hiện/ẩn UI
+            companyBox.style.display = isCompany ? '' : 'none';
+            customerBox.style.display = isCustomer ? '' : 'none';
+
+            // Bật/tắt trường submit
+            if (companySel) {
+                companySel.disabled = !isCompany;
+                companySel.required = isCompany;
+                if (!isCompany) {
+                    // clear khi chuyển qua loại khác
+                    if (companySel.tagName === 'SELECT') {
+                        companySel.value = '';
+                        if (window.jQuery && jQuery.fn && jQuery.fn.select2) jQuery(companySel).val(null).trigger('change');
+                    }
+                }
+            }
+            if (customerSel) {
+                customerSel.disabled = !isCustomer;
+                customerSel.required = isCustomer;
+                if (!isCustomer) {
+                    if (customerSel.tagName === 'SELECT') {
+                        customerSel.value = '';
+                        if (window.jQuery && jQuery.fn && jQuery.fn.select2) jQuery(customerSel).val(null).trigger('change');
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.name === 'subject') {
+                updateSubjectUI(e.target.value);
+            }
+        });
+
+        // Khởi tạo theo giá trị hiện tại (mặc định company)
+        document.addEventListener('DOMContentLoaded', function() {
+            var checked = document.querySelector('input[name="subject"]:checked');
+            updateSubjectUI(checked ? checked.value : 'company');
+        });
+    })();
+</script>
