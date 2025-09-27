@@ -53,19 +53,6 @@ final class PasswordMigrator extends BaseMigrator
         $this->set_version(self::target_version());
     }
 
-    // public function upgrade(string $from_version): void
-    // {
-    //     if ($from_version === '') {
-    //         $this->install();
-    //         return;
-    //     }
-
-    //     // Ở đây chưa có logic nâng cấp schema riêng.
-    //     // Khi cần thêm cột (ví dụ: key_version, tag...), viết ở đây.
-    //     // if (version_compare($from_version, '1.0.1', '<')) { ... }
-
-    //     $this->set_version(self::target_version());
-    // }
     public function upgrade(string $from_version): void
     {
         if ($from_version === '') {

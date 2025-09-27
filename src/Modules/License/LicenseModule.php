@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License;
 
-use TMT\CRM\Modules\License\Installer\LicenseInstaller;
+use TMT\CRM\Modules\License\Presentation\Admin\Controller\LicenseController;
 use TMT\CRM\Modules\License\Presentation\Admin\Menu\LicenseMenu;
 
 /**
@@ -13,12 +14,26 @@ use TMT\CRM\Modules\License\Presentation\Admin\Menu\LicenseMenu;
  */
 final class LicenseModule
 {
+    /**
+     * Gọi 1 lần từ plugin chính (tmt-customer-crm.php):
+     *
+     * add_action('plugins_loaded', [\TMT\CRM\Modules\License\LicenseModule::class, 'register'], 1);
+     */
     public static function register(): void
     {
-        // Installer
-        add_action('plugins_loaded', [LicenseInstaller::class, 'maybe_install'], 5);
 
-        // Admin Menu
+
+        // 2) Đăng ký service vào DI Container khi Container boot
+
+        // PasswordServiceProvider::register();
+
+        // 3) Menu + Screen
         add_action('admin_menu', [LicenseMenu::class, 'register'], 20);
+
+        // 4) Controller (xử lý reveal/save/…)
+        LicenseController::register();
+
+        // 5) Enqueue CSS/JS cho admin
+        // LicenseAssets::register();
     }
 }

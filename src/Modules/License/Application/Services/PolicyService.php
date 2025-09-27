@@ -1,13 +1,32 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\Services;
 
+use TMT\CRM\Modules\License\Application\DTO\CredentialSeatAllocationDTO;
+
 /**
- * Kiểm tra ràng buộc seats/allocations cơ bản (P0: stub).
- * Ghi chú: Hàm đặt tên kiểu snake_case theo quy ước dự án.
+ * PolicyService: kiểm tra các ràng buộc seats/allocations/activations cơ bản.
  */
 final class PolicyService
 {
-    // public function example_service_method(): void { /* ... */ }
+    /** Kiểm tra tổng quota không vượt seats_total (nếu seats_total có giá trị) */
+    public function can_allocate_total(?int $seats_total, int $sum_quota_after): bool
+    {
+        if ($seats_total === null) return true; // không biết limit → cho phép
+        return $sum_quota_after <= $seats_total;
+    }
+
+    /** Kiểm tra used ≤ quota cho một allocation */
+    public function is_allocation_within_quota(CredentialSeatAllocationDTO $alloc): bool
+    {
+        return $alloc->seat_used <= $alloc->seat_quota;
+    }
+
+    /** Kiểm tra trước khi add activation vào allocation */
+    public function can_add_activation_to_allocation(CredentialSeatAllocationDTO $alloc): bool
+    {
+        return ($alloc->seat_used + 1) <= $alloc->seat_quota;
+    }
 }

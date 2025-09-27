@@ -1,13 +1,35 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\Services;
 
 /**
- * Mã hóa/giải mã secret, tạo mask (P0: interface/stub).
- * Ghi chú: Hàm đặt tên kiểu snake_case theo quy ước dự án.
+ * CryptoService: mã hoá/giải mã secret + tạo mask.
+ * P0: bạn có thể thay thế body bằng crypto thật (AES-256-GCM).
  */
 final class CryptoService
 {
-    // public function example_service_method(): void { /* ... */ }
+    public function encrypt_secret(?string $plain): ?string
+    {
+        if ($plain === null || $plain === '') return null;
+        // TODO: thay bằng crypto thực tế
+        return base64_encode($plain);
+    }
+
+    public function decrypt_secret(?string $cipher): ?string
+    {
+        if ($cipher === null || $cipher === '') return null;
+        // TODO: thay bằng crypto thực tế
+        $decoded = base64_decode($cipher, true);
+        return $decoded === false ? null : $decoded;
+    }
+
+    public function make_mask(?string $secret): ?string
+    {
+        if (!$secret) return null;
+        $len = mb_strlen($secret);
+        if ($len <= 4) return str_repeat('*', $len);
+        return str_repeat('*', max(0, $len - 4)) . mb_substr($secret, -4);
+    }
 }
