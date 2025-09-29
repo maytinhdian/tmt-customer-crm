@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Numbering;
 
 use TMT\CRM\Core\Numbering\Infrastructure\Installer;
+use TMT\CRM\Core\Numbering\Infrastructure\Providers\NumberingServiceProvider;
 use TMT\CRM\Core\Numbering\Presentation\Admin\Settings\NumberingSettingsIntegration;
 
 /**

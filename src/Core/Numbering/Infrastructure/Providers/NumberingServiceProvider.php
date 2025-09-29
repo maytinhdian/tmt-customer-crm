@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Numbering;
+namespace TMT\CRM\Core\Numbering\Infrastructure\Providers;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Domain\Repositories\NumberingRepositoryInterface;

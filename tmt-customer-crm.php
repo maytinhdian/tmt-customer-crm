@@ -11,8 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-use \TMT\CRM\Shared\Infrastructure\Migrations\Installer;
-use TMT\CRM\Shared\Infrastructure\Security\SecurityBootstrap;
+use \TMT\CRM\Shared\Infrastructure\Setup\Installer;
 
 define('TMT_CRM_FILE', __FILE__);
 define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
@@ -39,7 +38,7 @@ if (file_exists($composer_autoload)) {
 // });
 
 add_action('plugins_loaded', function () {
-    \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
+    Installer::register(); // (file chính)
     // ... gọi Module::register() như hiện tại
 }, 1);
 

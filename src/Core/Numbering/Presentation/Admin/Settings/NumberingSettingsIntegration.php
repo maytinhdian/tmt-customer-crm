@@ -1,108 +1,249 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Numbering\Presentation\Admin\Settings;
 
-use TMT\CRM\Shared\Container;
-use TMT\CRM\Domain\Repositories\NumberingRepositoryInterface;
-use TMT\CRM\Core\Numbering\Domain\DTO\NumberingRuleDTO;
+use TMT\CRM\Core\Settings\Settings;
+use TMT\CRM\Core\Settings\SettingsSectionInterface;
 
 /**
- * Tích hợp tab "Đánh số tự động" vào Core/Settings
- * Ghi chú: sử dụng View::render_admin_module() nếu project đã có sẵn View helper.
+ * NumberingSettingsIntegration
+ * - TÍCH HỢP THEO CHUẨN SettingsRegistry (section), KHÔNG dùng cơ chế "tab" cũ.
+ * - Đăng ký section qua filter tmt_crm_settings_sections.
  */
-final class NumberingSettingsIntegration
+final class NumberingSettingsIntegration implements SettingsSectionInterface
 {
-    public const TAB_KEY = 'numbering';
-
+    /** Gọi 1 lần ở bootstrap của NumberingModule */
     public static function register(): void
     {
-        // Thêm tab
-        add_filter('tmt_crm/settings/tabs', function (array $tabs) {
-            $tabs[self::TAB_KEY] = __('Đánh số tự động', 'tmt-crm');
-            return $tabs;
+        add_filter('tmt_crm_settings_sections', function (array $sections) {
+            $sections[] = new self();
+            return $sections;
         });
-
-        // Render nội dung tab
-        add_action('tmt_crm/settings/render_tab', function (string $active_tab) {
-            if ($active_tab !== self::TAB_KEY) {
-                return;
-            }
-            self::render_tab();
-        });
-
-        // Handle lưu form
-        add_action('admin_post_tmt_crm_save_numbering', [self::class, 'handle_save']);
     }
 
-    public static function render_tab(): void
+    public function section_id(): string
     {
-        /** @var NumberingRepositoryInterface $repo */
-        $repo = Container::get(NumberingRepositoryInterface::class);
+        return 'numbering';
+    }
 
-        $entities = [
-            'company'  => __('Công ty', 'tmt-crm'),
-            'customer' => __('Khách hàng', 'tmt-crm'),
-            'contact'  => __('Liên hệ', 'tmt-crm'),
-            'quote'    => __('Báo giá', 'tmt-crm'),
+    public function section_title(): string
+    {
+        return __('Đánh số tự động', 'tmt-crm');
+    }
+
+    /**
+     * Đăng ký các field cho section.
+     * Lưu ý: SettingsPage đã add_settings_section($this->section_id()) sẵn,
+     * nên ở đây chỉ cần add_settings_field các input cụ thể.
+     */
+    public function register_fields(string $page_slug, string $option_key): void
+    {
+        // --- SEPARATOR: COMPANY ---
+        add_settings_field(
+            'numbering_sep_company',
+            '', // để trống nhãn (cột trái)
+            function () {
+                echo '<div class="tmt-settings-sep" style="margin:16px 0 8px;">
+                <h3 style="margin:0 0 6px;">' . esc_html__('Cài đặt đánh số tự động cho module COMPANY', 'tmt-crm') . '</h3>
+                <hr style="margin:6px 0;">
+              </div>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+        // --- COMPANY: PREFIX ---
+        add_settings_field(
+            'numbering_company_prefix',
+            __('Prefix mã Công ty', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_company_prefix', 'C-{year}-');
+                echo '<input type="text" class="regular-text" name="' . esc_attr($option_key) . '[numbering_company_prefix]" value="' . esc_attr($v) . '" />';
+                echo '<p class="description">' . esc_html__('Hỗ trợ {year}, {yy}, {month}', 'tmt-crm') . '</p>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // --- COMPANY: SUFFIX ---
+        add_settings_field(
+            'numbering_company_suffix',
+            __('Suffix mã Công ty', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_company_suffix', '');
+                echo '<input type="text" class="regular-text" name="' . esc_attr($option_key) . '[numbering_company_suffix]" value="' . esc_attr($v) . '" />';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // --- COMPANY: PADDING ---
+        add_settings_field(
+            'numbering_company_padding',
+            __('Số chữ số (padding)', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (int) Settings::get('numbering_company_padding', 4);
+                echo '<input type="number" min="1" max="10" name="' . esc_attr($option_key) . '[numbering_company_padding]" value="' . esc_attr((string)$v) . '" />';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // --- COMPANY: RESET MODE ---
+        add_settings_field(
+            'numbering_company_reset',
+            __('Chính sách reset', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_company_reset', 'yearly');
+                $ops = [
+                    'never'   => __('Không reset', 'tmt-crm'),
+                    'yearly'  => __('Theo năm', 'tmt-crm'),
+                    'monthly' => __('Theo tháng', 'tmt-crm'),
+                ];
+                echo '<select name="' . esc_attr($option_key) . '[numbering_company_reset]">';
+                foreach ($ops as $k => $label) {
+                    printf(
+                        '<option value="%s"%s>%s</option>',
+                        esc_attr($k),
+                        selected($v, $k, false),
+                        esc_html($label)
+                    );
+                }
+                echo '</select>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // Gợi ý: nhân bản 4 field trên cho customer/contact/quote nếu cần (đổi tiền tố key).
+        // =========================
+        // ======== LICENSE ========
+        // =========================
+
+        // --- SEPARATOR: LICENSE ---
+        add_settings_field(
+            'numbering_sep_license',
+            '', // để trống nhãn (cột trái)
+            function () {
+                echo '<div class="tmt-settings-sep" style="margin:16px 0 8px;">
+                <h3 style="margin:0 0 6px;">' . esc_html__('Cài đặt đánh số tự động cho module LICENSE', 'tmt-crm') . '</h3>
+                <hr style="margin:6px 0;">
+              </div>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // LICENSE: PREFIX
+        add_settings_field(
+            'numbering_license_prefix',
+            __('Prefix mã License', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_license_prefix', 'LIC-{year}-');
+                echo '<input type="text" class="regular-text" name="' . esc_attr($option_key) . '[numbering_license_prefix]" value="' . esc_attr($v) . '" />';
+                echo '<p class="description">' . esc_html__('Hỗ trợ {year}, {yy}, {month}', 'tmt-crm') . '</p>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+        // LICENSE: SUFFIX
+        add_settings_field(
+            'numbering_license_suffix',
+            __('Suffix mã License', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_license_suffix', '');
+                echo '<input type="text" class="regular-text" name="' . esc_attr($option_key) . '[numbering_license_suffix]" value="' . esc_attr($v) . '" />';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+        // LICENSE: PADDING
+        add_settings_field(
+            'numbering_license_padding',
+            __('Số chữ số (padding) License', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (int) Settings::get('numbering_license_padding', 5);
+                echo '<input type="number" min="1" max="10" name="' . esc_attr($option_key) . '[numbering_license_padding]" value="' . esc_attr((string)$v) . '" />';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+
+        // LICENSE: RESET
+        add_settings_field(
+            'numbering_license_reset',
+            __('Chính sách reset License', 'tmt-crm'),
+            function () use ($option_key) {
+                $v = (string) Settings::get('numbering_license_reset', 'yearly');
+                $ops = [
+                    'never'   => __('Không reset', 'tmt-crm'),
+                    'yearly'  => __('Theo năm', 'tmt-crm'),
+                    'monthly' => __('Theo tháng', 'tmt-crm'),
+                ];
+                echo '<select name="' . esc_attr($option_key) . '[numbering_license_reset]">';
+                foreach ($ops as $k => $label) {
+                    printf(
+                        '<option value="%s"%s>%s</option>',
+                        esc_attr($k),
+                        selected($v, $k, false),
+                        esc_html($label)
+                    );
+                }
+                echo '</select>';
+            },
+            $page_slug,
+            $this->section_id()
+        );
+    }
+
+    /** Defaults cho section */
+    public function get_defaults(): array
+    {
+        return [
+            'numbering_company_prefix'  => 'C-{year}-',
+            'numbering_company_suffix'  => '',
+            'numbering_company_padding' => 4,
+            'numbering_company_reset'   => 'yearly', // never|yearly|monthly
+            // license
+            'numbering_license_prefix'  => 'LIC-{year}-',
+            'numbering_license_suffix'  => '',
+            'numbering_license_padding' => 5,
+            'numbering_license_reset'   => 'yearly', // never|yearly|monthly
         ];
-
-        echo '<div class="wrap"><h2>' . esc_html__('Cấu hình đánh số tự động', 'tmt-crm') . '</h2>';
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
-        echo '<input type="hidden" name="action" value="tmt_crm_save_numbering" />';
-        wp_nonce_field('tmt_crm_numbering');
-
-        echo '<table class="form-table">';
-        foreach ($entities as $key => $label) {
-            $rule = $repo->get_rule($key) ?? new NumberingRuleDTO($key);
-            echo '<tr><th colspan="2"><h3>' . esc_html($label) . '</h3></th></tr>';
-            echo '<tr><th><label>Prefix</label></th><td><input type="text" name="rules[' . esc_attr($key) . '][prefix]" value="' . esc_attr($rule->prefix) . '" class="regular-text" /></td></tr>';
-            echo '<tr><th><label>Suffix</label></th><td><input type="text" name="rules[' . esc_attr($key) . '][suffix]" value="' . esc_attr($rule->suffix) . '" class="regular-text" /></td></tr>';
-            echo '<tr><th><label>Padding</label></th><td><input type="number" min="1" max="10" name="rules[' . esc_attr($key) . '][padding]" value="' . esc_attr((string)$rule->padding) . '" /></td></tr>';
-            echo '<tr><th><label>Reset</label></th><td>';
-            echo '<select name="rules[' . esc_attr($key) . '][reset]">';
-            foreach ([
-                'never'   => __('Không reset', 'tmt-crm'),
-                'yearly'  => __('Theo năm', 'tmt-crm'),
-                'monthly' => __('Theo tháng', 'tmt-crm'),
-            ] as $val => $text) {
-                $sel = selected($rule->reset, $val, false);
-                echo '<option value="' . esc_attr($val) . '" ' . $sel . '>' . esc_html($text) . '</option>';
-            }
-            echo '</select>';
-            echo '</td></tr>';
-            echo '<tr><th><label>Last Number</label></th><td><input type="number" min="0" name="rules[' . esc_attr($key) . '][last_number]" value="' . esc_attr((string)$rule->last_number) . '" /></td></tr>';
-            echo '<tr><td colspan="2"><hr/></td></tr>';
-        }
-        echo '</table>';
-        submit_button(__('Lưu thay đổi', 'tmt-crm'));
-        echo '</form></div>';
     }
 
-    public static function handle_save(): void
+    /** Sanitize dữ liệu của section */
+    public function sanitize(array $input, array $current_all): array
     {
-        check_admin_referer('tmt_crm_numbering');
-        if (!current_user_can('manage_options')) {
-            wp_die(__('Bạn không có quyền.', 'tmt-crm'));
-        }
-        $rules = isset($_POST['rules']) && is_array($_POST['rules']) ? wp_unslash($_POST['rules']) : [];
+        $out = [];
 
-        /** @var NumberingRepositoryInterface $repo */
-        $repo = Container::get(NumberingRepositoryInterface::class);
-
-        foreach ($rules as $entity => $data) {
-            $entity = sanitize_key($entity);
-            $dto = new NumberingRuleDTO(
-                entity_type: $entity,
-                prefix: sanitize_text_field($data['prefix'] ?? ''),
-                suffix: sanitize_text_field($data['suffix'] ?? ''),
-                padding: max(1, (int)($data['padding'] ?? 4)),
-                reset: in_array(($data['reset'] ?? 'never'), ['never','yearly','monthly'], true) ? $data['reset'] : 'never',
-                last_number: max(0, (int)($data['last_number'] ?? 0))
-            );
-            $repo->save_rule($dto);
+        // PREFIX
+        if (array_key_exists('numbering_company_prefix', $input)) {
+            $v = sanitize_text_field((string)$input['numbering_company_prefix']);
+            $out['numbering_company_prefix'] = mb_substr($v, 0, 50);
         }
-        wp_safe_redirect(add_query_arg(['page' => 'tmt-crm-settings', 'tab' => self::TAB_KEY, 'updated' => '1'], admin_url('admin.php')));
-        exit;
+
+        // SUFFIX
+        if (array_key_exists('numbering_company_suffix', $input)) {
+            $v = sanitize_text_field((string)$input['numbering_company_suffix']);
+            $out['numbering_company_suffix'] = mb_substr($v, 0, 50);
+        }
+
+        // PADDING
+        if (array_key_exists('numbering_company_padding', $input)) {
+            $v = (int)$input['numbering_company_padding'];
+            $out['numbering_company_padding'] = max(1, min(10, $v));
+        }
+
+        // RESET
+        if (array_key_exists('numbering_company_reset', $input)) {
+            $v = (string)$input['numbering_company_reset'];
+            $allow = ['never', 'yearly', 'monthly'];
+            $out['numbering_company_reset'] = in_array($v, $allow, true) ? $v : 'never';
+        }
+
+
+        return $out;
     }
 }
