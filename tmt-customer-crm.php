@@ -130,14 +130,16 @@ add_action('plugins_loaded', function () {
     CoreCapabilitiesModule::register();
 
     NotificationsModule::register();
-
-
-
-    // … rồi mới ModuleRegistry::register_enabled_modules();
 }, 1);
 
 use TMT\CRM\Modules\Password\PasswordModule;
 
 add_action('plugins_loaded', function () {
     PasswordModule::register(); // bootstrap (file chính)
+}, 1);
+
+use TMT\CRM\Modules\License\LicenseModule;
+
+add_action('plugins_loaded', function () {
+    LicenseModule::register(); // bootstrap (file chính)
 }, 1);

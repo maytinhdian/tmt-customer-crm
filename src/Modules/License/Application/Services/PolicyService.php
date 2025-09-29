@@ -29,4 +29,18 @@ final class PolicyService
     {
         return ($alloc->seat_used + 1) <= $alloc->seat_quota;
     }
+    public static function can_manage(): bool
+    {
+        return current_user_can('tmt_license_manage') || current_user_can('manage_options');
+    }
+
+    public static function can_reveal(): bool
+    {
+        return current_user_can('tmt_license_reveal_secret') || current_user_can('manage_options');
+    }
+
+    public static function can_delete(): bool
+    {
+        return current_user_can('tmt_license_delete') || current_user_can('manage_options');
+    }
 }

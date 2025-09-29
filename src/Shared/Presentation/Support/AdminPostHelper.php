@@ -98,7 +98,7 @@ final class AdminPostHelper
 
 // Cách dùng :
 
-// use TMT\CRM\Presentation\Support\AdminPostHelper;
+// use TMT\CRM\Shared\Presentation\Support\AdminPostHelper;
 
 // // Đặt làm liên hệ chính
 // $set_primary_url = AdminPostHelper::url(

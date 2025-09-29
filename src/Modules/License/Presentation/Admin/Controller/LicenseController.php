@@ -18,22 +18,25 @@ use TMT\CRM\Modules\License\Presentation\Admin\Screen\LicenseScreen;
 final class LicenseController
 {
     /** Action names cho admin-post */
+    public const ACTION_OPEN_FORM   = 'tmt_crm_license_open_form';
     public const ACTION_SAVE        = 'tmt_crm_license_save';
     public const ACTION_SOFT_DELETE = 'tmt_crm_license_soft_delete';
     public const ACTION_RESTORE     = 'tmt_crm_license_restore';
 
     /** Nonce keys */
-    private const NONCE_SAVE        = 'tmt_crm_license_save';
-    private const NONCE_SOFT_DELETE = 'tmt_crm_license_soft_delete';
-    private const NONCE_RESTORE     = 'tmt_crm_license_restore';
+    private const NONCE_SAVE        = 'tmt_crm_license_save_';
+    private const NONCE_SOFT_DELETE = 'tmt_crm_license_soft_delete_';
+    private const NONCE_RESTORE     = 'tmt_crm_license_restore_';
 
     public static function register(): void
     {
 
         // Hành vi GET trên màn hình (ví dụ: reveal)
-        add_action('admin_init', [self::class, 'handle_actions']);
+        // add_action('admin_init', [self::class, 'handle_actions']);
+
 
         // Routes POST (đã đăng nhập)
+        add_action('admin_post_' . self::ACTION_OPEN_FORM, [self::class, 'handle_open_form']);
         add_action('admin_post_' . self::ACTION_SAVE,        [self::class, 'handle_save']);
         add_action('admin_post_' . self::ACTION_SOFT_DELETE, [self::class, 'handle_soft_delete']);
         add_action('admin_post_' . self::ACTION_RESTORE,     [self::class, 'restore']);
@@ -43,13 +46,44 @@ final class LicenseController
         add_action('admin_post_nopriv_' . self::ACTION_SOFT_DELETE, [self::class, 'forbid']);
         add_action('admin_post_nopriv_' . self::ACTION_RESTORE,     [self::class, 'forbid']);
     }
+    /**
+     * Điều hướng sang trang form edit/add (admin.php?page=tmt-crm-licenses-edit&id=?)
+     */
+    public static function handle_open_form(): void
+    {
+        if (!PolicyService::can_manage()) {
+            wp_die(__('Not allowed', 'tmt-crm'));
+        }
 
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+
+        $url = add_query_arg(
+            [
+                'page' => 'tmt-crm-licenses-edit',
+                // Add New thì không cần id
+                'id'   => $id ?: null,
+            ],
+            admin_url('admin.php')
+        );
+
+        // Giữ referer/state nếu có
+        if (!empty($_GET['_wp_http_referer'])) {
+            $url = add_query_arg(
+                '_wp_http_referer',
+                sanitize_text_field((string) $_GET['_wp_http_referer']),
+                $url
+            );
+        }
+
+        wp_safe_redirect($url);
+        exit;
+    }
     public static function handle_save(): void
     {
         if (!current_user_can('manage_options')) {
             wp_die(__('Not allowed', 'tmt-crm'));
         }
-        check_admin_referer('tmt_license_save', '_wpnonce');
+        check_admin_referer(self::NONCE_SAVE, '_wpnonce');
 
         // Build DTO
         $dto = CredentialDTO::from_array([

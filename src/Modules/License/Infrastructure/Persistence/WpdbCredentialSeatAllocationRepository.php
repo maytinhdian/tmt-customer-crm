@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Infrastructure\Persistence;
@@ -49,7 +50,7 @@ final class WpdbCredentialSeatAllocationRepository implements CredentialSeatAllo
         $ok = $this->db->update($this->table, [
             'deleted_at'   => current_time('mysql'),
             'deleted_by'   => $deleted_by,
-            'delete_reason'=> $reason,
+            'delete_reason' => $reason,
         ], ['id' => $allocation_id]);
         return $ok !== false;
     }
@@ -77,6 +78,8 @@ final class WpdbCredentialSeatAllocationRepository implements CredentialSeatAllo
             'accepted_at'       => $this->fmt_datetime($row['accepted_at'] ?? null),
             'revoked_at'        => $this->fmt_datetime($row['revoked_at'] ?? null),
             'note'              => $row['note'] ?? null,
+            'secret_primary_encrypted' => $row['secret_primary_encrypted'] ?? null,
+            'secret_secondary_encrypted' => $row['secret_secondary_encrypted'] ?? null,
         ]);
     }
 
