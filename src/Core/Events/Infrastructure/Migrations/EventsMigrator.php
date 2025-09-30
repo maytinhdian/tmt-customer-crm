@@ -28,7 +28,7 @@ final class EventsMigrator extends BaseMigrator
     /** Tăng phiên bản này khi có thay đổi cấu trúc DB cần migrate */
     public static function target_version(): string
     {
-        return '1.0.0';
+        return '1.0.1';
     }
 
     /**
@@ -57,8 +57,10 @@ final class EventsMigrator extends BaseMigrator
                 SQL;
 
         // Ưu tiên dbDelta để an toàn tên cột/chỉ số (nếu BaseMigrator không wrap sẵn)
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        // require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
         dbDelta($sql);
+        $this->set_version(self::target_version());
     }
 
     /**
@@ -69,6 +71,13 @@ final class EventsMigrator extends BaseMigrator
     public function upgrade(string $from_version): void
     {
         $table = $this->db->prefix . 'tmt_crm_event_store';
+
+        if ($from_version === '') {
+            $this->install();
+            return;
+        }
+
+        $this->set_version('1.0.1');
 
         // Ví dụ: thêm chỉ số nếu trước đây chưa tạo
         if (version_compare($from_version, '1.0.0', '<')) {

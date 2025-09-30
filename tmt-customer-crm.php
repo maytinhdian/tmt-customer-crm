@@ -145,4 +145,5 @@ add_action('plugins_loaded', function () {
     EventsModule::bootstrap(); // (file chính)
 
     LicenseModule::register(); // bootstrap (file chính)
+    \TMT\CRM\Core\Log\LogModule::register();
 }, 1);

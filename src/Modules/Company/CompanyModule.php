@@ -25,7 +25,7 @@ final class CompanyModule
 
         // Container wiring
         Container::set('company-repo',   fn() => Container::get(CompanyRepositoryInterface::class));
-        Container::set('user-repo',   fn() => Container::get(UserRepositoryInterface::class));
+        // Container::set('user-repo',   fn() => Container::get(UserRepositoryInterface::class));
 
         Container::set('company-service',   fn() => new CompanyService(Container::get('company-repo'), Container::get('company-contact-repo'), Container::get('user-repo')));
 
@@ -34,5 +34,6 @@ final class CompanyModule
         add_action('admin_init', function () {
             CompanyController::register();
         });
+       
     }
 }
