@@ -55,3 +55,45 @@ jQuery(function ($) {
       });
   });
 });
+
+jQuery(function ($) {
+  $(document).on("click", ".tmt-reveal-secret", function (e) {
+    e.preventDefault();
+    var $btn = $(this);
+    var id = $btn.data("id");
+    var field = $btn.data("field"); // 'secret_primary' | 'secret_secondary'
+
+    $.post(
+      typeof TMTCRM_LicenseSecret !== "undefined" &&
+        TMTCRM_LicenseSecret.ajax_url
+        ? TMTCRM_LicenseSecret.ajax_url
+        : ajaxurl,
+      {
+        action: "tmt_crm_license_reveal_secret",
+        _ajax_nonce: TMTCRM_LicenseSecret.nonce,
+        id: id,
+        field: field, // Controller sẽ map sang *_encrypted
+      },
+      function (resp) {
+        if (!resp || !resp.success) {
+          alert(
+            resp && resp.data && resp.data.message
+              ? resp.data.message
+              : "Reveal failed"
+          );
+          return;
+        }
+        // List view: thay mask bằng full key
+        if ($btn.hasClass("tmt-reveal-secret-list")) {
+          $btn.closest("td").find(".tmt-secret-text").text(resp.data.secret);
+        }
+        $btn.remove();
+      },
+      "json"
+    ).fail(function (xhr) {
+      alert(
+        "AJAX " + xhr.status + " – " + (xhr.responseText || "Request failed")
+      );
+    });
+  });
+});

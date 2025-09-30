@@ -138,7 +138,11 @@ add_action('plugins_loaded', function () {
 }, 1);
 
 use TMT\CRM\Modules\License\LicenseModule;
+use TMT\CRM\Core\Events\EventsModule;
 
 add_action('plugins_loaded', function () {
+    // 1) Boot Core/Events trước (đăng EventBus)
+    EventsModule::bootstrap(); // (file chính)
+
     LicenseModule::register(); // bootstrap (file chính)
 }, 1);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Company\Presentation\Admin\Controller;
 
 use TMT\CRM\Shared\Container\Container;
-use TMT\CRM\Shared\Infrastructure\Security\Capability;
+use TMT\CRM\Core\Capabilities\Domain\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 

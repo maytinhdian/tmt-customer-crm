@@ -37,14 +37,14 @@ final class CredentialListTable extends WP_List_Table
     public function get_columns(): array
     {
         return [
-            'cb'        => '<input type="checkbox" />',
-            'number'    => __('Number', 'tmt-crm'),
-            'label'     => __('Label', 'tmt-crm'),
-            'type'      => __('Type', 'tmt-crm'),
-            'status'    => __('Status', 'tmt-crm'),
-            'seats'     => __('Seats (used/total)', 'tmt-crm'),
-            'expires_at' => __('Expires', 'tmt-crm'),
-            'license'   => __('License Key', 'tmt-crm'),
+            'cb'            => '<input type="checkbox" />',
+            'number'        => __('Number', 'tmt-crm'),
+            'label'         => __('Label', 'tmt-crm'),
+            'type'          => __('Type', 'tmt-crm'),
+            'status'        => __('Status', 'tmt-crm'),
+            'seats'         => __('Seats (used/total)', 'tmt-crm'),
+            'expires_at'    => __('Expires', 'tmt-crm'),
+            'secret_mask'   => __('License Key', 'tmt-crm'),
         ];
     }
 
@@ -127,9 +127,28 @@ final class CredentialListTable extends WP_List_Table
         return esc_html((string)($item->expires_at ?? ''));
     }
 
-    protected function column_license($item): string
+    protected function column_secret_mask($item): string
     {
-        return (string)($item->secret_mask ?? '');
+        $mask = (string)($item->secret_mask ?? '');
+        if ($mask === '') {
+            return '<span style="color:#888">—</span>';
+        }
+
+        $html = '<span class="tmt-secret-text">' . esc_html($mask) . '</span>';
+
+        // Chỉ hiện nút reveal nếu có quyền
+        if (\TMT\CRM\Modules\License\Application\Services\PolicyService::can_reveal()) {
+            $eye = '<span class="dashicons dashicons-visibility" style="vertical-align:middle;"></span>';
+            $html .= sprintf(
+                ' <a href="#" class="tmt-reveal-secret tmt-reveal-secret-list" ' .
+                    'data-id="%d" data-field="secret_primary" title="%s" style="font-size:12px;">%s</a>',
+                (int)$item->id,
+                esc_attr__('Reveal', 'tmt-crm'),
+                $eye
+            );
+        }
+
+        return $html;
     }
 
 

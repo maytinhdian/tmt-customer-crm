@@ -21,7 +21,7 @@ use TMT\CRM\Core\Notifications\Infrastructure\Persistence\{
     WpdbNotificationTemplateRepository,
     WpdbNotificationPreferenceRepository
 };
-use TMT\CRM\Core\Notifications\Domain\Repositories\{
+use TMT\CRM\Domain\Repositories\{
     NotificationLogRepositoryInterface,
     NotificationTemplateRepositoryInterface,
     NotificationPreferenceRepositoryInterface

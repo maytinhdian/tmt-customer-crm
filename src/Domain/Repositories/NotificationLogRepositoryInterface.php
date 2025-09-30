@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Notifications\Domain\Repositories;
+namespace TMT\CRM\Domain\Repositories;
 
 interface NotificationLogRepositoryInterface
 {

@@ -29,10 +29,17 @@ final class NotificationsModule
 
     public static function on_admin_init(): void
     {
-        // (Tuỳ chọn) Test nhanh pipeline bằng admin_notices
+        // // (Tuỳ chọn) Test nhanh pipeline bằng admin_notices
         // add_action('admin_notices', function () {
         //     echo '<div class="notice notice-info"><p>TMT NotificationsModule đã khởi động.</p></div>';
         // });
-        
+        // // Test thủ công
+        // add_action('admin_init', function () {
+        //     do_action('tmt_crm_debug_notify', 'CompanyCreated', [
+        //         'actor_id' => get_current_user_id(),
+        //         'subject'  => 'Tạo công ty thành công',
+        //         'body'     => 'Công ty A vừa được tạo bởi bạn.',
+        //     ], ['notice','email']); // đổi kênh tuỳ ý
+        // });
     }
 }
