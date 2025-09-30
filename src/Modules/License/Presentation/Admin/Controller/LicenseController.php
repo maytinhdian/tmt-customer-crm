@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Presentation\Admin\Controller;
 
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\License\Application\Services\CryptoService;
 use TMT\CRM\Modules\License\Application\Services\PolicyService;
 use TMT\CRM\Modules\License\Application\Services\CredentialService;
 
+use TMT\CRM\Core\Numbering\Application\NumberingFacade;
 use TMT\CRM\Modules\License\Infrastructure\Persistence\WpdbCredentialRepository;
 use TMT\CRM\Modules\License\Infrastructure\Persistence\WpdbCredentialSeatAllocationRepository;
 use TMT\CRM\Modules\License\Infrastructure\Persistence\WpdbCredentialActivationRepository;
@@ -85,10 +87,19 @@ final class LicenseController
         }
         check_admin_referer(self::NONCE_SAVE, '_wpnonce');
 
+        $number = isset($_POST['number']) ? trim((string) $_POST['number']) : '';
+        if ($number === '') {
+
+            // sequence cố định cho module License, có thể cấu hình trong Core
+            // ví dụ pattern ở Core: LIC-{YYYY}-{SEQ:5} 
+            // mặc định theo thời gian hiện tại
+            $number =  NumberingFacade::next_number('license');
+        }
+
         // Build DTO
         $dto = CredentialDTO::from_array([
             'id'            => isset($_POST['id']) && $_POST['id'] !== '' ? (int)$_POST['id'] : null,
-            'number'        => sanitize_text_field((string)($_POST['number'] ?? '')),
+            'number'        =>  $number,
             'type'          => sanitize_text_field((string)($_POST['type'] ?? 'LICENSE_KEY')),
             'label'         => sanitize_text_field((string)($_POST['label'] ?? '')),
             'customer_id'   => isset($_POST['customer_id']) && $_POST['customer_id'] !== '' ? (int)$_POST['customer_id'] : null,
@@ -98,7 +109,7 @@ final class LicenseController
             'seats_total'   => isset($_POST['seats_total']) && $_POST['seats_total'] !== '' ? (int)$_POST['seats_total'] : null,
             'sharing_mode'  => sanitize_text_field((string)($_POST['sharing_mode'] ?? 'none')),
             'renewal_of_id' => isset($_POST['renewal_of_id']) && $_POST['renewal_of_id'] !== '' ? (int)$_POST['renewal_of_id'] : null,
-            'owner_id'      => isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? (int)$_POST['owner_id'] : null,
+            'owner_id'      => isset($_POST['owner_id']) && $_POST['owner_id'] !== '' ? (int)$_POST['owner_id'] : get_current_user_id(),
             'username'      => isset($_POST['username']) && $_POST['username'] !== '' ? sanitize_text_field((string)$_POST['username']) : null,
             // Lưu ý: secret_primary/secondary nhập plaintext; Service sẽ mã hoá
             'secret_primary'   => isset($_POST['secret_primary']) && $_POST['secret_primary'] !== '' ? (string)$_POST['secret_primary'] : null,

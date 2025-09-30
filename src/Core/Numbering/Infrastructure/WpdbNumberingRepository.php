@@ -13,7 +13,7 @@ final class WpdbNumberingRepository implements NumberingRepositoryInterface
 
     public function __construct(private wpdb $db)
     {
-        $this->table = $this->db->prefix . 'crm_numbering_rules';
+        $this->table = $this->db->prefix . 'tmt_crm_numbering_rules';
     }
 
     public function get_rule(string $entity_type): ?NumberingRuleDTO

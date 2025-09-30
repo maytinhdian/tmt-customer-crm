@@ -68,9 +68,19 @@ final class CredentialListTable extends WP_List_Table
         // $edit_url = add_query_arg(['page' => 'tmt-crm-licenses-edit', 'id' => (int)$item->id], admin_url('admin.php'));
         $edit_url = AdminPostHelper::url(
             'tmt_crm_license_open_form',
-            ['id' => (int) $item->id]
+            [
+                'id' => (int) $item->id,
+                'view' => 'edit',
+                'tab'  => 'general',
+            ]
         );
 
+        // $edit_url = add_query_arg([
+        //     'page' => \TMT\CRM\Modules\License\Presentation\Admin\Screen\LicenseScreen::PAGE_SLUG,
+        //     'view' => 'edit',
+        //     'id'   => (int)$item->id,
+        //     'tab'  => 'general',
+        // ], admin_url('admin.php'));
 
         $del_url  = wp_nonce_url(add_query_arg([
             'action' => 'tmt_license_delete',

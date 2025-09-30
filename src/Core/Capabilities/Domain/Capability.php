@@ -24,6 +24,14 @@ final class Capability
     public const PASSWORD_RESTORE = 'tmt_crm_password_restore';
     public const PASSWORD_REVEAL  = 'tmt_crm_password_reveal'; // hành động nhạy cảm
 
+    //License 
+    public const LICENSE_READ       = 'tmt_crm_license_read';
+    public const LICENSE_CREATE     = 'tmt_crm_license_create';
+    public const LICENSE_UPDATE     = 'tmt_crm_license_update';
+    public const LICENSE_DELETE     = 'tmt_crm_license_delete';
+    public const LICENSE_PURGE      = 'tmt_crm_license_purge';
+    public const LICENSE_RESTORE    = 'tmt_crm_license_restore';
+    public const LICENSE_REVEAL     = 'tmt_crm_license_reveal';
 
     // Customer
     public const CUSTOMER_READ   = 'tmt_crm_customer_read';
@@ -107,6 +115,14 @@ final class Capability
             self::PASSWORD_RESTORE,
             self::PASSWORD_DELETE,
             self::PASSWORD_REVEAL,
+            //License
+            self::LICENSE_READ,
+            self::LICENSE_CREATE,
+            self::LICENSE_UPDATE,
+            self::LICENSE_DELETE,
+            self::LICENSE_PURGE,
+            self::LICENSE_RESTORE,
+            self::LICENSE_REVEAL,
             // Quotes/Orders/Invoices/Payments
             self::QUOTE_READ,
             self::QUOTE_CREATE,
@@ -145,7 +161,8 @@ final class Capability
             'Invoice' => [self::INVOICE_READ, self::INVOICE_CREATE, self::INVOICE_UPDATE, self::INVOICE_DELETE],
             'Payment' => [self::PAYMENT_READ, self::PAYMENT_CREATE, self::PAYMENT_UPDATE, self::PAYMENT_DELETE],
             'Admin' => [self::SETTINGS_MANAGE, self::CAPABILITIES_MANAGE, self::RECORDS_PURGE],
-            'Password' => [self::PASSWORD_CREATE, self::PASSWORD_READ, self::PASSWORD_RESTORE, self::PASSWORD_DELETE, self::PASSWORD_REVEAL]
+            'Password' => [self::PASSWORD_CREATE, self::PASSWORD_READ, self::PASSWORD_RESTORE, self::PASSWORD_DELETE, self::PASSWORD_REVEAL],
+            'License' => [self::LICENSE_READ, self::LICENSE_CREATE, self::LICENSE_UPDATE, self::LICENSE_DELETE, self::LICENSE_PURGE, self::LICENSE_RESTORE, self::LICENSE_REVEAL,]
         ];
     }
 }

@@ -6,6 +6,9 @@ namespace TMT\CRM\Core\Numbering\Presentation\Admin\Settings;
 
 use TMT\CRM\Core\Settings\Settings;
 use TMT\CRM\Core\Settings\SettingsSectionInterface;
+use TMT\CRM\Shared\Container\Container;
+use TMT\CRM\Domain\Repositories\NumberingRepositoryInterface;
+use TMT\CRM\Core\Numbering\Domain\DTO\NumberingRuleDTO;
 
 /**
  * NumberingSettingsIntegration
@@ -243,6 +246,57 @@ final class NumberingSettingsIntegration implements SettingsSectionInterface
             $out['numbering_company_reset'] = in_array($v, $allow, true) ? $v : 'never';
         }
 
+        /************************
+         * LICENSE 
+         ***********************/
+        // PREFIX
+        if (array_key_exists('numbering_license_prefix', $input)) {
+            $v = sanitize_text_field((string)$input['numbering_license_prefix']);
+            $out['numbering_license_prefix'] = mb_substr($v, 0, 50);
+        }
+
+        // SUFFIX
+        if (array_key_exists('numbering_license_suffix', $input)) {
+            $v = sanitize_text_field((string)$input['numbering_license_suffix']);
+            $out['numbering_license_suffix'] = mb_substr($v, 0, 50);
+        }
+
+        // PADDING
+        if (array_key_exists('numbering_license_padding', $input)) {
+            $v = (int)$input['numbering_license_padding'];
+            $out['numbering_license_padding'] = max(1, min(10, $v));
+        }
+
+        // RESET
+        if (array_key_exists('numbering_license_reset', $input)) {
+            $v = (string)$input['numbering_license_reset'];
+            $allow = ['never', 'yearly', 'monthly'];
+            $out['numbering_license_reset'] = in_array($v, $allow, true) ? $v : 'never';
+        }
+
+
+        // --- SYNC sang DB rule (ví dụ cho license) ---
+        /** @var NumberingRepositoryInterface $repo */
+        $repo = Container::get(NumberingRepositoryInterface::class);
+
+        $company = new NumberingRuleDTO(
+            entity_type: 'company',
+            prefix: $out['numbering_company_prefix']  ?? ($current_all['numbering_company_prefix']  ?? 'C-{year}-'),
+            suffix: $out['numbering_company_suffix']  ?? ($current_all['numbering_company_suffix']  ?? ''),
+            padding: $out['numbering_company_padding'] ?? (int)($current_all['numbering_company_padding'] ?? 5),
+            reset: $out['numbering_company_reset']   ?? ($current_all['numbering_company_reset']   ?? 'yearly')
+        );
+        $repo->save_rule($company);
+
+
+        $license = new NumberingRuleDTO(
+            entity_type: 'license',
+            prefix: $out['numbering_license_prefix']  ?? ($current_all['numbering_license_prefix']  ?? 'LIC-{year}-'),
+            suffix: $out['numbering_license_suffix']  ?? ($current_all['numbering_license_suffix']  ?? ''),
+            padding: $out['numbering_license_padding'] ?? (int)($current_all['numbering_license_padding'] ?? 5),
+            reset: $out['numbering_license_reset']   ?? ($current_all['numbering_license_reset']   ?? 'yearly')
+        );
+        $repo->save_rule($license);
 
         return $out;
     }

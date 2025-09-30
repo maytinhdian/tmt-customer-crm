@@ -29,7 +29,7 @@ final class NumberingModule
     public static function bootstrap(): void
     {
         // 1) Cài đặt/migrate
-        add_action('init', [Installer::class, 'maybe_install'], 1);
+        // add_action('init', [Installer::class, 'maybe_install'], 1);
 
         // 2) Đăng ký DI bindings
         NumberingServiceProvider::register();

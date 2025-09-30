@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Core\Numbering\Application;
 
-use TMT\CRM\Shared\Container;
+use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Core\Numbering\Domain\Services\NumberingService;
 
 /**
