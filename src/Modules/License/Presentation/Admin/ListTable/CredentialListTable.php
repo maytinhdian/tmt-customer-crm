@@ -44,8 +44,7 @@ final class CredentialListTable extends WP_List_Table
             'status'    => __('Status', 'tmt-crm'),
             'seats'     => __('Seats (used/total)', 'tmt-crm'),
             'expires_at' => __('Expires', 'tmt-crm'),
-            'secret_primary'   => __('Primary Key', 'tmt-crm'),
-            'secret_secondary' => __('Secondary Key', 'tmt-crm'),
+            'license'   => __('License Key', 'tmt-crm'),
         ];
     }
 
@@ -128,15 +127,11 @@ final class CredentialListTable extends WP_List_Table
         return esc_html((string)($item->expires_at ?? ''));
     }
 
-    protected function column_secret_primary($item): string
+    protected function column_license($item): string
     {
-        return $this->render_secret_cell((int)$item->id, (string)($item->secret_primary_encrypted ?? ''), 'secret_primary');
+        return (string)($item->secret_mask ?? '');
     }
 
-    protected function column_secret_secondary($item): string
-    {
-        return $this->render_secret_cell((int)$item->id, (string)($item->secret_secondary_encrypted ?? ''), 'secret_secondary');
-    }
 
     private function render_secret_cell(int $credential_id, string $cipher, string $field_key): string
     {
