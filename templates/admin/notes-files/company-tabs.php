@@ -57,8 +57,10 @@ use TMT\CRM\Application\DTO\FileDTO;
         <hr>
 
         <h3><?php esc_html_e('Danh sách tài liệu', 'tmt-crm'); ?></h3>
-        <ul>
-            <?php /** @var FileDTO $f */ foreach ($files as $f): ?>
+        <!-- <ul>
+            <?php /** @var FileDTO $f */ 
+            // foreach ($files as $f): 
+            ?>
                 <li style="margin-bottom:8px;border-bottom:1px solid #e3e3e3;padding-bottom:8px;">
                     <a href="<?php echo esc_url(wp_get_attachment_url($f->attachment_id)); ?>" target="_blank">
                         <?php echo esc_html(get_the_title($f->attachment_id) ?: ('#' . $f->attachment_id)); ?>
@@ -67,11 +69,14 @@ use TMT\CRM\Application\DTO\FileDTO;
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline-block;margin-left:8px;">
                         <input type="hidden" name="action" value="tmt_crm_detach_file">
                         <input type="hidden" name="file_id" value="<?php echo (int)$f->id; ?>">
-                        <?php wp_nonce_field('tmt_crm_detach_file'); ?>
+                        <?php
+                        //  wp_nonce_field('tmt_crm_detach_file'); 
+                         ?>
                         <button class="button-link delete-link" onclick="return confirm('<?php echo esc_js(__('Gỡ file này?', 'tmt-crm')); ?>');"><?php esc_html_e('Gỡ', 'tmt-crm'); ?></button>
                     </form>
                 </li>
-            <?php endforeach; ?>
-        </ul>
+            <?php 
+        // endforeach; ?>
+        </ul> -->
     </div>
 </div>

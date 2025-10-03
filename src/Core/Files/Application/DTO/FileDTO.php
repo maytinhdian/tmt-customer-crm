@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Note\Application\DTO;
+namespace TMT\CRM\Core\Files\Application\DTO;
 
 use TMT\CRM\Shared\Traits\AsArrayTrait;
 
