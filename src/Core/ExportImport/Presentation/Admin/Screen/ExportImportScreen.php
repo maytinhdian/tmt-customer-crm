@@ -25,7 +25,7 @@ final class ExportImportScreen
 
     public static function render(): void
     {
-        View::render_admin_module('core/export-import', 'index', [
+        View::render_admin_module('export-import', 'index', [
             'title' => 'Export / Import'
         ]);
     }

@@ -1,18 +1,26 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\ExportImport\Infrastructure\Setup;
+namespace TMT\CRM\Core\ExportImport\Infrastructure\Migrations;
 
 use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
 
-final class Migrator extends BaseMigrator
+final class ExportImportMigrator extends BaseMigrator
 {
-    public static function module_key(): string { return 'export_import'; }
-    public static function target_version(): string { return '0.1.0'; }
+    public static function module_key(): string
+    {
+        return 'export_import';
+    }
+    public static function target_version(): string
+    {
+        return '0.1.0';
+    }
 
     public function install(): void
     {
-        $db = $this->db; $charset = $this->charset_collate;
+        $db = $this->db;
+        $charset = $this->charset_collate;
 
         $table1 = $db->prefix . 'tmt_crm_export_jobs';
         $sql1 = "CREATE TABLE {$table1} (
@@ -64,8 +72,11 @@ final class Migrator extends BaseMigrator
         dbDelta($sql3);
     }
 
-    public function upgrade(string $from_version, string $to_version): void
+    public function upgrade(string $from_version): void
     {
-        // Chưa có nâng cấp ở MVP
+        if ($from_version === '') {
+            $this->install();
+            return;
+        }
     }
 }

@@ -28,6 +28,7 @@ final class Installer
             \TMT\CRM\Modules\Password\Infrastructure\Migrations\PasswordMigrator::class,
             \TMT\CRM\Core\Numbering\Infrastructure\Migrations\NumberingMigrator::class,
             \TMT\CRM\Core\Events\Infrastructure\Migrations\EventsMigrator::class,
+            \TMT\CRM\Core\ExportImport\Infrastructure\Migrations\ExportImportMigrator::class,
             \TMT\CRM\Modules\License\Infrastructure\Migrations\LicenseMigrator::class,
             // \TMT\CRM\Modules\Order\Infrastructure\Persistence\Migration\OrderMigrator::class,
             // \TMT\CRM\Modules\Invoice\Infrastructure\Persistence\Migration\InvoiceMigrator::class,

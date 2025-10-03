@@ -147,3 +147,7 @@ add_action('plugins_loaded', function () {
     LicenseModule::register(); // bootstrap (file chính)
     \TMT\CRM\Core\Log\LogModule::register();
 }, 1);
+
+use TMT\CRM\Core\ExportImport\ExportImportModule;
+
+ExportImportModule::bootstrap();

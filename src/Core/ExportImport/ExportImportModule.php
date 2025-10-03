@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\ExportImport;
@@ -18,13 +19,13 @@ final class ExportImportModule
     public const OPTION_VERSION = 'tmt_crm_export_import_version';
     public const MODULE_KEY = 'export_import';
 
-    public static function boot(): void
+    public static function bootstrap(): void
     {
         // Cài đặt DB khi cần
-        add_action('init', [Installer::class, 'maybe_install']);
+        // add_action('init', [Installer::class, 'maybe_install']);
 
         // Đăng ký màn hình admin
-        add_action('admin_menu', [ExportImportScreen::class, 'register_menu']);
+        add_action('admin_menu', [ExportImportScreen::class, 'register_menu'], 20);
 
         // admin-post endpoints
         add_action('admin_post_tmt_crm_export_start', [ExportImportController::class, 'handle_export_start']);
