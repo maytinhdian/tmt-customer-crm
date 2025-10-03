@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Note\Infrastructure\Persistence;
+namespace TMT\CRM\Core\Files\Infrastructure\Persistence;
 
 use wpdb;
-use TMT\CRM\Modules\Note\Domain\Repositories\FileRepositoryInterface;
+use TMT\CRM\Domain\Repositories\FileRepositoryInterface;
 use TMT\CRM\Modules\Note\Application\DTO\FileDTO;
 
 final class WpdbFileRepository implements FileRepositoryInterface

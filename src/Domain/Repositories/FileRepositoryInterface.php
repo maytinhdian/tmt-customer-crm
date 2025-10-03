@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Note\Domain\Repositories;
+namespace TMT\CRM\Domain\Repositories;
 
 use TMT\CRM\Modules\Note\Application\DTO\FileDTO;
 

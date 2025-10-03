@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Note\Application\Services;
+namespace TMT\CRM\Core\Files\Application\Services;
 
-use TMT\CRM\Modules\Note\Domain\Repositories\FileRepositoryInterface;
+use TMT\CRM\Domain\Repositories\FileRepositoryInterface;
 use TMT\CRM\Modules\Note\Application\DTO\FileDTO;
 
 final class FileService

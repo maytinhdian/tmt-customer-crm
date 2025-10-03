@@ -12,7 +12,7 @@ final class ExportService
 {
     public function __construct(
         private ExportJobRepositoryInterface $job_repo,
-        private Container $container,
+        
     ) {}
 
     /** @param array $filters @param string[] $columns */
@@ -44,9 +44,9 @@ final class ExportService
     {
         // Ví dụ MVP: gọi Container để lấy repo phù hợp.
         $repo = match ($entity_type) {
-            'company'  => $this->container->get('company_repository'),
-            'customer' => $this->container->get('customer_repository'),
-            'contact'  => $this->container->get('company_contact_repository'),
+            'company'  => Container::get('company_repository'),
+            'customer' => Container::get('customer_repository'),
+            'contact'  => Container::get('company_contact_repository'),
             default    => throw new \InvalidArgumentException('Unsupported entity_type: ' . $entity_type),
         };
 

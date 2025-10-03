@@ -8,7 +8,7 @@ use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Core\ExportImport\Infrastructure\Setup\Installer;
 use TMT\CRM\Core\ExportImport\Presentation\Admin\Screen\ExportImportScreen;
 use TMT\CRM\Core\ExportImport\Presentation\Admin\Controller\ExportImportController;
-
+use TMT\CRM\Core\ExportImport\Infrastructure\Providers\ExportImportServiceProvider;
 /**
  * Module Export/Import — MVP
  * bootstrap (file chính)
@@ -23,7 +23,7 @@ final class ExportImportModule
     {
         // Cài đặt DB khi cần
         // add_action('init', [Installer::class, 'maybe_install']);
-
+        ExportImportServiceProvider::register();
         // Đăng ký màn hình admin
         add_action('admin_menu', [ExportImportScreen::class, 'register_menu'], 20);
 

@@ -13,7 +13,6 @@ final class ImportService
     public function __construct(
         private ImportJobRepositoryInterface $job_repo,
         private ValidationService $validator,
-        private Container $container,
     ) {}
 
     public function create_job(string $entity_type, string $uploaded_path, bool $has_header, int $user_id): ImportJobDTO
@@ -101,9 +100,9 @@ final class ImportService
     private function persist_row(string $entity_type, array $data): void
     {
         $service = match ($entity_type) {
-            'company'  => $this->container->get('company_service'),
-            'customer' => $this->container->get('customer_service'),
-            'contact'  => $this->container->get('company_contact_service'),
+            'company'  => Container::get('company_service'),
+            'customer' => Container::get('customer_service'),
+            'contact'  => Container::get('company_contact_service'),
             default    => throw new \InvalidArgumentException('Unsupported entity_type: ' . $entity_type),
         };
         // Giả định service có upsert_from_array()

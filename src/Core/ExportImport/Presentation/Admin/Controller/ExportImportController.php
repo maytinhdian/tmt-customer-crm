@@ -17,7 +17,7 @@ final class ExportImportController
         $filters = isset($_POST['filters']) && is_array($_POST['filters']) ? array_map('sanitize_text_field', $_POST['filters']) : [];
 
         /** @var ExportService $svc */
-        $svc = Container::instance()->get(ExportService::class);
+        $svc = Container::get(ExportService::class);
         $job = $svc->start_export($entity, $filters, $columns, get_current_user_id());
 
         if ($job->status === 'done' && $job->file_path) {
@@ -42,11 +42,18 @@ final class ExportImportController
         if (!empty($uploaded['error'])) { wp_die(esc_html($uploaded['error'])); }
 
         /** @var ImportService $svc */
-        $svc = Container::instance()->get(ImportService::class);
+        $svc = Container::get(ImportService::class);
         $job = $svc->create_job($entity, (string)$uploaded['file'], $has_header, get_current_user_id());
 
         // mapping rỗng lúc preview
-        $svc->preview($job, []);
+        $preview = $svc->preview($job, []);
+
+        // Lưu preview tạm thời để view hiển thị (10 phút)
+        set_transient('tmt_crm_import_preview_' . $job->id, [
+            'columns' => $preview['columns'],
+            'sample_rows' => $preview['sample_rows'],
+            'total' => $preview['total'],
+        ], 10 * MINUTE_IN_SECONDS);
 
         wp_safe_redirect(add_query_arg([
             'page' => 'tmt-crm-export-import',
@@ -63,7 +70,7 @@ final class ExportImportController
         if ($job_id <= 0) { wp_die('Invalid job'); }
 
         /** @var ImportService $svc */
-        $svc = Container::instance()->get(ImportService::class);
+        $svc = Container::get(ImportService::class);
         $job = $svc->find_job_by_id($job_id);
         if (!$job) { wp_die('Job not found'); }
 
@@ -79,6 +86,9 @@ final class ExportImportController
         $job->mapping = $mapping;
 
         $svc->commit($job);
+
+        // Xóa preview tạm
+        delete_transient('tmt_crm_import_preview_' . $job_id);
 
         wp_safe_redirect(add_query_arg(['page' => 'tmt-crm-export-import', 'import_done' => 1], admin_url('admin.php')));
         exit;
