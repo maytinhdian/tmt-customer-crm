@@ -8,7 +8,7 @@ use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
-use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
+use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
 
 use TMT\CRM\Core\Events\Domain\Contracts\EventInterface;
 use TMT\CRM\Core\Events\Domain\ValueObjects\EventMetadata;

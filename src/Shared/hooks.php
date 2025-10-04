@@ -15,12 +15,6 @@ final class Hooks
         // Core WP / REST / Admin
         add_action('init', [self::class, 'init']);
         add_action('admin_menu', [Menu::class, 'register']);
-        // add_action('rest_api_init', [Routes::class, 'register']);
-
-        // WooCommerce integration (nếu có)
-        // add_action('woocommerce_thankyou', [WooCommerceSync::class, 'sync_after_order']);
-
-        // error_log('[XDEBUG TEST] __FILE__=' . __FILE__);
 
         //Notice Services
         add_action('admin_init', function () {

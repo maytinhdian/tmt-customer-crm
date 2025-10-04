@@ -1,8 +1,9 @@
 <?php
-
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Customer\Domain\Repositories;
+namespace TMT\CRM\Domain\Repositories;
+
+use TMT\CRM\Core\Accounts\Domain\DTO\UserDTO;
 
 interface UserRepositoryInterface
 {
@@ -17,9 +18,7 @@ interface UserRepositoryInterface
         string $must_capability
     ): array;
 
-    /**
-     * Lấy nhãn hiển thị (label) theo ID (để preload Select2).
-     */
+    /** Lấy nhãn hiển thị (label) theo ID (để preload Select2). */
     public function find_label_by_id(int $user_id): ?string;
 
     /** Lấy tên hiển thị của user (display_name hoặc user_login). */
@@ -31,7 +30,7 @@ interface UserRepositoryInterface
      * @return array<int, UserDTO>
      */
     public function find_by_ids(array $ids): array;
-    
+
     /** @return array<int,string> map [user_id => display_name] */
     public function map_display_names(array $user_ids): array;
 }

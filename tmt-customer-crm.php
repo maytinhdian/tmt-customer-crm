@@ -11,14 +11,14 @@
 
 if (!defined('ABSPATH')) exit;
 
-use \TMT\CRM\Shared\Infrastructure\Setup\Installer;
-
+// ------------------------------------------------------------
+// 0) HẰNG SỐ & Autoload
+// ------------------------------------------------------------
 define('TMT_CRM_FILE', __FILE__);
 define('TMT_CRM_PATH', plugin_dir_path(__FILE__));
 define('TMT_CRM_URL',  plugin_dir_url(__FILE__));
 define('TMT_CRM_DB_VERSION', '1.2.81'); // chỉ định 1 chỗ duy nhất
 
-// 0) Autoload
 $composer_autoload = __DIR__ . '/vendor/autoload.php';
 if (file_exists($composer_autoload)) {
     require $composer_autoload;
@@ -26,128 +26,210 @@ if (file_exists($composer_autoload)) {
     error_log('[TMT CRM] vendor/autoload.php not found. Run "composer install".');
 }
 
-// 1) Activation: chạy migrate + set version + roles
-// register_activation_hook(TMT_CRM_FILE, function () {
-//     /** @var \wpdb $wpdb */
-//     global $wpdb;
+// ------------------------------------------------------------
+// 1) Kiểm tra môi trường tối thiểu
+// ------------------------------------------------------------
+(function () {
+    $ok = true;
 
-//     if (class_exists(Installer::class)) {
-//         Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
-//     }
-//     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
-// });
-
-add_action('plugins_loaded', function () {
-    Installer::register(); // (file chính)
-    // ... gọi Module::register() như hiện tại
-}, 1);
-
-// 2) Auto-upgrade khi plugin load (so sánh version & migrate)
-add_action('plugins_loaded', function () {
-    // /** @var \wpdb $wpdb */
-    // global $wpdb;
-
-    // $installed_ver = (string) get_option('tmt_crm_db_version', '');
-
-    // if ($installed_ver !== TMT_CRM_DB_VERSION && class_exists(Installer::class)) {
-    //     Installer::run_if_needed($wpdb, TMT_CRM_DB_VERSION);
-    //     update_option('tmt_crm_db_version', TMT_CRM_DB_VERSION, true);
-    // }
-
-    // bật Role packs + map_meta_cap (own/any, DIP)
-    // SecurityBootstrap::init();
-
-    // Khởi động hệ thống sau khi schema OK
-    if (class_exists(\TMT\CRM\Shared\Hooks::class)) {
-        \TMT\CRM\Shared\Hooks::register();
+    if (version_compare(PHP_VERSION, '8.1', '<')) {
+        $ok = false;
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-error"><p><strong>TMT Customer CRM</strong> yêu cầu PHP >= 8.1.</p></div>';
+        });
     }
-});
 
-use TMT\CRM\Modules\Customer\Menu as CustomerMenu;
-use TMT\CRM\Modules\Customer\CustomerModule as CustomerModule;
+    global $wp_version;
+    if (isset($wp_version) && version_compare($wp_version, '6.0', '<')) {
+        $ok = false;
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-error"><p><strong>TMT Customer CRM</strong> yêu cầu WordPress >= 6.0.</p></div>';
+        });
+    }
 
-add_action('plugins_loaded', function () {
-    CustomerModule::register();
-    CustomerMenu::register(); // mỗi module tự có Menu::register()
+    if (!$ok) {
+        return; // Ngăn plugin chạy tiếp nếu môi trường không đạt
+    }
+})();
 
-}, 1);
-
-use TMT\CRM\Modules\Quotation\Menu as QuotationMenu;
-use TMT\CRM\Modules\Quotation\QuotationModule as QuotationModule;
-
-add_action('plugins_loaded', function () {
-    QuotationModule::register();
-    QuotationMenu::register(); // mỗi module tự có Menu::register()
-
-}, 1);
-
-use TMT\CRM\Modules\Company\Menu as CompanyMenu;
-use TMT\CRM\Modules\Company\CompanyModule as CompanyModule;
-
-add_action('plugins_loaded', function () {
-    CompanyMenu::register();
-    CompanyModule::register(); // mỗi module tự có Menu::register()
-
-}, 1);
-
-use TMT\CRM\Modules\Contact\Menu as ContactMenu;
-use TMT\CRM\Modules\Contact\ContactModule as ContactModule;
-
-add_action('plugins_loaded', function () {
-    ContactMenu::register();
-    ContactModule::register(); // mỗi module tự có Menu::register()
-
-}, 1);
-
-
-use TMT\CRM\Modules\Note\Menu as NotesMenu;
-use TMT\CRM\Modules\Note\NoteModule as NoteModule;
-
-add_action('plugins_loaded', function () {
-    NotesMenu::register();
-    NoteModule::register(); // mỗi module tự có Menu::register()
-
-}, 1);
-
-use TMT\CRM\Core\Settings\SettingsPage;
+// ------------------------------------------------------------
+// 2) Use các thành phần Core/Modules
+// ------------------------------------------------------------
+use TMT\CRM\Shared\Infrastructure\Setup\Installer;
+use TMT\CRM\Shared\EventBus\EventBusBridge;
+use TMT\CRM\Core\Accounts\Presentation\Admin\Screen\AccountsSettingsScreen;
 use TMT\CRM\Core\Records\CoreRecordsModule;
+use TMT\CRM\Core\Settings\SettingsPage;
+use TMT\CRM\Core\Numbering\NumberingModule;
 use TMT\CRM\Core\Capabilities\CoreCapabilitiesModule;
-use TMT\CRM\Core\Notifications\NotificationsModule;
-
-add_action('plugins_loaded', function () {
-    CoreRecordsModule::register(); // bootstrap (file chính)
-}, 1);
-// Bridge WP action -> EventBus (đăng ký càng sớm càng tốt)
-add_action('plugins_loaded', static function () {
-    \TMT\CRM\Shared\EventBus\EventBusBridge::register();
-}, 0);
-
-add_action('plugins_loaded', function () {
-    \TMT\CRM\Shared\Infrastructure\Setup\Installer::register(); // (file chính)
-    SettingsPage::register();
-    \TMT\CRM\Core\Numbering\NumberingModule::register(); // bootstrap (file chính)
-    CoreCapabilitiesModule::register();
-
-    NotificationsModule::register();
-}, 1);
-
-use TMT\CRM\Modules\Password\PasswordModule;
-
-add_action('plugins_loaded', function () {
-    PasswordModule::register(); // bootstrap (file chính)
-}, 1);
-
-use TMT\CRM\Modules\License\LicenseModule;
 use TMT\CRM\Core\Events\EventsModule;
-
-add_action('plugins_loaded', function () {
-    // 1) Boot Core/Events trước (đăng EventBus)
-    EventsModule::bootstrap(); // (file chính)
-
-    LicenseModule::register(); // bootstrap (file chính)
-    \TMT\CRM\Core\Log\LogModule::register();
-}, 1);
-
+use TMT\CRM\Core\Notifications\NotificationsModule;
+use TMT\CRM\Core\Log\LogModule;
 use TMT\CRM\Core\ExportImport\ExportImportModule;
+use TMT\CRM\Core\Accounts\AccountsModule;
 
-ExportImportModule::bootstrap();
+use TMT\CRM\Modules\Company\CompanyModule;
+use TMT\CRM\Modules\Company\Menu as CompanyMenu;
+use TMT\CRM\Modules\Customer\CustomerModule;
+use TMT\CRM\Modules\Customer\Menu as CustomerMenu;
+use TMT\CRM\Modules\Contact\ContactModule;
+use TMT\CRM\Modules\Contact\Menu as ContactMenu;
+use TMT\CRM\Modules\Quotation\QuotationModule;
+use TMT\CRM\Modules\Quotation\Menu as QuotationMenu;
+use TMT\CRM\Modules\Note\NoteModule;
+use TMT\CRM\Modules\Note\Menu as NoteMenu;
+use TMT\CRM\Modules\Password\PasswordModule;
+use TMT\CRM\Modules\License\LicenseModule;
+
+// Shared Menu (menu chung nếu có)
+use TMT\CRM\Shared\Presentation\Menu as SharedMenu;
+
+// Container
+use TMT\CRM\Shared\Container\Container;
+
+// ------------------------------------------------------------
+// 3) Orchestrator (đã GOM toàn bộ hook từ Hooks.php vào 3 phase)
+// ------------------------------------------------------------
+final class TmtCrmPlugin
+{
+    public static function register_hooks(): void
+    {
+        // Phase 1: hạ tầng
+        add_action('plugins_loaded', [self::class, 'boot_infrastructure'], 1);
+
+        // Phase 2: core modules
+        add_action('plugins_loaded', [self::class, 'boot_core_modules'], 2);
+
+        // Phase 3: business/presentation
+        add_action('plugins_loaded', [self::class, 'boot_business_and_presentation'], 3);
+    }
+
+    // --------------------------
+    // PHASE 1 — INFRASTRUCTURE
+    // --------------------------
+    public static function boot_infrastructure(): void
+    {
+        // Installer tự quản lý activate + auto-upgrade (file chính)
+        Installer::register();
+
+        // Bridge WP action -> EventBus (đăng ký càng sớm càng tốt)
+        EventBusBridge::register();
+
+        // Core Records (soft delete, base repo …)
+        CoreRecordsModule::register();
+
+        // ==== Hooks.php → init (nền tảng, không phụ thuộc admin UI) ====
+        add_action('init', [self::class, 'init_runtime']);
+
+        // ==== Hooks.php → DI Container bindings (dùng chung sớm) ====
+        add_action('plugins_loaded', [self::class, 'bind_container'], 1);
+    }
+
+    // ---------------------
+    // PHASE 2 — CORE LAYER
+    // ---------------------
+    public static function boot_core_modules(): void
+    {
+        SettingsPage::register();
+        NumberingModule::register();       // bootstrap (file chính)
+        CoreCapabilitiesModule::register();
+        EventsModule::bootstrap();         // bootstrap (file chính)
+        NotificationsModule::register();
+        LogModule::register();
+        AccountsModule::bootstrap(); // bootstrap (file chính)
+
+        // ==== Hooks.php → AdminNoticeService::boot() (dùng toàn plugin) ====
+        add_action('admin_init', function () {
+            \TMT\CRM\Shared\Presentation\Support\AdminNoticeService::boot();
+        }, 0);
+    }
+
+    // -------------------------------------
+    // PHASE 3 — BUSINESS + PRESENTATION/UI
+    // -------------------------------------
+    public static function boot_business_and_presentation(): void
+    {
+        // ===== Business modules =====
+        CompanyModule::register();
+        CustomerModule::register();
+        ContactModule::register();
+        QuotationModule::register();
+        NoteModule::register();
+        PasswordModule::register();        // bootstrap (file chính)
+        LicenseModule::register();         // bootstrap (file chính)
+        ExportImportModule::bootstrap();   // bootstrap (file chính)
+
+        // ===== Menus (module menus) =====
+        CompanyMenu::register();
+        CustomerMenu::register();
+        ContactMenu::register();
+        QuotationMenu::register();
+        NoteMenu::register();
+        // AccountsSettingsScreen::register_menu();
+        // ===== Shared Menu (nếu có menu chung ở Shared\Presentation\Menu) =====
+        add_action('admin_menu', [SharedMenu::class, 'register']);
+
+        // ===== Assets cho admin =====
+        add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin']);
+
+        // ===== Select2 Assets + AJAX Controllers (từ Hooks.php) =====
+        \TMT\CRM\Shared\Presentation\Assets\Select2Assets::bootstrap();
+        \TMT\CRM\Modules\Customer\Presentation\Admin\Ajax\OwnerAjaxController::bootstrap();
+        \TMT\CRM\Modules\Customer\Presentation\Admin\Ajax\CustomerAjaxController::bootstrap();
+
+        // ===== Không chặn admin cho role CRM (từ Hooks.php) =====
+        add_filter('woocommerce_prevent_admin_access', [self::class, 'allow_crm_roles_into_admin']);
+    }
+
+    // ==========================================================
+    // =============== HANDLERS (thay cho Hooks.php) ============
+    // ==========================================================
+
+    // Phase 1: init — KHÔNG phụ thuộc admin UI
+    public static function init_runtime(): void
+    {
+        // i18n
+        load_plugin_textdomain(
+            'tmt-customer-crm',
+            false,
+            dirname(plugin_basename(TMT_CRM_FILE)) . '/languages'
+        );
+        // Nếu có rewrite/schedule/default options → thêm tại đây
+    }
+
+    // Phase 1: DI Container bindings
+    public static function bind_container(): void
+    {
+    }
+
+    // Phase 3: Enqueue admin assets
+    public static function enqueue_admin(): void
+    {
+        // Sử dụng DB version để cache-bust
+        $ver = defined('TMT_CRM_DB_VERSION') ? TMT_CRM_DB_VERSION : '0.1.0';
+
+        wp_enqueue_style('tmt-crm-admin', TMT_CRM_URL . 'assets/css/admin.css', [], $ver);
+        wp_enqueue_script('tmt-crm-admin', TMT_CRM_URL . 'assets/js/admin.js', ['jquery'], $ver, true);
+
+        // Nếu cần localize:
+        // wp_localize_script('tmt-crm-admin', 'TMTCRM', ['ajax_url' => admin_url('admin-ajax.php')]);
+    }
+
+    // Phase 3: Cho phép role CRM vào /wp-admin
+    public static function allow_crm_roles_into_admin($prevent_access)
+    {
+        if (!is_user_logged_in()) {
+            return $prevent_access;
+        }
+        $u = wp_get_current_user();
+        if (array_intersect(['tmt_crm_manager', 'tmt_crm_staff'], (array) $u->roles)) {
+            return false;
+        }
+        return $prevent_access;
+    }
+}
+
+// ------------------------------------------------------------
+// 4) Kick off Orchestrator
+// ------------------------------------------------------------
+TmtCrmPlugin::register_hooks();

@@ -1,13 +1,12 @@
 <?php
-
 declare(strict_types=1);
 
-namespace TMT\CRM\Modules\Customer\Infrastructure\Persistence;
+namespace TMT\CRM\Core\Accounts\Infrastructure\Persistence;
 
 use wpdb;
 use WP_User_Query;
-use TMT\CRM\Modules\Customer\Application\DTO\UserDTO;
-use TMT\CRM\Modules\Customer\Domain\Repositories\UserRepositoryInterface;
+use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
+use TMT\CRM\Core\Accounts\Domain\DTO\UserDTO;
 
 final class WpdbUserRepository implements UserRepositoryInterface
 {
@@ -15,13 +14,11 @@ final class WpdbUserRepository implements UserRepositoryInterface
     private string $users_table;
     private string $usermeta_table;
 
-
-
     public function __construct(wpdb $db)
     {
-        $this->db            = $db;
-        $this->users_table   = $db->users;
-        $this->usermeta_table = $db->usermeta;
+        $this->db              = $db;
+        $this->users_table     = $db->users;
+        $this->usermeta_table  = $db->usermeta;
     }
 
     public function search_for_select(
@@ -30,35 +27,35 @@ final class WpdbUserRepository implements UserRepositoryInterface
         int $per_page,
         string $must_capability
     ): array {
-        $page      = max(1, $page);
-        $limit     = max(1, $per_page);
-        $fetch     = $limit + 1; // lấy dư 1 để biết còn trang sau
-        $offset    = ($page - 1) * $limit;
+        $page   = max(1, $page);
+        $limit  = max(1, $per_page);
+        $fetch  = $limit + 1; // lấy dư 1 để biết còn trang sau
+        $offset = ($page - 1) * $limit;
 
         $args = [
-            'number'  => $fetch,
-            'offset'  => $offset,
-            'search'  => $keyword !== '' ? '*' . $keyword . '*' : '*',
-            'orderby' => 'display_name',
-            'order'   => 'ASC',
-            'fields'  => ['ID', 'display_name', 'user_email', 'user_login'],
+            'number'         => $fetch,
+            'offset'         => $offset,
+            'search'         => $keyword !== '' ? '*' . esc_attr($keyword) . '*' : '*',
+            'search_columns' => ['user_login','user_nicename','user_email','display_name'],
+            'orderby'        => 'display_name',
+            'order'          => 'ASC',
+            'fields'         => ['ID', 'display_name', 'user_email', 'user_login'],
         ];
 
         $q = new WP_User_Query($args);
         $users = (array) $q->get_results();
 
-        // Lọc theo capability bắt buộc
-        // Ghi chú: Dùng user_can($uid, $must_capability) để chỉ đưa user có quyền bắt buộc (ở đây sẽ là Capability::COMPANY_CREATE).
         $items = [];
         foreach ($users as $u) {
-            if (!user_can($u->ID, $must_capability)) {
+            if ($must_capability !== '' && !user_can((int)$u->ID, $must_capability)) {
                 continue;
             }
-            $label = trim(($u->display_name ?: $u->user_login) . ' — ' . $u->user_email);
+            $name  = $u->display_name !== '' ? $u->display_name : $u->user_login;
+            $email = (string) ($u->user_email ?? '');
+            $label = trim($name . ($email !== '' ? ' — ' . $email : ''));
             $items[] = ['id' => (int)$u->ID, 'label' => $label];
         }
 
-        // Nếu kết quả sau lọc > $limit thì cắt + more=true
         $more = false;
         if (count($items) > $limit) {
             array_pop($items);
@@ -72,11 +69,15 @@ final class WpdbUserRepository implements UserRepositoryInterface
     {
         $u = get_user_by('ID', $user_id);
         if (!$u) return null;
-        return trim(($u->display_name ?: $u->user_login) . ' — ' . $u->user_email);
+
+        $name  = $u->display_name !== '' ? $u->display_name : $u->user_login;
+        $email = (string) ($u->user_email ?? '');
+        return trim($name . ($email !== '' ? ' — ' . $email : ''));
     }
+
     public function get_display_name(int $user_id): ?string
     {
-        $u = get_user_by('id', $user_id);
+        $u = get_user_by('ID', $user_id);
         if ($u instanceof \WP_User) {
             return $u->display_name !== '' ? $u->display_name : $u->user_login;
         }
@@ -86,10 +87,10 @@ final class WpdbUserRepository implements UserRepositoryInterface
     public function map_display_names(array $user_ids): array
     {
         $ids = array_values(array_unique(array_map('intval', $user_ids)));
-        if (!$ids) return [];
+        if ($ids === []) return [];
 
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $sql = "SELECT ID, display_name FROM {$this->db->users} WHERE ID IN ($placeholders)";
+        $sql  = "SELECT ID, display_name FROM {$this->users_table} WHERE ID IN ($placeholders)";
         $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
 
         $map = [];
@@ -99,23 +100,20 @@ final class WpdbUserRepository implements UserRepositoryInterface
         return $map;
     }
 
-
     /** @inheritDoc */
     public function find_by_ids(array $ids): array
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
-        if (empty($ids)) {
-            return [];
-        }
+        if ($ids === []) return [];
 
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $sql = "SELECT ID as id, display_name, user_email FROM {$this->users_table} WHERE ID IN ($placeholders)";
+        $sql  = "SELECT ID as id, display_name, user_email FROM {$this->users_table} WHERE ID IN ($placeholders)";
         $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
 
-        // Nếu cần lấy owner_phone từ usermeta
-        $phones = [];
-        $meta_key = 'owner_phone';
-        $meta_sql = "
+        // Lấy phone từ usermeta (đổi key nếu muốn): 'owner_phone' → gợi ý chuẩn hoá 'tmt_phone'
+        $phones    = [];
+        $meta_key  = 'owner_phone';
+        $meta_sql  = "
             SELECT user_id, meta_value
             FROM {$this->usermeta_table}
             WHERE meta_key = %s AND user_id IN ($placeholders)
@@ -125,19 +123,18 @@ final class WpdbUserRepository implements UserRepositoryInterface
             ARRAY_A
         ) ?: [];
         foreach ($meta_rows as $m) {
-            $phones[(int)$m['user_id']] = $m['meta_value'];
+            $phones[(int)$m['user_id']] = (string)$m['meta_value'];
         }
 
         $map = [];
         foreach ($rows as $r) {
             $id = (int)$r['id'];
-            $dto = new UserDTO(
-                $id,
-                $r['display_name'] ?? '',
-                $r['user_email'] ?? null,
-                $phones[$id] ?? null
+            $map[$id] = new UserDTO(
+                id: $id,
+                display_name: (string)($r['display_name'] ?? ''),
+                email: isset($r['user_email']) ? (string)$r['user_email'] : null,
+                phone: $phones[$id] ?? null
             );
-            $map[$id] = $dto;
         }
         return $map;
     }
