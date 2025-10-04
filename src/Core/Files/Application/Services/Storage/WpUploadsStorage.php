@@ -13,41 +13,35 @@ final class WpUploadsStorage implements StorageInterface
         $basedir = rtrim($uploads['basedir'], '/');
         $baseurl = rtrim($uploads['baseurl'], '/');
 
-        // Tạo thư mục theo năm/tháng để dễ quản lý
-        $subdir = self::BASE_DIR . '/' . gmdate('Y') . '/' . gmdate('m');
-        $target_dir = $basedir . '/' . $subdir;
-
-        if (!wp_mkdir_p($target_dir)) {
-            throw new \RuntimeException('Không tạo được thư mục lưu trữ.');
+        // Thư mục theo tháng/năm
+        $ym = date('Y/m');
+        $target_dir = $basedir . '/' . self::BASE_DIR . '/' . $ym;
+        if (!is_dir($target_dir)) {
+            wp_mkdir_p($target_dir);
         }
 
-        // Tên file an toàn
+        // Tên file duy nhất
         $ext = pathinfo($original_name, PATHINFO_EXTENSION);
-        $name = pathinfo($original_name, PATHINFO_FILENAME);
-        $safe = sanitize_file_name($name);
-        $filename = $safe . '-' . wp_generate_password(8, false, false);
-        if ($ext) {
-            $filename .= '.' . strtolower($ext);
+        $slug = pathinfo($original_name, PATHINFO_FILENAME);
+        $slug = sanitize_file_name($slug);
+        $unique = wp_unique_filename($target_dir, $slug . ($ext ? ".{$ext}" : ''));
+
+        $target = $target_dir . '/' . $unique;
+        if (!@move_uploaded_file($tmp_path, $target)) {
+            if (!@rename($tmp_path, $target)) {
+                throw new \RuntimeException('Không thể di chuyển file upload.');
+            }
         }
 
-        $target_path = $target_dir . '/' . $filename;
-        if (!@copy($tmp_path, $target_path)) {
-            throw new \RuntimeException('Lưu file thất bại.');
-        }
+        $checksum = function_exists('hash_file') ? hash_file('sha256', $target) : null;
 
-        // Tính checksum (tùy chọn)
-        $checksum = null;
-        if (function_exists('hash_file')) {
-            $checksum = @hash_file('sha256', $target_path) ?: null;
-        }
-
-        $relative_path = $subdir . '/' . $filename;
-        $public_url = $baseurl . '/' . $relative_path;
+        $relative = self::BASE_DIR . '/' . $ym . '/' . $unique;
+        $public = $baseurl . '/' . $relative;
 
         return new StoredFile(
             storage: 'wp_uploads',
-            path: $relative_path,
-            public_url: $public_url,
+            path: $relative,
+            public_url: $public,
             checksum: $checksum
         );
     }

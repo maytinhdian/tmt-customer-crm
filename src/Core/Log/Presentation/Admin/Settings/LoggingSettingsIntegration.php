@@ -140,25 +140,58 @@ final class LoggingSettingsIntegration implements SettingsSectionInterface
      * @param array $current_all Toàn bộ option hiện tại (để tham chiếu nếu cần)
      * @return array [key => value] hợp lệ cho section "logging"
      */
+    // public function sanitize(array $input, array $current_all): array
+    // {
+    //     $defaults = $this->get_defaults();
+    //     $out      = [];
+
+    //     // channel
+    //     $allowed_channels = ['file', 'database', 'both'];
+    //     $in_channel = isset($input['channel']) ? (string)$input['channel'] : $defaults['channel'];
+    //     $out['channel'] = in_array($in_channel, $allowed_channels, true) ? $in_channel : $defaults['channel'];
+
+    //     // min_level
+    //     $allowed_levels = ['debug', 'info', 'warning', 'error', 'critical'];
+    //     $in_level = isset($input['min_level']) ? (string)$input['min_level'] : $defaults['min_level'];
+    //     $out['min_level'] = in_array($in_level, $allowed_levels, true) ? $in_level : $defaults['min_level'];
+
+    //     // keep_days
+    //     $in_days = isset($input['keep_days']) ? (int)$input['keep_days'] : $defaults['keep_days'];
+    //     $out['keep_days'] = ($in_days > 0) ? $in_days : $defaults['keep_days'];
+
+    //     return $out;
+    // }
     public function sanitize(array $input, array $current_all): array
     {
         $defaults = $this->get_defaults();
-        $out      = [];
+
+        // Tương thích: nếu $input là toàn bộ option, trích phần của section này
+        $sid = $this->section_id(); // 'logging'
+        if (isset($input[$sid]) && is_array($input[$sid])) {
+            $input = $input[$sid];
+        }
 
         // channel
         $allowed_channels = ['file', 'database', 'both'];
         $in_channel = isset($input['channel']) ? (string)$input['channel'] : $defaults['channel'];
-        $out['channel'] = in_array($in_channel, $allowed_channels, true) ? $in_channel : $defaults['channel'];
+        $channel = in_array($in_channel, $allowed_channels, true) ? $in_channel : $defaults['channel'];
 
         // min_level
         $allowed_levels = ['debug', 'info', 'warning', 'error', 'critical'];
         $in_level = isset($input['min_level']) ? (string)$input['min_level'] : $defaults['min_level'];
-        $out['min_level'] = in_array($in_level, $allowed_levels, true) ? $in_level : $defaults['min_level'];
+        $min_level = in_array($in_level, $allowed_levels, true) ? $in_level : $defaults['min_level'];
 
         // keep_days
         $in_days = isset($input['keep_days']) ? (int)$input['keep_days'] : $defaults['keep_days'];
-        $out['keep_days'] = ($in_days > 0) ? $in_days : $defaults['keep_days'];
+        $keep_days = ($in_days > 0) ? $in_days : $defaults['keep_days'];
 
-        return $out;
+        // QUAN TRỌNG: trả về mảng THEO SECTION
+        return [
+            $sid => [
+                'channel'   => $channel,
+                'min_level' => $min_level,
+                'keep_days' => $keep_days,
+            ],
+        ];
     }
 }

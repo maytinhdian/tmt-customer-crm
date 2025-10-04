@@ -99,7 +99,7 @@ final class CustomerController
      */
     public static function handle_delete(): void
     {
-        self::ensure_capability(Capability::CUSTOMER_DELETE_ANY, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
+        self::ensure_capability(Capability::CUSTOMER_DELETE, __('Bạn không có quyền xoá khách hàng.', 'tmt-crm'));
 
         $id = isset($_GET['id']) ? absint($_GET['id']) : 0;
         if ($id <= 0) {

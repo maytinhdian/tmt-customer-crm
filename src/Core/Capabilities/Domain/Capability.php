@@ -46,12 +46,13 @@ final class Capability
     public const COMPANY_CONTACT_UPDATE = 'tmt_crm_company_contact_update';
     public const COMPANY_CONTACT_DELETE = 'tmt_crm_company_contact_delete';
 
-    // Notes & Files
+    // Notes
     public const NOTE_READ   = 'tmt_crm_note_read';
     public const NOTE_CREATE = 'tmt_crm_note_create';
     public const NOTE_UPDATE = 'tmt_crm_note_update';
     public const NOTE_DELETE = 'tmt_crm_note_delete';
 
+    //Core Files
     public const FILE_READ   = 'tmt_crm_file_read';
     public const FILE_ATTACH = 'tmt_crm_file_attach';
     public const FILE_DELETE = 'tmt_crm_file_delete';
@@ -82,6 +83,8 @@ final class Capability
     public const SETTINGS_MANAGE      = 'tmt_crm_settings_manage';     // vào trang cài đặt CRM
     public const CAPABILITIES_MANAGE  = 'tmt_crm_capabilities_manage'; // quản trị ma trận quyền
 
+   
+
     /** Trả về tất cả capabilities (mảng phẳng). */
     public static function all(): array
     {
@@ -101,11 +104,12 @@ final class Capability
             self::COMPANY_CONTACT_CREATE,
             self::COMPANY_CONTACT_UPDATE,
             self::COMPANY_CONTACT_DELETE,
-            // Notes & Files
+            // Notes 
             self::NOTE_READ,
             self::NOTE_CREATE,
             self::NOTE_UPDATE,
             self::NOTE_DELETE,
+            // Files
             self::FILE_READ,
             self::FILE_ATTACH,
             self::FILE_DELETE,

@@ -4,8 +4,13 @@ declare(strict_types=1);
 namespace TMT\CRM\Core\Files;
 
 use TMT\CRM\Core\Files\Infrastructure\Providers\FilesServiceProvider;
-use TMT\CRM\Core\Files\Infrastructure\Migrations\FilesMigrator;
+use TMT\CRM\Core\Files\Infrastructure\Migrations\FileMigrator;
 
+/**
+ * FilesModule (file chính)
+ * - Bootstrap service/provider
+ * - Kiểm tra & migrate DB
+ */
 final class FilesModule
 {
     public const VERSION = '1.0.0';
@@ -13,10 +18,10 @@ final class FilesModule
 
     public static function bootstrap(): void
     {
-        // Đăng ký service provider
+        // Đăng ký DI cho storage/repository
         FilesServiceProvider::register();
 
-        // Kiểm tra và migrate DB
-        add_action('plugins_loaded', [FilesMigrator::class, 'maybe_install']);
+        // Migrate DB khi plugin khởi động
+        add_action('plugins_loaded', [FileMigrator::class, 'maybe_install']);
     }
 }

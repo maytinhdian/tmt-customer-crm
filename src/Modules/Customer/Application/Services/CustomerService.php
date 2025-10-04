@@ -3,7 +3,7 @@
 namespace TMT\CRM\Modules\Customer\Application\Services;
 
 use TMT\CRM\Shared\Logging\LoggerInterface;
-
+use TMT\CRM\Shared\EventBus\EventBus;
 use TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO;
 use TMT\CRM\Modules\Customer\Application\DTO\EmploymentHistoryDTO;
 
@@ -79,7 +79,7 @@ class CustomerService
         ]);
 
         $this->validate($dto, false);
-        return $this->customer_repo->create($dto);
+        // return $this->customer_repo->create($dto);
         try {
             // Thực hiện insert
             $customer_id = $this->customer_repo->create($dto);
@@ -89,17 +89,17 @@ class CustomerService
                 'request_id'   => $request_id,
                 'customer_id'  => $customer_id,
                 'name'         => $dto->name ?? '',
-                'created_by'   => $created_by,
+                'created_by'   =>  get_current_user(),
                 'module'       => 'customer',
                 'action'       => 'create',
             ]);
 
-            // // (Tuỳ chọn) phát sự kiện để các module khác nghe
-            // EventBus::publish('CustomerCreated', [
-            //     'id'         => $customer_id,
-            //     'created_by' => $created_by,
-            //     'request_id' => $request_id,
-            // ]);
+            // (Tuỳ chọn) phát sự kiện để các module khác nghe
+            EventBus::publish('CustomerCreated', [
+                'id'         => $customer_id,
+                'created_by' =>  get_current_user(),
+                'request_id' => $request_id,
+            ]);
 
             return $customer_id;
         } catch (\Throwable $e) {

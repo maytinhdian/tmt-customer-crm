@@ -35,6 +35,7 @@ final class Installer
         return [
             // Core trước
             \TMT\CRM\Core\Events\Infrastructure\Migrations\EventsMigrator::class,
+            \TMT\CRM\Core\Log\Infrastructure\Migrations\LogMigrator::class,
             \TMT\CRM\Core\Numbering\Infrastructure\Migrations\NumberingMigrator::class,
             \TMT\CRM\Core\Notifications\Infrastructure\Migrations\NotificationsMigrator::class,
             \TMT\CRM\Core\ExportImport\Infrastructure\Migrations\ExportImportMigrator::class,

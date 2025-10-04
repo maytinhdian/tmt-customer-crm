@@ -57,8 +57,8 @@ if (file_exists($composer_autoload)) {
 // ------------------------------------------------------------
 use TMT\CRM\Shared\Infrastructure\Setup\Installer;
 use TMT\CRM\Shared\EventBus\EventBusBridge;
-use TMT\CRM\Core\Accounts\Presentation\Admin\Screen\AccountsSettingsScreen;
 use TMT\CRM\Core\Records\CoreRecordsModule;
+use TMT\CRM\Core\Files\FilesModule;
 use TMT\CRM\Core\Settings\SettingsPage;
 use TMT\CRM\Core\Numbering\NumberingModule;
 use TMT\CRM\Core\Capabilities\CoreCapabilitiesModule;
@@ -131,11 +131,12 @@ final class TmtCrmPlugin
     public static function boot_core_modules(): void
     {
         SettingsPage::register();
+        FilesModule::bootstrap();
         NumberingModule::register();       // bootstrap (file chính)
         CoreCapabilitiesModule::register();
         EventsModule::bootstrap();         // bootstrap (file chính)
         NotificationsModule::register();
-        LogModule::register();
+        LogModule::bootstrap();
         AccountsModule::bootstrap(); // bootstrap (file chính)
 
         // ==== Hooks.php → AdminNoticeService::boot() (dùng toàn plugin) ====
