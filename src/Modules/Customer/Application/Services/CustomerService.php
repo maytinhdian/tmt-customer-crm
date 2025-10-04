@@ -2,6 +2,8 @@
 
 namespace TMT\CRM\Modules\Customer\Application\Services;
 
+use TMT\CRM\Shared\Logging\LoggerInterface;
+
 use TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO;
 use TMT\CRM\Modules\Customer\Application\DTO\EmploymentHistoryDTO;
 
@@ -14,7 +16,8 @@ class CustomerService
 
     public function __construct(
         private CustomerRepositoryInterface $customer_repo,
-        private EmploymentHistoryRepositoryInterface $history_repo
+        private EmploymentHistoryRepositoryInterface $history_repo,
+        private LoggerInterface $logger
     ) {}
 
     public function get_by_id(int $id): ?CustomerDTO
@@ -60,8 +63,55 @@ class CustomerService
 
     public function create(CustomerDTO $dto): int
     {
+        // Tạo 1 request_id để trace cùng 1 luồng
+        $request_id = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : bin2hex(random_bytes(8));
+
+        // Ghi log bắt đầu
+        $this->logger->info('Customer create: start', [
+            'request_id'  => $request_id,
+            'name'        => $dto->name ?? '',
+            'phone'       => $dto->phone ?? null,
+            'email'       => $dto->email ?? null,
+            'created_by'  => get_current_user_id(),
+            'ip'          => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? ($_SERVER['REMOTE_ADDR'] ?? null),
+            'module'      => 'customer',
+            'action'      => 'create',
+        ]);
+
         $this->validate($dto, false);
         return $this->customer_repo->create($dto);
+        try {
+            // Thực hiện insert
+            $customer_id = $this->customer_repo->create($dto);
+
+            // Log thành công
+            $this->logger->info('Customer create: success', [
+                'request_id'   => $request_id,
+                'customer_id'  => $customer_id,
+                'name'         => $dto->name ?? '',
+                'created_by'   => $created_by,
+                'module'       => 'customer',
+                'action'       => 'create',
+            ]);
+
+            // // (Tuỳ chọn) phát sự kiện để các module khác nghe
+            // EventBus::publish('CustomerCreated', [
+            //     'id'         => $customer_id,
+            //     'created_by' => $created_by,
+            //     'request_id' => $request_id,
+            // ]);
+
+            return $customer_id;
+        } catch (\Throwable $e) {
+            // Log lỗi
+            $this->logger->error('Customer create: failed', [
+                'request_id' => $request_id,
+                'error'      => $e->getMessage(),
+                'module'     => 'customer',
+                'action'     => 'create',
+            ]);
+            throw $e; // giữ nguyên flow ném ra để UI/Controller xử lý
+        }
     }
 
     public function update(int $id, CustomerDTO $dto): bool
