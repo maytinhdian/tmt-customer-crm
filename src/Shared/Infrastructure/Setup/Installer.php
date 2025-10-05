@@ -14,6 +14,8 @@ use TMT\CRM\Shared\Infrastructure\Setup\Migration\SchemaMigratorInterface;
  */
 final class Installer
 {
+
+
     /** Bootstrap (file chính) */
     public static function register(): void
     {
@@ -58,8 +60,10 @@ final class Installer
     }
 
     /** Kích hoạt plugin: migrate schema & set version */
-    public static function on_activate(): void
+    public function on_activate(): void
     {
+    
+
         foreach (self::migrators() as $migrator_class) {
             if (!class_exists($migrator_class)) {
                 // Ghi log để dev biết thiếu file/namespace

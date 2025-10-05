@@ -12,7 +12,6 @@ use \TMT\CRM\Modules\Customer\Domain\Repositories\EmploymentHistoryRepositoryInt
 
 class CustomerService
 {
-    // private CustomerRepositoryInterface $repo;
 
     public function __construct(
         private CustomerRepositoryInterface $customer_repo,
@@ -79,7 +78,6 @@ class CustomerService
         ]);
 
         $this->validate($dto, false);
-        // return $this->customer_repo->create($dto);
         try {
             // Thực hiện insert
             $customer_id = $this->customer_repo->create($dto);
@@ -95,11 +93,11 @@ class CustomerService
             ]);
 
             // (Tuỳ chọn) phát sự kiện để các module khác nghe
-            EventBus::publish('CustomerCreated', [
-                'id'         => $customer_id,
-                'created_by' =>  get_current_user(),
-                'request_id' => $request_id,
-            ]);
+            // EventBus::publish('CustomerCreated', [
+            //     'id'         => $customer_id,
+            //     'created_by' =>  get_current_user(),
+            //     'request_id' => $request_id,
+            // ]);
 
             return $customer_id;
         } catch (\Throwable $e) {

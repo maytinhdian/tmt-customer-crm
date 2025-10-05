@@ -56,7 +56,6 @@ if (file_exists($composer_autoload)) {
 // 2) Use các thành phần Core/Modules
 // ------------------------------------------------------------
 use TMT\CRM\Shared\Infrastructure\Setup\Installer;
-use TMT\CRM\Shared\EventBus\EventBusBridge;
 use TMT\CRM\Core\Records\CoreRecordsModule;
 use TMT\CRM\Core\Files\FilesModule;
 use TMT\CRM\Core\Settings\SettingsPage;
@@ -112,8 +111,8 @@ final class TmtCrmPlugin
         // Installer tự quản lý activate + auto-upgrade (file chính)
         Installer::register();
 
-        // Bridge WP action -> EventBus (đăng ký càng sớm càng tốt)
-        EventBusBridge::register();
+        // Bridge WP action -> EventBus (đăng ký càng sớm càng tốt) 
+        // EventBusBridge::register();
 
         // Core Records (soft delete, base repo …)
         CoreRecordsModule::register();
@@ -138,6 +137,7 @@ final class TmtCrmPlugin
         NotificationsModule::register();
         LogModule::bootstrap();
         AccountsModule::bootstrap(); // bootstrap (file chính)
+        ExportImportModule::bootstrap();   // bootstrap (file chính)
 
         // ==== Hooks.php → AdminNoticeService::boot() (dùng toàn plugin) ====
         add_action('admin_init', function () {
@@ -158,7 +158,7 @@ final class TmtCrmPlugin
         NoteModule::register();
         PasswordModule::register();        // bootstrap (file chính)
         LicenseModule::register();         // bootstrap (file chính)
-        ExportImportModule::bootstrap();   // bootstrap (file chính)
+
 
         // ===== Menus (module menus) =====
         CompanyMenu::register();
@@ -201,6 +201,26 @@ final class TmtCrmPlugin
     // Phase 1: DI Container bindings
     public static function bind_container(): void
     {
+        // Chỉ alias/shortcut nhẹ, KHÔNG khởi tạo chuỗi phụ thuộc nặng ở đây.
+        // Hạ tầng thật sẽ do từng ServiceProvider của module tự register.
+
+        // Số ít alias chung có ích khi resolve bằng string (giữ backward-compat).
+        \TMT\CRM\Shared\Container\Container::set(
+            'event_bus',
+            fn() =>
+            \TMT\CRM\Shared\Container\Container::get(\TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface::class)
+        );
+
+        // Alias thuận tiện nếu một số nơi gọi trực tiếp key kênh thông báo:
+        \TMT\CRM\Shared\Container\Container::set('notifications.channels', function (): array {
+            // Nếu NotificationsServiceProvider đã chạy, giá trị này sẽ được override.
+            return apply_filters('tmt_crm_notifications_channels', []);
+        });
+
+        // (Optional) Đặt sẵn các khóa version/đường dẫn phục vụ view/service
+        \TMT\CRM\Shared\Container\Container::set('tmt_crm.db_version', fn() => defined('TMT_CRM_DB_VERSION') ? TMT_CRM_DB_VERSION : '0.0.0');
+        \TMT\CRM\Shared\Container\Container::set('tmt_crm.base_url', fn() => TMT_CRM_URL);
+        \TMT\CRM\Shared\Container\Container::set('tmt_crm.base_path', fn() => TMT_CRM_PATH);
     }
 
     // Phase 3: Enqueue admin assets

@@ -14,11 +14,29 @@ use TMT\CRM\Core\Notifications\Application\Services\PreferenceService;
 use TMT\CRM\Core\Notifications\Infrastructure\Channels\NoticeChannelAdapter;
 use TMT\CRM\Core\Notifications\Infrastructure\Channels\EmailChannelAdapter;
 
+// 🔄 Đã chuyển sang namespace Persistence
+use TMT\CRM\Core\Notifications\Infrastructure\Persistence\{
+    WpdbNotificationLogRepository,
+    WpdbNotificationTemplateRepository,
+    WpdbNotificationPreferenceRepository
+};
+use TMT\CRM\Domain\Repositories\{
+    NotificationLogRepositoryInterface,
+    NotificationTemplateRepositoryInterface,
+    NotificationPreferenceRepositoryInterface
+};
 final class NotificationsServiceProvider
 {
     public static function register(): void
     {
-        // Channels
+         global $wpdb;
+         
+         // Repositories
+        Container::set(NotificationLogRepositoryInterface::class, fn() => new WpdbNotificationLogRepository($wpdb));
+        Container::set(NotificationTemplateRepositoryInterface::class, fn() => new WpdbNotificationTemplateRepository($wpdb));
+        Container::set(NotificationPreferenceRepositoryInterface::class, fn() => new WpdbNotificationPreferenceRepository($wpdb));
+
+        // Adapters
         Container::set(NoticeChannelAdapter::class, static fn() => new NoticeChannelAdapter());
         Container::set(EmailChannelAdapter::class, static fn() => new EmailChannelAdapter());
 
@@ -31,21 +49,15 @@ final class NotificationsServiceProvider
             return apply_filters('tmt_crm_notifications_channels', $channels);
         });
 
-        // Core services (P0: không gắn repo DB — sẽ bổ sung ở P1)
+        // Services
+        Container::set(TemplateRenderer::class, static fn() => new TemplateRenderer());
         Container::set(PreferenceService::class, static fn() => new PreferenceService());
 
-        Container::set(TemplateRenderer::class, static function (): TemplateRenderer {
-            // P0: renderer tối giản (subject/body từ template + context),
-            // P1: có thể bind TemplateRepositoryInterface để load template động.
-            return new TemplateRenderer(
-                // Tham số tùy chọn nếu có, để trống ở P0
-            );
-        });
-
         Container::set(DeliveryService::class, static function (): DeliveryService {
-            /** @var array<string,mixed> $channels */
-            $channels = Container::get('notifications.channels');
-            return new DeliveryService($channels);
+            return new DeliveryService(
+                channels: Container::get('notifications.channels')
+                // P1 sẽ ghép thêm repo lưu DB nếu cần
+            );
         });
 
         Container::set(NotificationDispatcher::class, static function (): NotificationDispatcher {
@@ -56,11 +68,5 @@ final class NotificationsServiceProvider
             );
         });
 
-        // (Optional) Hook test nhanh (chỉ bật khi debug)
-        // add_action('tmt_crm_debug_notify', function (string $event, array $ctx = [], array $channels = []) {
-        //     /** @var NotificationDispatcher $dispatcher */
-        //     $dispatcher = Container::get(NotificationDispatcher::class);
-        //     $dispatcher->notify($event, $ctx, $channels);
-        // }, 10, 3);
     }
 }
