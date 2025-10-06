@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Core\Notifications\Infrastructure\Persistence;
 
-use TMT\CRM\Core\Notifications\Domain\Repositories\NotificationPreferenceRepositoryInterface;
+use TMT\CRM\Domain\Repositories\NotificationPreferenceRepositoryInterface;
 use wpdb;
 
 final class WpdbNotificationPreferenceRepository implements NotificationPreferenceRepositoryInterface

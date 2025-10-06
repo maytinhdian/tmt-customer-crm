@@ -11,11 +11,10 @@ use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterfac
 use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
 
 use TMT\CRM\Core\Events\Domain\Contracts\EventInterface;
+use TMT\CRM\Core\Events\Domain\Events\DefaultEvent;
 use TMT\CRM\Core\Events\Domain\ValueObjects\EventMetadata;
 use TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface;
 use TMT\CRM\Shared\Container\Container;
-
-use TMT\CRM\Shared\EventBus\EventBus;
 
 final class CompanyService
 {
@@ -39,27 +38,17 @@ final class CompanyService
         $this->ensure_unique_tax_code($dto->tax_code, null);
         $company_id = $this->company_repo->insert($dto);
 
-        // (2) Tạo event ẩn danh implements EventInterface
-        $event = new class($dto) implements EventInterface {
-            public function __construct(private CompanyDTO $payload) {}
-            public function name(): string
-            {
-                return 'CompanyCreated';
-            }
-            public function payload(): object
-            {
-                return $this->payload;
-            }
-            public function metadata(): EventMetadata
-            {
-                return new EventMetadata(
-                    event_id: wp_generate_uuid4(),
-                    occurred_at: new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
-                    actor_id: get_current_user_id(),
-                    correlation_id: $_REQUEST['tmt_correlation_id'] ?? null,
-                );
-            }
-        };
+        // (2) Tạo Default event 
+        $event = new DefaultEvent(
+            'CompanyCreated',
+            (object)['company' => $dto],
+            new EventMetadata(
+                event_id: wp_generate_uuid4(),
+                occurred_at: new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+                actor_id: get_current_user_id(),
+                correlation_id: $_REQUEST['tmt_correlation_id'] ?? null
+            )
+        );
 
         // (3) Publish qua EventBusInterface
         /** @var EventBusInterface $bus */
@@ -111,17 +100,6 @@ final class CompanyService
     {
         // $this->policy->ensure_can('company_soft_delete', $actor_id, $company_id);
         $this->company_repo->mark_deleted($company_id, $actor_id, $reason);
-
-        // 4) PHÁT SỰ KIỆN – CompanyCreated
-        //    Chèn ngay dưới phần create/commit thành công
-        // Phát sự kiện cho Notifications
-        EventBus::publish('CompanySoftDeleted', [
-            'event_key' => 'CompanySoftDeleted',
-            'context'   => [
-                'actor_id'   => (int)$actor_id,
-                'company_id' => (int)$company_id,
-            ],
-        ]);
     }
 
     /** Khôi phục */

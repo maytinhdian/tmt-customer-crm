@@ -67,6 +67,7 @@ use TMT\CRM\Core\Log\LogModule;
 use TMT\CRM\Core\ExportImport\ExportImportModule;
 use TMT\CRM\Core\Accounts\AccountsModule;
 
+
 use TMT\CRM\Modules\Company\CompanyModule;
 use TMT\CRM\Modules\Company\Menu as CompanyMenu;
 use TMT\CRM\Modules\Customer\CustomerModule;
@@ -111,8 +112,8 @@ final class TmtCrmPlugin
         // Installer tự quản lý activate + auto-upgrade (file chính)
         Installer::register();
 
-        // Bridge WP action -> EventBus (đăng ký càng sớm càng tốt) 
-        // EventBusBridge::register();
+        // 2) Boot Core/Events rất sớm (bind EventStore + EventBus, phát 'tmt_crm_events_ready')
+        EventsModule::boot();
 
         // Core Records (soft delete, base repo …)
         CoreRecordsModule::register();
@@ -133,11 +134,13 @@ final class TmtCrmPlugin
         FilesModule::bootstrap();
         NumberingModule::register();       // bootstrap (file chính)
         CoreCapabilitiesModule::register();
-        EventsModule::bootstrap();         // bootstrap (file chính)
-        NotificationsModule::register();
+        NotificationsModule::boot();
         LogModule::bootstrap();
         AccountsModule::bootstrap(); // bootstrap (file chính)
         ExportImportModule::bootstrap();   // bootstrap (file chính)
+
+
+
 
         // ==== Hooks.php → AdminNoticeService::boot() (dùng toàn plugin) ====
         add_action('admin_init', function () {
@@ -205,22 +208,22 @@ final class TmtCrmPlugin
         // Hạ tầng thật sẽ do từng ServiceProvider của module tự register.
 
         // Số ít alias chung có ích khi resolve bằng string (giữ backward-compat).
-        \TMT\CRM\Shared\Container\Container::set(
+        Container::set(
             'event_bus',
             fn() =>
-            \TMT\CRM\Shared\Container\Container::get(\TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface::class)
+            Container::get(\TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface::class)
         );
 
         // Alias thuận tiện nếu một số nơi gọi trực tiếp key kênh thông báo:
-        \TMT\CRM\Shared\Container\Container::set('notifications.channels', function (): array {
+        Container::set('notifications.channels', function (): array {
             // Nếu NotificationsServiceProvider đã chạy, giá trị này sẽ được override.
             return apply_filters('tmt_crm_notifications_channels', []);
         });
 
         // (Optional) Đặt sẵn các khóa version/đường dẫn phục vụ view/service
-        \TMT\CRM\Shared\Container\Container::set('tmt_crm.db_version', fn() => defined('TMT_CRM_DB_VERSION') ? TMT_CRM_DB_VERSION : '0.0.0');
-        \TMT\CRM\Shared\Container\Container::set('tmt_crm.base_url', fn() => TMT_CRM_URL);
-        \TMT\CRM\Shared\Container\Container::set('tmt_crm.base_path', fn() => TMT_CRM_PATH);
+        Container::set('tmt_crm.db_version', fn() => defined('TMT_CRM_DB_VERSION') ? TMT_CRM_DB_VERSION : '0.0.0');
+        Container::set('tmt_crm.base_url', fn() => TMT_CRM_URL);
+        Container::set('tmt_crm.base_path', fn() => TMT_CRM_PATH);
     }
 
     // Phase 3: Enqueue admin assets
@@ -254,3 +257,119 @@ final class TmtCrmPlugin
 // 4) Kick off Orchestrator
 // ------------------------------------------------------------
 TmtCrmPlugin::register_hooks();
+
+
+
+// use TMT\CRM\Core\Events\Domain\Events\DefaultEvent;
+// use TMT\CRM\Core\Events\Domain\ValueObjects\EventMetadata;
+// use TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface;
+
+// // ===== TMT Notifications SMOKE DIAGNOSTIC (tạm thời) =====
+// add_action('plugins_loaded', function () {
+//     error_log('[TMT][SMOKE] plugins_loaded');
+
+//     // 1) Đăng ký provider sự kiện + notifications (nếu chưa)
+//     if (class_exists('\TMT\CRM\Core\Events\Infrastructure\Providers\EventsServiceProvider')) {
+//         \TMT\CRM\Core\Events\Infrastructure\Providers\EventsServiceProvider::register();
+//         error_log('[TMT][SMOKE] EventsServiceProvider::register()');
+//     }
+//     if (class_exists('\TMT\CRM\Core\Notifications\Infrastructure\Providers\NotificationsServiceProvider')) {
+//         \TMT\CRM\Core\Notifications\Infrastructure\Providers\NotificationsServiceProvider::register();
+//         error_log('[TMT][SMOKE] NotificationsServiceProvider::register()');
+//     }
+// }, 5);
+
+// // 2) Bật AdminNoticeService sớm
+// add_action('admin_init', function () {
+//     error_log('[TMT][SMOKE] admin_init');
+//     if (class_exists('\TMT\CRM\Shared\Presentation\Support\AdminNoticeService')) {
+//         \TMT\CRM\Shared\Presentation\Support\AdminNoticeService::boot();
+//         error_log('[TMT][SMOKE] AdminNoticeService::boot()');
+//     }
+// }, 0);
+
+// // 3) Tầng 0: ép in notice trực tiếp (nếu mọi thứ khác fail vẫn thấy)
+// add_action('admin_notices', function () {
+//     echo '<div class="notice notice-success is-dismissible"><p>'
+//         . esc_html('[TMT][SMOKE] Tầng 0: admin_notices đang hoạt động')
+//         . '</p></div>';
+// }, 1);
+
+// // 4) Tầng 1: gọi driver admin_notice trực tiếp (bỏ qua dispatcher/delivery)
+// add_action('admin_init', function () {
+//     try {
+//         error_log('[TMT][SMOKE] Tầng 1');
+//         $driver = new \TMT\CRM\Core\Notifications\Infrastructure\Channels\AdminNoticeDriver();
+//         $ok = $driver->send(
+//             new \TMT\CRM\Core\Notifications\Domain\DTO\DeliveryDTO('admin_notice'),
+//             ['subject' => 'SMOKE OK', 'body' => 'Tầng 1: Driver chạy']
+//         );
+//         error_log('[TMT][SMOKE] Driver->send = ' . ($ok ? 'true' : 'false'));
+//     } catch (\Throwable $e) {
+//         error_log('[TMT][SMOKE][ERR Tầng 1] ' . $e->getMessage());
+//     }
+// }, 3);
+
+// // 5) Tầng 2: chạy đủ chain Dispatcher → Delivery (không qua EventBus)
+// add_action('admin_init', function () {
+//     try {
+//         error_log('[TMT][SMOKE] Tầng 2');
+//         $d = \TMT\CRM\Shared\Container\Container::get(
+//             \TMT\CRM\Core\Notifications\Application\Services\NotificationDispatcher::class
+//         );
+//         $d->handle([
+//             'event_key' => 'CompanyCreated',
+//             'context'   => ['company' => ['name' => 'SMOKE Co.'], 'user' => ['display_name' => wp_get_current_user()->display_name]]
+//         ]);
+//         error_log('[TMT][SMOKE] Dispatcher->handle() called');
+//     } catch (\Throwable $e) {
+//         error_log('[TMT][SMOKE][ERR Tầng 2] ' . $e->getMessage());
+//     }
+// }, 4);
+
+// // 6) Tầng 3: E2E EventBus → Subscriber → Dispatcher
+// add_action('admin_init', function () {
+//     try {
+//         error_log('[TMT][SMOKE] Tầng 3');
+//         // Đăng ký subscriber tạm thời
+//         $bus = \TMT\CRM\Shared\Container\Container::get(\TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface::class);
+//         $dispatcher = \TMT\CRM\Shared\Container\Container::get(\TMT\CRM\Core\Notifications\Application\Services\NotificationDispatcher::class);
+
+//         $bus->subscribe('CompanyCreated', new class($dispatcher) implements \TMT\CRM\Core\Events\Domain\Contracts\EventSubscriberInterface {
+//             public function __construct(private $d) {}
+//             public static function subscribed_events(): array
+//             {
+//                 return ['CompanyCreated' => 10];
+//             }
+//             public function handle(\TMT\CRM\Core\Events\Domain\Contracts\EventInterface $e): void
+//             {
+//                 $this->d->handle(['event_key' => $e->name(), 'context' => $e->payload()]);
+//             }
+//         }, 10);
+
+//         $meta = new EventMetadata(
+//             event_id: function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : bin2hex(random_bytes(16)),
+//             occurred_at: new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+//             actor_id: (int) get_current_user_id(),
+//             correlation_id: isset($_REQUEST['tmt_correlation_id']) ? sanitize_text_field((string)$_REQUEST['tmt_correlation_id']) : null
+//         );
+
+//         // Ép từng nhánh về object để nhất quán
+//         $payload = (object)[
+//             'company' => (object)['id' => 999, 'name' => 'E2E Test Co.'],
+//             'user'    => (object)['display_name' => wp_get_current_user()->display_name],
+//         ];
+
+//         // Publish event thử
+//         $event = new DefaultEvent(
+//             'CompanyCreated',
+//             $payload,
+//             $meta
+//         );
+//         $bus->publish($event);
+//         error_log('[TMT][SMOKE] Bus->publish() done');
+//     } catch (\Throwable $e) {
+//         error_log('[TMT][SMOKE][ERR Tầng 3] ' . $e->getMessage());
+//     }
+// }, 5);
+// // ===== END SMOKE =====

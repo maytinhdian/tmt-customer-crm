@@ -2,8 +2,12 @@
 
 namespace TMT\CRM\Modules\Customer\Application\Services;
 
+use TMT\CRM\Core\Events\Domain\Events\DefaultEvent;
+use TMT\CRM\Core\Events\Domain\ValueObjects\EventMetadata;
+use TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface;
+use TMT\CRM\Shared\Container\Container;
+
 use TMT\CRM\Shared\Logging\LoggerInterface;
-use TMT\CRM\Shared\EventBus\EventBus;
 use TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO;
 use TMT\CRM\Modules\Customer\Application\DTO\EmploymentHistoryDTO;
 
@@ -92,12 +96,19 @@ class CustomerService
                 'action'       => 'create',
             ]);
 
-            // (Tuỳ chọn) phát sự kiện để các module khác nghe
-            // EventBus::publish('CustomerCreated', [
-            //     'id'         => $customer_id,
-            //     'created_by' =>  get_current_user(),
-            //     'request_id' => $request_id,
-            // ]);
+            $event = new DefaultEvent(
+                'CustomerCreated',
+                (object)['customer' => $dto],
+                new EventMetadata(
+                    event_id: wp_generate_uuid4(),
+                    occurred_at: new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+                    actor_id: get_current_user_id(),
+                    correlation_id: $_REQUEST['tmt_correlation_id'] ?? null,
+                )
+            );
+            /** @var EventBusInterface $bus */
+            $bus = Container::get(EventBusInterface::class);
+            $bus->publish($event);
 
             return $customer_id;
         } catch (\Throwable $e) {

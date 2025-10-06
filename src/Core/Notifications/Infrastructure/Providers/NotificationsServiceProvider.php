@@ -5,62 +5,31 @@ declare(strict_types=1);
 namespace TMT\CRM\Core\Notifications\Infrastructure\Providers;
 
 use TMT\CRM\Shared\Container\Container;
-
-use TMT\CRM\Core\Notifications\Application\Services\DeliveryService;
-use TMT\CRM\Core\Notifications\Application\Services\TemplateRenderer;
-use TMT\CRM\Core\Notifications\Application\Services\NotificationDispatcher;
-use TMT\CRM\Core\Notifications\Application\Services\PreferenceService;
-
-use TMT\CRM\Core\Notifications\Infrastructure\Channels\NoticeChannelAdapter;
-use TMT\CRM\Core\Notifications\Infrastructure\Channels\EmailChannelAdapter;
+use TMT\CRM\Core\Notifications\Application\Services\{DeliveryService, TemplateRenderer, NotificationDispatcher, PreferenceService};
+use TMT\CRM\Core\Notifications\Infrastructure\Channels\{NoticeChannelAdapter, EmailChannelAdapter};
 
 final class NotificationsServiceProvider
 {
     public static function register(): void
     {
-        // Channels
-        Container::set(NoticeChannelAdapter::class, static fn() => new NoticeChannelAdapter());
-        Container::set(EmailChannelAdapter::class, static fn() => new EmailChannelAdapter());
-
-        // Map kênh
-        Container::set('notifications.channels', static function (): array {
-            $channels = [
-                'notice' => Container::get(NoticeChannelAdapter::class),
-                'email'  => Container::get(EmailChannelAdapter::class),
-            ];
-            return apply_filters('tmt_crm_notifications_channels', $channels);
-        });
-
-        // Core services (P0: không gắn repo DB — sẽ bổ sung ở P1)
         Container::set(PreferenceService::class, static fn() => new PreferenceService());
+        Container::set(TemplateRenderer::class, static fn() => new TemplateRenderer());
 
-        Container::set(TemplateRenderer::class, static function (): TemplateRenderer {
-            // P0: renderer tối giản (subject/body từ template + context),
-            // P1: có thể bind TemplateRepositoryInterface để load template động.
-            return new TemplateRenderer(
-                // Tham số tùy chọn nếu có, để trống ở P0
+        // src/Core/Notifications/Infrastructure/Providers/NotificationsServiceProvider.php
+        Container::set(NotificationDispatcher::class, static function () {
+            return new \TMT\CRM\Core\Notifications\Application\Services\NotificationDispatcher(
+                Container::get(\TMT\CRM\Core\Notifications\Application\Services\TemplateRenderer::class),
+                Container::get(\TMT\CRM\Core\Notifications\Application\Services\DeliveryService::class),
+                Container::get(\TMT\CRM\Core\Notifications\Application\Services\PreferenceService::class),
             );
         });
 
-        Container::set(DeliveryService::class, static function (): DeliveryService {
-            /** @var array<string,mixed> $channels */
-            $channels = Container::get('notifications.channels');
-            return new DeliveryService($channels);
+        // Channels map
+        Container::set(\TMT\CRM\Core\Notifications\Application\Services\DeliveryService::class, static function () {
+            return new \TMT\CRM\Core\Notifications\Application\Services\DeliveryService([
+                'admin_notice' => new \TMT\CRM\Core\Notifications\Infrastructure\Channels\AdminNoticeDriver(),
+                // 'email' => new EmailDriver(), // bật sau nếu cần
+            ]);
         });
-
-        Container::set(NotificationDispatcher::class, static function (): NotificationDispatcher {
-            return new NotificationDispatcher(
-                renderer: Container::get(TemplateRenderer::class),
-                delivery: Container::get(DeliveryService::class),
-                preferences: Container::get(PreferenceService::class),
-            );
-        });
-
-        // (Optional) Hook test nhanh (chỉ bật khi debug)
-        // add_action('tmt_crm_debug_notify', function (string $event, array $ctx = [], array $channels = []) {
-        //     /** @var NotificationDispatcher $dispatcher */
-        //     $dispatcher = Container::get(NotificationDispatcher::class);
-        //     $dispatcher->notify($event, $ctx, $channels);
-        // }, 10, 3);
     }
 }

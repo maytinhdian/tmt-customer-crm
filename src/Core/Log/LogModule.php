@@ -35,8 +35,6 @@ final class LogModule
      */
     public static function bootstrap(): void
     {
-        // 1) Cài đặt DB (tạo bảng nếu cần)
-        Installer::maybe_install();
 
         // Đăng ký Settings sections
         LoggingSettingsIntegration::register();
