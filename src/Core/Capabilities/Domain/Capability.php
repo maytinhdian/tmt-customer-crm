@@ -169,4 +169,5 @@ final class Capability
             'License' => [self::LICENSE_READ, self::LICENSE_CREATE, self::LICENSE_UPDATE, self::LICENSE_DELETE, self::LICENSE_PURGE, self::LICENSE_RESTORE, self::LICENSE_REVEAL,]
         ];
     }
+    
 }

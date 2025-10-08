@@ -1,90 +1,58 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Files\Infrastructure\Migrations;
 
-use TMT\CRM\Core\Files\FilesModule;
+use TMT\CRM\Shared\Infrastructure\Setup\Migration\BaseMigrator;
 
-/**
- * FileMigrator
- * - Tạo bảng ánh xạ file ↔ entity
- * - Quản lý nâng cấp schema theo version
- */
-final class FileMigrator
+final class FileMigrator extends BaseMigrator
 {
-    public static function maybe_install(): void
+    public static function module_key(): string
     {
-        $installed = get_option(FilesModule::OPTION_VERSION);
+        return 'core_files';
+    }
+    public static function target_version(): string
+    {
+        return '1.0.0';
+    }
 
-        if (!$installed) {
-            self::install();
-            update_option(FilesModule::OPTION_VERSION, FilesModule::VERSION);
+    public function install(): void
+    {
+        $table = $this->db->prefix . 'tmt_crm_files';
+        $charset = $this->charset_collate;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $sql = "CREATE TABLE {$table} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            entity_type VARCHAR(100) NOT NULL,
+            entity_id BIGINT UNSIGNED NOT NULL,
+            storage VARCHAR(50) NOT NULL,
+            path TEXT NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            mime VARCHAR(150) NOT NULL,
+            size_bytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            checksum VARCHAR(64) DEFAULT NULL,
+            version INT UNSIGNED NOT NULL DEFAULT 1,
+            visibility ENUM('private','public') NOT NULL DEFAULT 'private',
+            uploaded_by BIGINT UNSIGNED NOT NULL,
+            uploaded_at DATETIME NOT NULL,
+            updated_at DATETIME DEFAULT NULL,
+            deleted_at DATETIME DEFAULT NULL,
+            meta LONGTEXT DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY idx_entity (entity_type, entity_id),
+            KEY idx_deleted (deleted_at)
+        ) {$charset};";
+
+        dbDelta($sql);
+    }
+
+    public function upgrade(string $from_version): void
+    {
+        if ($from_version === '') {
+            $this->install();
             return;
         }
-
-        if (version_compare((string)$installed, FilesModule::VERSION, '<')) {
-            self::upgrade((string)$installed, FilesModule::VERSION);
-            update_option(FilesModule::OPTION_VERSION, FilesModule::VERSION);
-        }
-    }
-
-    private static function install(): void
-    {
-        global $wpdb;
-        $table = $wpdb->prefix . 'tmt_crm_files';
-        $charset_collate = $wpdb->get_charset_collate();
-
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-        $sql = "
-        CREATE TABLE {$table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            entity_type VARCHAR(50) NOT NULL,
-            entity_id BIGINT UNSIGNED NOT NULL,
-            attachment_id BIGINT UNSIGNED NOT NULL,
-            uploaded_by BIGINT UNSIGNED NOT NULL,
-            uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_entity (entity_type, entity_id),
-            KEY idx_attachment (attachment_id),
-            UNIQUE KEY uniq_map (entity_type, entity_id, attachment_id)
-        ) {$charset_collate};
-        ";
-
-        dbDelta($sql);
-    }
-
-    private static function upgrade(string $from, string $to): void
-    {
-        // Ví dụ nâng cấp:
-        // if (version_compare($from, '1.0.1', '<')) { self::migrate_101(); }
-    }
-
-    private static function migrate_101(): void
-    {
-        global $wpdb;
-        $table = $wpdb->prefix . 'tmt_crm_files';
-        $charset_collate = $wpdb->get_charset_collate();
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-        $sql = "
-        CREATE TABLE {$table} (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            entity_type VARCHAR(50) NOT NULL,
-            entity_id BIGINT UNSIGNED NOT NULL,
-            attachment_id BIGINT UNSIGNED NOT NULL,
-            uploaded_by BIGINT UNSIGNED NOT NULL,
-            uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            deleted_at DATETIME NULL DEFAULT NULL,
-            deleted_by BIGINT UNSIGNED NULL DEFAULT NULL,
-            PRIMARY KEY (id),
-            KEY idx_entity (entity_type, entity_id),
-            KEY idx_attachment (attachment_id),
-            KEY idx_deleted (deleted_at),
-            UNIQUE KEY uniq_map (entity_type, entity_id, attachment_id)
-        ) {$charset_collate};
-        ";
-
-        dbDelta($sql);
     }
 }

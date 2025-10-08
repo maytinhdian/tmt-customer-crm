@@ -41,6 +41,7 @@ final class Installer
             \TMT\CRM\Core\Numbering\Infrastructure\Migrations\NumberingMigrator::class,
             \TMT\CRM\Core\Notifications\Infrastructure\Migrations\NotificationsMigrator::class,
             \TMT\CRM\Core\ExportImport\Infrastructure\Migrations\ExportImportMigrator::class,
+            \TMT\CRM\Core\Files\Infrastructure\Migrations\FileMigrator::class,
 
             // Modules nghiệp vụ
             \TMT\CRM\Modules\Company\Infrastructure\Migrations\CompanyMigrator::class,

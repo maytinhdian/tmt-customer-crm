@@ -1,27 +1,31 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Files;
 
-use TMT\CRM\Core\Files\Infrastructure\Providers\FilesServiceProvider;
 use TMT\CRM\Core\Files\Infrastructure\Migrations\FileMigrator;
+use TMT\CRM\Core\Files\Presentation\Controllers\DownloadController;
+use TMT\CRM\Core\Files\Presentation\Admin\Settings\FilesSettingsIntegration;
+use TMT\CRM\Core\Files\Infrastructure\Providers\FilesServiceProvider;
 
-/**
- * FilesModule (file chính)
- * - Bootstrap service/provider
- * - Kiểm tra & migrate DB
- */
 final class FilesModule
 {
-    public const VERSION = '1.0.0';
-    public const OPTION_VERSION = 'tmt_crm_core_files_version';
-
     public static function bootstrap(): void
     {
-        // Đăng ký DI cho storage/repository
+        // Register migrator to global Installer registry
+        add_filter('tmt_crm_migrators', static function (array $migrators) {
+            $migrators[] = FileMigrator::class;
+            return $migrators;
+        });
         FilesServiceProvider::register();
+        // Routes
+        DownloadController::bootstrap();
 
-        // Migrate DB khi plugin khởi động
-        add_action('plugins_loaded', [FileMigrator::class, 'maybe_install']);
+        // Settings (optional, enable when Core/Settings ready)
+        if (class_exists(FilesSettingsIntegration::class)) {
+            FilesSettingsIntegration::register();
+        }
+        \TMT\CRM\Core\Files\Presentation\Admin\Playground\FilesPlayground::bootstrap();
     }
 }

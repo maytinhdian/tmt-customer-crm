@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Shared\Logging;
@@ -14,7 +15,7 @@ final class Logger implements LoggerInterface
     private string $min_level = LogLevel::INFO;
     private int $min_level_num;
 
-    public function __construct(string $min_level, callable ...$writers)
+    public function __construct(string $min_level = LogLevel::INFO, callable ...$writers)
     {
         $this->min_level = $min_level;
         $map = LogLevel::map();
@@ -46,9 +47,24 @@ final class Logger implements LoggerInterface
         }
     }
 
-    public function debug(string $message, array $context = []): void { $this->log(LogLevel::DEBUG, $message, $context); }
-    public function info(string $message, array $context = []): void { $this->log(LogLevel::INFO, $message, $context); }
-    public function warning(string $message, array $context = []): void { $this->log(LogLevel::WARNING, $message, $context); }
-    public function error(string $message, array $context = []): void { $this->log(LogLevel::ERROR, $message, $context); }
-    public function critical(string $message, array $context = []): void { $this->log(LogLevel::CRITICAL, $message, $context); }
+    public function debug(string $message, array $context = []): void
+    {
+        $this->log(LogLevel::DEBUG, $message, $context);
+    }
+    public function info(string $message, array $context = []): void
+    {
+        $this->log(LogLevel::INFO, $message, $context);
+    }
+    public function warning(string $message, array $context = []): void
+    {
+        $this->log(LogLevel::WARNING, $message, $context);
+    }
+    public function error(string $message, array $context = []): void
+    {
+        $this->log(LogLevel::ERROR, $message, $context);
+    }
+    public function critical(string $message, array $context = []): void
+    {
+        $this->log(LogLevel::CRITICAL, $message, $context);
+    }
 }

@@ -1,7 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TMT\CRM\Core\Files\Application\Services\Storage;
+namespace TMT\CRM\Core\Files\Application\Storage;
+
+use TMT\CRM\Core\Files\Domain\Contracts\StorageInterface;
+use TMT\CRM\Core\Files\Domain\ValueObjects\StoredFile;
 
 final class WpUploadsStorage implements StorageInterface
 {
@@ -41,11 +45,27 @@ final class WpUploadsStorage implements StorageInterface
         return new StoredFile(
             storage: 'wp_uploads',
             path: $relative,
-            public_url: $public,
+            publicUrl: $public,
             checksum: $checksum
         );
     }
+    /** @return resource|\WP_Error */
+    public function read(string $path)
+    {
+        $uploads  = wp_get_upload_dir();
+        $fullPath = $uploads['basedir'] . $path;
 
+        if (!is_readable($fullPath)) {
+            return new \WP_Error('not_found', 'File not found', ['status' => 404]);
+        }
+
+        $fh = @fopen($fullPath, 'rb');
+        if ($fh === false) {
+            return new \WP_Error('open_failed', 'Cannot open file', ['status' => 500]);
+        }
+        return $fh;
+    }
+    
     public function delete(string $path): bool
     {
         $uploads = wp_get_upload_dir();
