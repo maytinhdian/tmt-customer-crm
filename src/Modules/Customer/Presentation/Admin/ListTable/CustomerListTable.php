@@ -7,6 +7,8 @@ namespace TMT\CRM\Modules\Customer\Presentation\Admin\ListTable;
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Core\Capabilities\Domain\Capability;
 use TMT\CRM\Modules\Customer\Presentation\Admin\Screen\CustomerScreen;
+use TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO;
+use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 
 defined('ABSPATH') || exit;
 
@@ -15,13 +17,17 @@ if (!class_exists('\WP_List_Table')) {
 }
 
 /**
- * Bảng danh sách khách hàng (WP_List_Table)
+ * CustomerListTable
+ * - Phân trang, sort, filter, bulk actions cho bảng Customers.
+ * - Không truy vấn DB trực tiếp: ủy quyền cho Repository.
  */
 final class CustomerListTable extends \WP_List_Table
 {
-    private array $items_data = [];
-    private int $total = 0;
-    private int $per_page = 20;
+    public const NONCE_BULK   = 'tmt_crm_customer_bulk_nonce';
+    public const ACTION_BULK  = 'bulk-delete';
+
+    /** @var CustomerRepositoryInterface */
+    private CustomerRepositoryInterface $repo;
 
     public function __construct()
     {
@@ -30,206 +36,370 @@ final class CustomerListTable extends \WP_List_Table
             'plural'   => 'customers',
             'ajax'     => false,
         ]);
+
+        /** @var CustomerRepositoryInterface $repo */
+        $this->repo = Container::get(CustomerRepositoryInterface::class);
     }
 
+    /** ===== Columns ===== */
     public function get_columns(): array
     {
         return [
-            'cb'      => '<input type="checkbox" />',
-            'id'      => 'ID',
-            'name'    => __('Tên khách hàng', 'tmt-crm'),
-            'email'   => __('Email', 'tmt-crm'),
-            'phone'   => __('Điện thoại', 'tmt-crm'),
-            'updated_at' => __('Ngày chỉnh sửa', 'tmt-crm'),
-            'owner'   => __('Người phụ trách', 'tmt-crm'),
+            'cb'         => '<input type="checkbox" />',
+            'id'         => __('ID', 'tmt-crm'),
+            'name'       => __('Name', 'tmt-crm'),
+            'email'      => __('Email', 'tmt-crm'),
+            'phone'      => __('Phone', 'tmt-crm'),
+            'owner'      => __('Owner', 'tmt-crm'),
+            'created_at' => __('Created', 'tmt-crm'),
+            'updated_at' => __('Updated', 'tmt-crm'),
         ];
     }
 
     public function get_sortable_columns(): array
     {
         return [
-            'id'   => ['id', false],
-            'name' => ['name', false],
-            'phone' => ['phone', false],
+            'id'         => ['id', true],
+            'name'       => ['name', false],
+            'email'      => ['email', false],
+            'created_at' => ['created_at', true],
             'updated_at' => ['updated_at', false],
         ];
     }
 
-    protected function column_cb($item): string
+    public function get_hidden_columns(): array
     {
-        return sprintf(
-            '<input type="checkbox" name="ids[]" value="%d" />',
-            (int)$item['id']
-        );
+        // Trả về mảng rỗng để Screen Options quyết định.
+        return [];
     }
 
-    public function column_default($item, $column_name)
+    public function column_cb($item): string
     {
-        switch ($column_name) {
-            case 'id':
-                return (int)($item['id'] ?? 0);
-
-            case 'name':
-                return esc_html($item['name'] ?? '');
-
-            case 'email':
-                $email = trim((string)($item['email'] ?? ''));
-                return $email !== '' ? '<a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a>' : '<span class="tmtcrm-muted">(chưa gán)</span>';
-
-            case 'phone':
-                $phone = trim((string)($item['phone'] ?? ''));
-                return $phone !== '' ? esc_html($phone) : '<span class="tmtcrm-muted">(chưa gán)</span>';
-
-            case 'owner':
-                // Ưu tiên chuỗi đã render sẵn trong items_data['owner']; fallback sang owner_id
-                if (!empty($item['owner'])) {
-                    return esc_html($item['owner']);
-                }
-                if (!empty($item['owner_id'])) {
-                    $u = get_user_by('id', (int)$item['owner_id']);
-                    return $u ? esc_html($u->display_name ?: $u->user_login) : '<span class="tmtcrm-muted">(không rõ)</span>';
-                }
-                return '<span class="tmtcrm-muted">(chưa gán)</span>';
-
-            case 'updated_at':
-                $ts = $item['updated_at'] ?? '';
-                return $ts ? esc_html(mysql2date('d/m/Y H:i', $ts)) : '<span class="tmtcrm-muted">(chưa gán)</span>';
-
-            default:
-                // Debug an toàn
-                return esc_html(print_r($item, true));
-        }
+        $id = (int)($item->id ?? 0);
+        return sprintf('<input type="checkbox" name="ids[]" value="%d" />', $id);
     }
 
+    /** Primary column = name (hiện row actions) */
+    protected function get_primary_column_name(): string
+    {
+        return 'name';
+    }
 
     public function column_name($item): string
     {
-        $id  = (int)$item['id'];
-        $txt = esc_html($item['name'] ?? '');
+        /** @var CustomerDTO $item */
+        $id    = (int)$item->id;
+        $name  = esc_html($item->name ?: sprintf(__('(No name) #%d', 'tmt-crm'), $id));
+        $page  = CustomerScreen::PAGE_SLUG;
+        $view = isset($_GET['view']) ? sanitize_key((string)$_GET['view']) : 'active';
+        $is_deleted = ($view === 'deleted') || !empty($item->deleted_at);
+        // $actions = [];
 
-        $actions = [];
+        // ----- DELETED VIEW: primary = Restore -----
+        if ($is_deleted) {
+            $actions = [];
 
-        if (current_user_can(Capability::CUSTOMER_UPDATE_ANY, $id)) {
-            $edit_url = add_query_arg([
-                'page'   => 'tmt-crm-customers',
-                'action' => 'edit',
-                'id'     => $id,
-            ], admin_url('admin.php'));
+            if (current_user_can(Capability::CUSTOMER_DELETE)) {
+                // Restore
+                $restore_action = CustomerScreen::ACTION_RESTORE;             // vd: 'tmt_crm_customer_restore'
+                $restore_nonce  = $restore_action . ':' . $id;
+                $restore_url    = wp_nonce_url(
+                    admin_url('admin-post.php?action=' . $restore_action . '&id=' . $id),
+                    $restore_nonce
+                );
+                $actions['restore'] = sprintf(
+                    '<a href="%s">%s</a>',
+                    esc_url($restore_url),
+                    esc_html__('Restore', 'tmt-crm')
+                );
 
-            $actions['edit'] = sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Sửa', 'tmt-crm'));
+                // Delete permanently
+                $purge_action = CustomerScreen::ACTION_HARD_DELETE;                 // vd: 'tmt_crm_customer_purge'
+                $purge_nonce  = $purge_action . ':' . $id;
+                $purge_url    = wp_nonce_url(
+                    admin_url('admin-post.php?action=' . $purge_action . '&id=' . $id),
+                    $purge_nonce
+                );
+                $actions['delete'] = sprintf(
+                    '<a href="%s" class="submitdelete" onclick="return confirm(\'%s\')">%s</a>',
+                    esc_url($purge_url),
+                    esc_attr__('Delete this customer permanently?', 'tmt-crm'),
+                    esc_html__('Delete permanently', 'tmt-crm')
+                );
+            }
+
+            // Name → link trực tiếp to RESTORE
+            $primary = sprintf(
+                '<strong><a class="row-title" href="%s">%s</a></strong>',
+                esc_url($restore_url ?? '#'),
+                $name
+            );
+            return $primary . ' ' . $this->row_actions($actions);
+        }
+        // ----- ACTIVE/ALL: như cũ (View/Edit/Delete=soft) -----
+        if (current_user_can(Capability::CUSTOMER_READ)) {
+            $view_url = admin_url(sprintf('admin.php?page=%s&view=%d', $page, $id));
+            $actions['view'] = sprintf('<a href="%s">%s</a>', esc_url($view_url), esc_html__('View', 'tmt-crm'));
         }
 
-        if (current_user_can(Capability::CUSTOMER_DELETE, $id)) {
-            $del_url = wp_nonce_url(
-                add_query_arg([
-                    'action' => 'tmt_crm_customer_delete',
-                    'id'     => $id,
-                ], admin_url('admin-post.php')),
-                'tmt_crm_customer_delete_' . $id
+        if (current_user_can(Capability::CUSTOMER_UPDATE)) {
+            $edit_url = admin_url(sprintf('admin.php?page=%s&action=edit&id=%d', $page, $id));
+            $actions['edit'] = sprintf('<a href="%s">%s</a>', esc_url($edit_url), esc_html__('Edit', 'tmt-crm'));
+        }
+
+        if (current_user_can(Capability::CUSTOMER_DELETE)) {
+            $delete_url = wp_nonce_url(
+                admin_url('admin-post.php?action=' . CustomerScreen::ACTION_SOFT_DELETE . '&id=' . $id),
+                CustomerScreen::NONCE_SOFT_DELETE . $id
             );
             $actions['delete'] = sprintf(
-                '<a href="%s" onclick="return confirm(\'%s\');">%s</a>',
-                esc_url($del_url),
-                esc_js(__('Xác nhận xoá khách hàng?', 'tmt-crm')),
-                esc_html__('Xoá', 'tmt-crm')
+                '<a href="%s" class="submitdelete" onclick="return confirm(\'%s\')">%s</a>',
+                esc_url($delete_url),
+                esc_attr__('Delete this customer?', 'tmt-crm'),
+                esc_html__('Delete', 'tmt-crm')
             );
         }
 
-        return sprintf('<strong>%s</strong> %s', $txt, $this->row_actions($actions));
+        return sprintf(
+            '<strong><a class="row-title" href="%s">%s</a></strong> %s',
+            esc_url(admin_url(sprintf('admin.php?page=%s&action=edit&id=%d', $page, $id))),
+            $name,
+            $this->row_actions($actions)
+        );
     }
 
-    public function get_bulk_actions(): array
+    public function column_email($item): string
     {
-        $actions = [];
-        if (current_user_can(Capability::CUSTOMER_DELETE)) {
-            $actions['bulk-delete'] = __('Xoá đã chọn', 'tmt-crm');
+        /** @var CustomerDTO $item */
+        return $item->email ? sprintf('<a href="mailto:%s">%s</a>', esc_attr($item->email), esc_html($item->email)) : '&mdash;';
+    }
+
+    public function column_phone($item): string
+    {
+        /** @var CustomerDTO $item */
+        $phone = trim((string)$item->phone);
+        return $phone !== '' ? esc_html($phone) : '&mdash;';
+    }
+
+
+
+    public function column_owner($item): string
+    {
+        /** @var CustomerDTO $item */
+        if (!$item->owner_id) return '&mdash;';
+
+        $uid   = (int)$item->owner_id;
+        $user  = get_user_by('ID', $uid);
+        if (!$user) return (string)$uid;
+
+        $phone = get_user_meta($uid, 'phone', true);
+        if (!$phone) $phone = get_user_meta($uid, 'billing_phone', true);
+
+        $label = trim($user->display_name);
+        $label .= $phone ? ' (' . preg_replace('/\s+/', '', (string)$phone) . ')' : '';
+
+        return esc_html($label ?: (string)$uid);
+    }
+
+    public function column_created_at($item): string
+    {
+        /** @var CustomerDTO $item */
+        return $item->created_at ? esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $item->created_at)) : '&mdash;';
+    }
+
+    public function column_updated_at($item): string
+    {
+        /** @var CustomerDTO $item */
+        return $item->updated_at ? esc_html(mysql2date(get_option('date_format') . ' ' . get_option('time_format'), $item->updated_at)) : '&mdash;';
+    }
+
+    public function column_default($item, $column_name): string
+    {
+        $val = $item->{$column_name} ?? '';
+        return $val !== '' ? esc_html((string)$val) : '&mdash;';
+    }
+
+    /** ===== Filters/Search/Views ===== */
+
+    protected function get_views(): array
+    {
+        $base = remove_query_arg(['paged', 'view']);
+        $cur  = isset($_GET['view']) ? sanitize_key((string)$_GET['view']) : 'active';
+
+        // Đếm tổng
+        $active_total = (int)$this->repo->count_all(['only_trashed' => false, 'with_trashed' => false]);
+        $all_total    = (int)$this->repo->count_all(['with_trashed' => true]);
+        $trash_total  = (int)$this->repo->count_all(['only_trashed' => true]);
+
+        return [
+            'active' => sprintf(
+                '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
+                esc_url(add_query_arg('view', 'active', $base)),
+                $cur === 'active' ? 'current' : '',
+                esc_html__('Active', 'tmt-crm'),
+                $active_total
+            ),
+            'deleted' => sprintf(
+                '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
+                esc_url(add_query_arg('view', 'deleted', $base)),
+                $cur === 'deleted' ? 'current' : '',
+                esc_html__('Deleted', 'tmt-crm'),
+                $trash_total
+            ),
+            'all' => sprintf(
+                '<a href="%s" class="%s">%s <span class="count">(%d)</span></a>',
+                esc_url(add_query_arg('view', 'all', $base)),
+                $cur === 'all' ? 'current' : '',
+                esc_html__('All', 'tmt-crm'),
+                $all_total
+            ),
+        ];
+    }
+    public function no_items(): void
+    {
+        $view = isset($_GET['view']) ? sanitize_key((string)$_GET['view']) : 'active';
+        if ($view === 'deleted') {
+            esc_html_e('No customers in trash.', 'tmt-crm');
+        } elseif ($view === 'all') {
+            esc_html_e('No customers found.', 'tmt-crm');
+        } else {
+            esc_html_e('No active customers.', 'tmt-crm');
         }
-        return $actions;
+    }
+
+    /** ===== Bulk actions ===== */
+    protected function get_bulk_actions(): array
+    {
+        $view = isset($_GET['view']) ? sanitize_key((string)$_GET['view']) : 'active';
+
+        if ($view === 'deleted') {
+            $actions = [];
+            if (current_user_can(Capability::CUSTOMER_DELETE)) {
+                $actions['restore'] = __('Restore', 'tmt-crm');
+                $actions['delete']  = __('Delete permanently', 'tmt-crm');
+            }
+            return $actions;
+        }
+
+        // active/all
+        if (current_user_can(Capability::CUSTOMER_DELETE)) {
+            return ['trash' => __('Move to trash', 'tmt-crm')];
+        }
+        return [];
     }
 
     /**
-     * Gọi trước render: nạp dữ liệu + tính phân trang
+     * Xử lý bulk hành động tại chỗ (trả về mảng ID hợp lệ).
+     * Gợi ý: Controller có thể đảm nhận; ở đây cho trải nghiệm liền mạch.
      */
+    public function process_bulk_action(): void
+    {
+        if ($this->current_action() !== self::ACTION_BULK) {
+            return;
+        }
+        check_admin_referer(self::NONCE_BULK);
+
+        if (!current_user_can(Capability::CUSTOMER_DELETE)) {
+            wp_die(__('You are not allowed to delete customers.', 'tmt-crm'), 403);
+        }
+
+        $ids = isset($_POST['ids']) ? array_map('absint', (array)$_POST['ids']) : [];
+        $ids = array_values(array_filter($ids));
+
+        if ($ids) {
+            // Repo xoá mềm/hard tuỳ implement
+            foreach ($ids as $id) {
+                $this->repo->delete($id);
+            }
+            add_settings_error('tmt_crm_customers', 'deleted', sprintf(__('Deleted %d customers.', 'tmt-crm'), count($ids)), 'updated');
+        }
+    }
+
+    /** ===== Data/prepare ===== */
+
     public function prepare_items(): void
     {
-        $svc = Container::get('customer-service');
+        $view = isset($_GET['view']) ? sanitize_key((string)$_GET['view']) : 'active';
 
-        // Lấy per-page từ Screen Options (KHÔNG đặt trong __construct vì lúc đó screen chưa sẵn)
-        $this->per_page = $this->get_items_per_page(
-            CustomerScreen::OPTION_PER_PAGE,
-            20
-        );
+        $current_page = max(1, (int)($_GET['paged'] ?? 1));
+        $orderby      = sanitize_text_field((string)($_GET['orderby'] ?? 'id'));
+        $order        = strtolower((string)($_GET['order'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $keyword       = isset($_REQUEST['s']) ? trim((string)$_REQUEST['s']) : '';
 
-        $current_page = $this->get_pagenum();
+        $per_page = (int)get_user_meta(get_current_user_id(), self::get_per_page_option_name(), true);
+        if ($per_page <= 0) {
+            $per_page = 20;
+        }
 
-
-        // Whitelist orderby
-        $allowed_orderby = ['id', 'name', 'company'];
-        $orderby_raw = isset($_GET['orderby']) ? sanitize_key((string) $_GET['orderby']) : '';
-        $orderby = in_array($orderby_raw, $allowed_orderby, true) ? $orderby_raw : null;
-
-        $order_raw = isset($_GET['order']) ? strtoupper(sanitize_text_field((string) $_GET['order'])) : 'DESC';
-        $order = in_array($order_raw, ['ASC', 'DESC'], true) ? $order_raw : 'DESC';
 
         $filters = [
-            'keyword'  => sanitize_text_field((string)($_GET['s'] ?? '')),
-            'type'     => sanitize_key((string)($_GET['type'] ?? '')),
-            'owner_id' => isset($_GET['owner']) ? absint((string) $_GET['owner']) : null,
-            'orderby'  => $orderby,
-            'order'    => $order,
+            'orderby'       => $orderby,
+            'order'         => $order,
+            'keyword'        => $keyword,
+            'only_trashed'  => ($view === 'deleted'),
+            'with_trashed'  => ($view === 'all'),
         ];
 
-        $data  = $svc->list_customers($current_page, $this->per_page, $filters);
-        $items = $data['items'] ?? [];
-        $this->total = (int)($data['total'] ?? 0);
+        // Lấy dữ liệu: repo chịu trách nhiệm áp điều kiện & hạn chế injection
+        $items = $this->repo->list_paginated($current_page, $per_page, $filters);
+        $total = $this->repo->count_all($filters);
 
-        $this->items_data = array_map(function ($c): array {
-            // object (DTO)
-            $ownerId = (int)($c->owner_id ?? 0);
-            return [
-                'id'      => (int)   ($c->id ?? 0),
-                'name'    => (string)($c->name ?? ''),
-                'email'   => (string)($c->email ?? ''),
-                'phone'   => (string)($c->phone ?? ''),
-                'owner'    => $ownerId ? get_the_author_meta('display_name', $ownerId) : '',
-                'updated_at' => (string)($c->updated_at ?? ''), // ← thêm
-            ];
-        }, $items);
-
-        $screen   = get_current_screen();
-        $hidden   = get_hidden_columns($screen); // ✅ cột bị ẩn theo user prefs
+        $this->items = $items;
 
         $this->_column_headers = [
             $this->get_columns(),
-            $hidden,
-            [],
+            $this->get_hidden_columns(),
             $this->get_sortable_columns(),
+            $this->get_primary_column_name(),
         ];
 
-        $this->items = $this->items_data;
-
         $this->set_pagination_args([
-            'total_items' => $this->total,
-            'per_page'    => $this->per_page,
-            'total_pages' => (int) ceil($this->total / $this->per_page),
+            'total_items' => (int)$total,
+            'per_page'    => $per_page,
+            'total_pages' => (int)ceil($total / $per_page),
         ]);
     }
 
-    /**
-     * Xử lý bulk action xoá (trả về danh sách id đã chọn)
-     */
-    public function get_selected_ids_for_bulk_delete(): array
+    /** ===== Helpers ===== */
+
+    /** Tên option per-page riêng cho màn này */
+    public static function get_per_page_option_name(): string
     {
-        if ($this->current_action() !== 'bulk-delete') return [];
-        $ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
-        return array_values(array_filter(array_map('absint', $ids)));
+        return CustomerScreen::OPTION_PER_PAGE; // 'tmt_crm_customers_per_page'
     }
 
+    /** Mặc định ẩn bớt các cột dài */
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
         if ($screen->id === 'tmt-crm_page_' . CustomerScreen::PAGE_SLUG) {
             $hidden = array_unique(array_merge($hidden, ['email', 'owner']));
         }
         return $hidden;
+    }
+
+    /** Render form bulk nonce */
+    public static function render_bulk_nonce(): void
+    {
+        wp_nonce_field(self::NONCE_BULK);
+    }
+    // Trong CustomerListTable
+    public function single_row($item): void
+    {
+        /** @var \TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO $item */
+        $classes = [];
+
+        // hàng alternate của WP giữ nguyên
+        static $row_class = '';
+        $row_class = ('alternate' === $row_class) ? '' : 'alternate';
+        if ($row_class) $classes[] = $row_class;
+
+        // nếu bị xoá mềm → thêm class để CSS bắt
+        if (!empty($item->deleted_at)) {
+            $classes[] = 'tmt-soft-deleted';
+        }
+
+        echo '<tr class="' . esc_attr(implode(' ', $classes)) . '">';
+        $this->single_row_columns($item);
+        echo '</tr>';
     }
 }

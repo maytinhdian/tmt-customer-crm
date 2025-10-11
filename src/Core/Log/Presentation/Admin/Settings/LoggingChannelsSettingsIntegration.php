@@ -35,6 +35,14 @@ final class LoggingChannelsSettingsIntegration implements SettingsSectionInterfa
     {
         return __('Logging — Per Channel', 'tmt-crm');
     }
+    public function capability(): string
+    {
+        return 'manage_options';
+    }
+    public function header_html(): string
+    {
+        return '<p>' . esc_html__('Cấu hình quản lý Log Chanel.', 'tmt-crm') . '</p>';
+    }
 
     /**
      * Render repeater: mỗi dòng = 1 channel

@@ -32,3 +32,19 @@
 tr.tmt-row-deleted td {
   color: #666;
 }
+
+/* hàng đã xoá mềm */
+.wp-list-table .tmt-soft-deleted td {
+  color: #6b7280; /* gray-500 */
+  background: #f9fafb; /* gray-50 */
+}
+.wp-list-table .tmt-soft-deleted .row-title {
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+.wp-list-table .tmt-soft-deleted a {
+  opacity: 0.85;
+}
+.wp-list-table .tmt-soft-deleted .submitdelete {
+  color: #b91c1c; /* đỏ đậm cho Delete permanently trong tab Deleted */
+}

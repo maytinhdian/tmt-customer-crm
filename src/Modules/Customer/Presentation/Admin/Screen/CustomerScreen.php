@@ -23,7 +23,18 @@ final class CustomerScreen
 
     /** Tên action cho admin-post */
     public const ACTION_SAVE   = 'tmt_crm_customer_save';
-    public const ACTION_DELETE = 'tmt_crm_customer_delete';
+    public const ACTION_HARD_DELETE = 'tmt_crm_customer_purge';
+    public const ACTION_SOFT_DELETE = 'tmt_crm_customer_soft_delete';
+    public const ACTION_BULK_DELETE = 'tmt_crm_customer_bulk_delete';
+    public const ACTION_RESTORE = 'tmt_crm_customer_restore';
+
+    /** Nonces cho admin-post */
+    public const NONCE_SAVE   = 'tmt_crm_customer_save_';
+    public const NONCE_HARD_DELETE = 'tmt_crm_customer_purge_';
+    public const NONCE_SOFT_DELETE = 'tmt_crm_customer_soft_delete_';
+    public const NONCE_BULK_DELETE = 'tmt_crm_customer_bulk_delete_';
+    public const NONCE_RESTORE = 'tmt_crm_customer_restore_';
+
 
     /** Tên option Screen Options: per-page */
     public const OPTION_PER_PAGE = 'tmt_crm_customers_per_page';
@@ -31,8 +42,8 @@ final class CustomerScreen
     /** Đăng ký các handler admin_post (submit form) */
     public static function boot(): void
     {
-        add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
-        add_action('admin_post_' . self::ACTION_DELETE, [self::class, 'handle_delete']);
+        // add_action('admin_post_' . self::ACTION_SAVE,   [self::class, 'handle_save']);
+        // add_action('admin_post_' . self::ACTION_SOFT_DELETE, [self::class, 'handle_delete']);
     }
 
     /** Menu.php sẽ gọi hàm này sau khi đăng ký submenu */
@@ -158,11 +169,14 @@ final class CustomerScreen
                 <a href="<?php echo esc_url($add_url); ?>" class="page-title-action"><?php esc_html_e('Thêm mới', 'tmt-crm'); ?></a>
             <?php endif; ?>
             <hr class="wp-header-end" />
-
+            <?php
+            // 👇 PHẢI có dòng này để hiện các link (views): All / Active / Trash...
+            $table->views();
+            ?>
             <form method="post">
                 <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE_SLUG); ?>" />
                 <?php
-                $table->search_box(__('Tìm kiếm khách hàng', 'tmt-crm'), 'customer');
+                $table->search_box(__('Tìm kiếm khách hàng', 'tmt-crm'), 'tmt-crm-customers-search-input');
                 $table->display();
                 wp_nonce_field('bulk-customers');
                 ?>
@@ -171,20 +185,21 @@ final class CustomerScreen
 <?php
     }
 
+
+
     /** FORM VIEW: Add/Edit */
     public static function render_form(int $id = 0): void
     {
-        $svc = Container::get('customer-service');
-        $customer = null;
+        /** @var \TMT\CRM\Shared\Container\Container $c */
+        $svc = \TMT\CRM\Shared\Container\Container::get('customer-service');
 
         /** @var \TMT\CRM\Domain\Repositories\UserRepositoryInterface $user_repo */
-        $user_repo = Container::get('user-repo');
+        $user_repo = \TMT\CRM\Shared\Container\Container::get('user-repo');
 
-        // ✅ Giá trị mặc định
-        $owner_id_selected = (int)($customer->owner_id ?? get_current_user_id());
+        /** @var \TMT\CRM\Modules\Customer\Application\DTO\CustomerDTO|null $customer */
+        $customer = null;
 
         if ($id > 0) {
-            /** @var CustomerDTO|null $customer */
             $customer = $svc->get_by_id($id);
             if (!$customer) {
                 echo '<div class="notice notice-error"><p>' . esc_html__('Không tìm thấy khách hàng.', 'tmt-crm') . '</p></div>';
@@ -192,17 +207,44 @@ final class CustomerScreen
             }
         }
 
-        $tpl = trailingslashit(TMT_CRM_PATH) . 'templates/admin/customer-form.php';
-        if (file_exists($tpl)) {
-            /** @var CustomerDTO|null $customer */
-            /** @var string $nonce_name */
-            /** @var array<int,string> $owner_choices */
-            include $tpl;
-        } else {
-            echo '<div class="notice notice-error"><p>' . esc_html__('Template customer-form.php không tồn tại.', 'tmt-crm') . '</p></div>';
-        }
-    }
+        // ✅ Giá trị mặc định (sau khi đã có $customer)
+        $owner_id_selected = (int)($customer?->owner_id ?? get_current_user_id());
 
+        // ✅ Chuẩn bị owner choices (có thể thay bằng $user_repo nếu bạn đã có hàm riêng)
+        $owner_choices = [];
+        foreach (get_users(['fields' => ['ID', 'display_name']]) as $u) {
+            $owner_choices[(int)$u->ID] = (string)$u->display_name;
+        }
+
+        // ✅ Nonce name dùng khi submit form (tuỳ convenion của bạn)
+        $nonce_name = 'tmt_crm_customer_save';
+
+        // ✅ Render qua View helper
+        $module   = 'customer';
+        $template = 'customer-form';
+
+        // Back URL: ưu tiên trang trước đó, fallback về danh sách khách hàng
+        $back_url = wp_get_referer();
+        if (!$back_url || strpos((string)$back_url, 'page=tmt-crm-customer') !== false) {
+            // Đổi slug bên dưới cho đúng với màn danh sách của bạn
+            $back_url = admin_url('admin.php?page=tmt-crm-customers');
+        }
+
+        if (\TMT\CRM\Shared\Presentation\Support\View::exists_admin($module . '\\' . $template)) {
+            \TMT\CRM\Shared\Presentation\Support\View::render_admin_module($module, $template, [
+                'customer'          => $customer,
+                'nonce_name'        => $nonce_name,
+                'owner_choices'     => $owner_choices,
+                'owner_id_selected' => $owner_id_selected,
+                'back_url'          => $back_url,
+            ]);
+            return;
+        }
+
+        echo '<div class="notice notice-error"><p>' .
+            esc_html__('Template customer-form không tồn tại trong View.', 'tmt-crm') .
+            '</p></div>';
+    }
 
 
     /* ===================== Helpers ===================== */

@@ -31,7 +31,81 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         $sql = "SELECT * FROM {$this->table} WHERE id = %d";
         $row = $this->db->get_row($this->db->prepare($sql, $id), ARRAY_A);
 
-        return $row ? $this->map_row_to_dto($row) : null;
+        return $row ? CustomerDTO::from_array($row) : null;
+    }
+    /** @inheritDoc */
+    public function find_by_ids(array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        $sql = "SELECT id, name, phone, email FROM {$this->table} WHERE id IN ($placeholders)";
+
+        $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
+
+        $map = [];
+        foreach ($rows as $r) {
+            $dto = new CustomerDTO(
+                (int)$r['id'],
+                $r['name'] ?? '',
+                $r['email'] ?? null,
+                $r['phone'] ?? null,
+            );
+            $map[$dto->id] = $dto;
+        }
+        return $map;
+    }
+    // Tìm số điện thoại hay email trùng (bỏ qua chính $exclude_id nếu có)
+    public function find_by_email_or_phone(?string $email = null, ?string $phone = null, ?int $exclude_id = null): ?CustomerDTO
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'tmt_crm_customers';
+
+        $conds  = [];
+        $params = [];
+
+        if (!empty($email)) {
+            // So sánh không phân biệt hoa/thường
+            $conds[]  = 'LOWER(email) = LOWER(%s)';
+            $params[] = trim($email);
+        }
+
+        if (!empty($phone)) {
+            $conds[]  = 'phone = %s';
+            $params[] = trim($phone);
+        }
+
+        if (!$conds) {
+            return null;
+        }
+
+        // (cond_email OR cond_phone)
+        $where = '(' . implode(' OR ', $conds) . ')';
+
+        // Bỏ qua chính mình khi update
+        if (!empty($exclude_id) && $exclude_id > 0) {
+            $where   .= ' AND id <> %d';
+            $params[] = (int) $exclude_id;
+        }
+
+        // Nếu có soft delete, loại các bản ghi đã xoá
+        $where .= ' AND deleted_at IS NULL';
+
+        $sql = "SELECT * FROM {$table} WHERE {$where} LIMIT 1";
+
+        // chuẩn hoá prepare theo mảng params
+        $row = $wpdb->get_row($wpdb->prepare($sql, $params), ARRAY_A);
+
+        return $row ? CustomerDTO::from_array($row) : null;
+    }
+    public function find_name_by_id(int $id): ?string
+    {
+        $sql = "SELECT name FROM {$this->table} WHERE id = %d";
+        $val = $this->db->get_var($this->db->prepare($sql, $id));
+        return $val !== null ? (string)$val : null;
     }
 
     /** @return CustomerDTO[] */
@@ -51,55 +125,17 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
 
         $rows = $this->db->get_results($this->db->prepare($sql, $params), ARRAY_A) ?: [];
 
-        return array_map([$this, 'map_row_to_dto'], $rows);
+        return array_map([CustomerDTO::class, 'from_array'], $rows);
     }
+
+
 
     public function count_all(array $filters = []): int
     {
-        [$where_sql, $params] = $this->build_where($filters);
-        $sql = "SELECT COUNT(*) FROM {$this->table} {$where_sql}";
-
-        if (!empty($params)) {
-            return (int)$this->db->get_var($this->db->prepare($sql, $params));
-        }
-        return (int)$this->db->get_var($sql);
+        [$whereSql, $args] = $this->build_where($filters);
+        $sql = "SELECT COUNT(*) FROM {$this->table} {$whereSql}";
+        return (int)$this->db->get_var($this->db->prepare($sql, ...$args));
     }
-
-    //Tìm số điện thoại hay email trùng
-    public function find_by_email_or_phone(?string $email = null, ?string $phone = null, ?int $exclude_id = null): ?CustomerDTO
-    {
-        global $wpdb;
-        $table = $wpdb->prefix . 'tmt_crm_customers';
-
-        $where = [];
-        $params = [];
-
-        if ($email) {
-            $where[] = 'email = %s';
-            $params[] = $email;
-        }
-
-        if ($phone) {
-            $where[] = 'phone = %s';
-            $params[] = $phone;
-        }
-
-        if (empty($where)) return null;
-
-        $sql = "SELECT * FROM $table WHERE (" . implode(' OR ', $where) . ")";
-
-        if ($exclude_id) {
-            $sql .= " AND id != %d";
-            $params[] = $exclude_id;
-        }
-
-        $sql .= " LIMIT 1";
-
-        $row = $wpdb->get_row($wpdb->prepare($sql, ...$params), ARRAY_A);
-
-        return $row ? CustomerDTO::from_array($row) : null;
-    }
-
 
     public function create(CustomerDTO $dto): int
     {
@@ -246,57 +282,50 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         ];
     }
 
-    public function find_name_by_id(int $id): ?string
+
+
+
+    public function soft_delete(int $id, int $actor_id, string $reason = ''): bool
     {
-        $sql = "SELECT name FROM {$this->table} WHERE id = %d";
-        $val = $this->db->get_var($this->db->prepare($sql, $id));
-        return $val !== null ? (string)$val : null;
+        $updated = $this->db->update(
+            $this->table,
+            [
+                'deleted_at'    => current_time('mysql', true),
+                'deleted_by'    => $actor_id,
+                'delete_reason' => $reason,
+            ],
+            ['id' => $id, 'deleted_at' => null],
+            ['%s', '%d', '%s'],
+            ['%d', '%s'] // id + deleted_at null (dbDelta may cast, but safe)
+        );
+        return (bool)$updated;
     }
 
-    /** @inheritDoc */
-    public function find_by_ids(array $ids): array
+    public function restore(int $id): bool
     {
-        $ids = array_values(array_unique(array_map('intval', $ids)));
-        if (empty($ids)) {
-            return [];
-        }
+        $updated = $this->db->update(
+            $this->table,
+            [
+                'deleted_at'    => null,
+                'deleted_by'    => null,
+                'delete_reason' => null,
+            ],
+            ['id' => $id],
+            ['%s', '%d', '%s'],
+            ['%d']
+        );
+        return (bool)$updated;
+    }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        $sql = "SELECT id, name, phone, email FROM {$this->table} WHERE id IN ($placeholders)";
-
-        $rows = $this->db->get_results($this->db->prepare($sql, ...$ids), ARRAY_A) ?: [];
-
-        $map = [];
-        foreach ($rows as $r) {
-            $dto = new CustomerDTO(
-                (int)$r['id'],
-                $r['name'] ?? '',
-                $r['email'] ?? null,
-                $r['phone'] ?? null,
-            );
-            $map[$dto->id] = $dto;
-        }
-        return $map;
+    public function purge(int $id): bool
+    {
+        $deleted = $this->db->delete($this->table, ['id' => $id], ['%d']);
+        return (bool)$deleted;
     }
 
     // ──────────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────────
-
-    private function map_row_to_dto(array $row): CustomerDTO
-    {
-        return new CustomerDTO(
-            (int)($row['id'] ?? 0),
-            (string)($row['name'] ?? ''),
-            $row['email']      ?? null,
-            $row['phone']      ?? null,
-            $row['address']    ?? null,
-            $row['note']       ?? null,
-            isset($row['owner_id']) ? (int)$row['owner_id'] : null,
-            $row['created_at'] ?? null,
-            $row['updated_at'] ?? null
-        );
-    }
 
     /**
      * Xây WHERE an toàn từ filters.
@@ -307,15 +336,20 @@ final class WpdbCustomerRepository implements CustomerRepositoryInterface
         $clauses = [];
         $params  = [];
 
-        if (!empty($filters['keyword'])) {
-            $kw = '%' . $this->db->esc_like($filters['keyword']) . '%';
-            $clauses[] = "(name LIKE %s OR email LIKE %s OR phone LIKE %s OR address LIKE %s)";
-            array_push($params, $kw, $kw, $kw, $kw);
+        $only_trashed = !empty($filters['only_trashed']);
+        $with_trashed = !empty($filters['with_trashed']);
+
+        if ($only_trashed) {
+            $clauses[] = 'deleted_at IS NOT NULL';
+        } elseif (!$with_trashed) {
+            // ⬅️ MẶC ĐỊNH: chỉ bản ghi Active
+            $clauses[] = 'deleted_at IS NULL';
         }
 
-        if (!empty($filters['owner_id'])) {
-            $clauses[] = "owner_id = %d";
-            $params[]  = (int)$filters['owner_id'];
+        if (!empty($filters['keyword'])) {
+            $kw = '%' . $this->db->esc_like($filters['keyword']) . '%';
+            $clauses[] = "(name LIKE %s OR email LIKE %s OR phone LIKE %s )";
+            array_push($params, $kw, $kw, $kw);
         }
 
         $where_sql = $clauses ? 'WHERE ' . implode(' AND ', $clauses) : '';

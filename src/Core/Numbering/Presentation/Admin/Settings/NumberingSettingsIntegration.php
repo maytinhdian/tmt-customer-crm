@@ -35,6 +35,14 @@ final class NumberingSettingsIntegration implements SettingsSectionInterface
     {
         return __('Đánh số tự động', 'tmt-crm');
     }
+    public function capability(): string
+    {
+        return 'manage_options';
+    }
+    public function header_html(): string
+    {
+        return '<p>' . esc_html__('Cấu hình quản lý Log Chanel.', 'tmt-crm') . '</p>';
+    }
 
     /**
      * Đăng ký các field cho section.

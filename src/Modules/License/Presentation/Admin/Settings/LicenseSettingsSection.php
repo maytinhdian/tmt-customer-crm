@@ -28,7 +28,15 @@ final class LicenseSettingsSection implements SettingsSectionInterface
             'license_notice_enabled' => 1,
         ];
     }
-
+    public function capability(): string
+    {
+        return 'manage_options';
+    }
+    public function header_html(): string
+    {
+        return '<p>' . esc_html__('Cấu hình quản lý Log Chanel.', 'tmt-crm') . '</p>';
+    }
+    
     public function register_fields(string $page_slug, string $option_key): void
     {
         add_settings_section(

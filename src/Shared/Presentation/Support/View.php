@@ -108,64 +108,34 @@ final class View
         return is_file($abs);
     }
 
-    /**
-     * Render RAW 1 file tuyệt đối trong templates/admin:
-     * - Không sanitize $vars, không đụng tới object/DTO.
-     * - extract(..., EXTR_OVERWRITE) để luôn ghi đè theo payload.
-     */
-    public static function render_raw(string $abs_path, array $vars = [], bool $return = false): ?string
-    {
-        // An toàn tối thiểu: path phải nằm trong base templates/admin
-        if (!self::is_safe_inside_base($abs_path)) {
-            self::doing_it_wrong('render_raw', 'Unsafe view path: ' . $abs_path);
-            return null;
-        }
-        if (!is_file($abs_path)) {
-            self::doing_it_wrong('render_raw', 'View file not found: ' . $abs_path);
-            return null;
-        }
-
-        if ($return) {
-            ob_start();
-            extract($vars, EXTR_OVERWRITE);
-            include $abs_path;
-            return (string) ob_get_clean();
-        }
-
-        extract($vars, EXTR_OVERWRITE);
-        include $abs_path;
-        return null;
-    }
-
     // /**
-    //  * Render RAW: templates/admin/{relative}.php
+    //  * Render RAW 1 file tuyệt đối trong templates/admin:
+    //  * - Không sanitize $vars, không đụng tới object/DTO.
+    //  * - extract(..., EXTR_OVERWRITE) để luôn ghi đè theo payload.
     //  */
-    // public static function render_admin_raw(string $relative, array $vars = [], bool $return = false): ?string
+    // public static function render_raw(string $abs_path, array $vars = [], bool $return = false): ?string
     // {
-    //     $abs = self::resolve_admin_path($relative);
-    //     return self::render_raw($abs, $vars, $return);
+    //     // An toàn tối thiểu: path phải nằm trong base templates/admin
+    //     if (!self::is_safe_inside_base($abs_path)) {
+    //         self::doing_it_wrong('render_raw', 'Unsafe view path: ' . $abs_path);
+    //         return null;
+    //     }
+    //     if (!is_file($abs_path)) {
+    //         self::doing_it_wrong('render_raw', 'View file not found: ' . $abs_path);
+    //         return null;
+    //     }
+
+    //     if ($return) {
+    //         ob_start();
+    //         extract($vars, EXTR_OVERWRITE);
+    //         include $abs_path;
+    //         return (string) ob_get_clean();
+    //     }
+
+    //     extract($vars, EXTR_OVERWRITE);
+    //     include $abs_path;
+    //     return null;
     // }
-
-    // /**
-    //  * Render RAW: templates/admin/{module}/{file}.php
-    //  */
-    // public static function render_admin_module_raw(string $module, string $file, array $vars = [], bool $return = false): ?string
-    // {
-    //     $rel = self::sanitize_rel($module) . '/' . self::ensure_ext($file);
-    //     return self::render_admin_raw($rel, $vars, $return);
-    // }
-
-    // /**
-    //  * Render RAW: templates/admin/{module}/partials/{file}.php
-    //  */
-    // public static function render_admin_partial_raw(string $module, string $file, array $vars = [], bool $return = false): ?string
-    // {
-    //     $rel = self::sanitize_rel($module) . '/partials/' . self::ensure_ext($file);
-    //     return self::render_admin_raw($rel, $vars, $return);
-    // }
-
-
-
 
     // ------------------------
     // Nội bộ

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Files\Presentation\Admin\Settings;
@@ -45,7 +46,14 @@ final class FilesSettingsIntegration implements SettingsSectionInterface
             );
         }
     }
-
+    public function capability(): string
+    {
+        return 'manage_options';
+    }
+    public function header_html(): string
+    {
+        return '<p>' . esc_html__('Cấu hình quản lý File.', 'tmt-crm') . '</p>';
+    }
     /**
      * Defaults cho toàn section (keys trùng id trong fields_def)
      */

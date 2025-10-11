@@ -1,24 +1,27 @@
 <?php
 
 /**
- * Core/Log bootstrap (file chính)
+ * LogModule bootstrap (file chính)
+ * - Đăng ký ServiceProvider
+ * - Gắn hooks admin/menu nếu có
+ * - Đăng ký Settings Section (nếu cần)
  */
-
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Log;
 
+use TMT\CRM\Shared\Container\Container;
+
+use TMT\CRM\Domain\Repositories\LogRepositoryInterface;
 use TMT\CRM\Core\Log\Infrastructure\Persistence\WpdbLogRepository;
 use TMT\CRM\Core\Log\Presentation\Admin\Screen\LogScreen;
 use TMT\CRM\Core\Log\Presentation\Admin\Settings\LoggingSettingsIntegration;
 use TMT\CRM\Core\Log\Presentation\Admin\Settings\LoggingChannelsSettingsIntegration;
-use TMT\CRM\Domain\Repositories\LogRepositoryInterface;
-use TMT\CRM\Shared\Container\Container;
+
 use TMT\CRM\Shared\Logging\LoggerInterface;
 use TMT\CRM\Shared\Logging\Logger;
 use TMT\CRM\Shared\Logging\LogLevel;
 use TMT\CRM\Shared\Logging\Writers\FileLogWriter;
-use TMT\CRM\Core\Log\Infrastructure\Setup\Installer;   // BỎ comment
 
 final class LogModule
 {

@@ -7,6 +7,7 @@ namespace TMT\CRM\Modules\Customer;
 use TMT\CRM\Modules\Customer\Domain\Repositories\EmploymentHistoryRepositoryInterface;
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Logging\LoggerInterface;
+use TMT\CRM\Modules\Customer\Application\Validation\CustomerValidator;
 use TMT\CRM\Modules\Customer\Domain\Repositories\CustomerRepositoryInterface;
 use TMT\CRM\Modules\Customer\Presentation\Admin\Controller\CustomerController;
 use TMT\CRM\Modules\Customer\Application\Services\{CustomerService, EmploymentHistoryService};
@@ -28,8 +29,9 @@ final class CustomerModule
         // Container wiring
         Container::set('customer-repo',  fn() => Container::get(CustomerRepositoryInterface::class));
         Container::set('employment-history-repo',  fn() => Container::get(EmploymentHistoryRepositoryInterface::class));
+        Container::set('customer-validator', fn() => new CustomerValidator(Container::get('customer-repo')));
 
-        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo')),  Container::get(LoggerInterface::class)));
+        Container::set('customer-service',  fn() => new CustomerService(Container::get('customer-repo'), Container::get(('employment-history-repo')),  Container::get(LoggerInterface::class), Container::get('customer-validator')));
         Container::set('employment-history-service',  fn() => new EmploymentHistoryService(Container::get('employment-history-repo')));
 
         add_action('admin_init', function () {

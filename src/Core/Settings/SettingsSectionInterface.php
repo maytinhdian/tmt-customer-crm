@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Settings;
@@ -29,4 +30,15 @@ interface SettingsSectionInterface
      * Nên return mảng [key => value] hợp lệ cho section.
      */
     public function sanitize(array $input, array $current_all): array;
+    /**
+     * Capability để xem/chỉnh sửa section này.
+     * Mặc định 'manage_options'.
+     */
+    public function capability(): string;
+
+    /**
+     * (Tuỳ chọn) HTML phần mô tả đầu section.
+     * Trả '' nếu không dùng.
+     */
+    public function header_html(): string;
 }

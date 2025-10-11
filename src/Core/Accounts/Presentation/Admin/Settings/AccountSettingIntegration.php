@@ -32,7 +32,14 @@ final class AccountSettingIntegration implements SettingsSectionInterface
     {
         return __('Tài khoản & Tuỳ chọn', 'tmt-crm');
     }
-
+    public function capability(): string
+    {
+        return 'manage_options';
+    }
+    public function header_html(): string
+    {
+        return '<p>' . esc_html__('Cấu hình quản lý Log Chanel.', 'tmt-crm') . '</p>';
+    }
     /**
      * Đăng ký các field cho section.
      * Lưu ý: SettingsPage đã add_settings_section($this->section_id()) sẵn,

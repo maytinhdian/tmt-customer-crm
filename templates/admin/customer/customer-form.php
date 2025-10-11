@@ -19,7 +19,9 @@ $val = function ($prop, $default = '') use ($customer) {
 };
 ?>
 <div class="wrap">
-    <h1><?php echo esc_html($title_txt); ?></h1>
+    <h1 class="wp-heading-inline"><?php echo esc_html($title_txt); ?></h1>
+    <a href="<?php echo esc_url($back_url); ?>" class="page-title-action"><?php esc_html_e('Quay lại danh sách chính', 'tmt-crm'); ?></a>
+    <hr class="wp-header-end" />
 
     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
         <?php wp_nonce_field($nonce); ?>

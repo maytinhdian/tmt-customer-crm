@@ -67,25 +67,14 @@ final class CompanyController
         try {
             if ($id > 0) {
                 $svc->update($id, $data);
-                // AdminNoticeService::success_for_screen(
-                //     CompanyScreen::screen_id(),
-                //     __('Đã cập nhật công ty.', 'tmt-crm')
-                // );
             } else {
                 $svc->create($data);
-                // AdminNoticeService::success_for_screen(
-                //     CompanyScreen::screen_id(),
-                //     __('Tạo mới công ty thành công.', 'tmt-crm')
-                // );
             }
             $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
             wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
             exit;
         } catch (\Throwable $e) {
-            // AdminNoticeService::error_for_screen(
-            //     CompanyScreen::screen_id(),
-            //     sprintf(__('Thao tác thất bại: %s', 'tmt-crm'), esc_html($e->getMessage()))
-            // );
+
             self::redirect(self::url(['error' => 1]));
         }
     }
