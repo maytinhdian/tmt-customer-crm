@@ -7,8 +7,20 @@ namespace TMT\CRM\Modules\License\Presentation\Admin\Settings;
 use TMT\CRM\Core\Settings\Settings;
 use TMT\CRM\Core\Settings\SettingsSectionInterface;
 
-final class LicenseSettingsSection implements SettingsSectionInterface
+final class LicenseSettingsIntegration implements SettingsSectionInterface
 {
+    /**
+     * (Gợi ý) Gọi 1 lần ở bootstrap của LicenseModule
+     * để đăng ký section vào Settings qua filter tmt_crm_settings_sections.
+     */
+    public static function register(): void
+    {
+        add_filter('tmt_crm_settings_sections', static function (array $sections) {
+            $sections[] = new self();
+            return $sections;
+        });
+    }
+
     public function section_id(): string
     {
         return 'licenses';
@@ -34,19 +46,16 @@ final class LicenseSettingsSection implements SettingsSectionInterface
     }
     public function header_html(): string
     {
-        return '<p>' . esc_html__('Cấu hình quản lý Log Chanel.', 'tmt-crm') . '</p>';
+        return '<p>' . esc_html__('Cấu hình quản lý License.', 'tmt-crm') . '</p>';
     }
-    
+
     public function register_fields(string $page_slug, string $option_key): void
     {
-        add_settings_section(
-            'tmt_crm_settings_section_licenses',
-            __('', 'tmt-crm'), // tên khác để không “Licenses” 2 lần
-            function () {
-                echo '<p>' . esc_html__('Thiết lập nhắc hết hạn & hiển thị cho module Licenses.', 'tmt-crm') . '</p>';
-            },
-            $page_slug
-        );
+        // Lấy giá trị hiện tại (gộp default)
+        $all   = get_option($option_key, []);
+        $value = isset($all[$this->section_id()]) && is_array($all[$this->section_id()])
+            ? array_merge($this->get_defaults(), $all[$this->section_id()])
+            : $this->get_defaults();
 
         // Field: Expiring within (days)
         add_settings_field(
@@ -63,7 +72,7 @@ final class LicenseSettingsSection implements SettingsSectionInterface
                 echo ' <span class="description">' . esc_html__('Số ngày trước hạn để hiển thị cảnh báo.', 'tmt-crm') . '</span>';
             },
             $page_slug,
-            'tmt_crm_settings_section_licenses'
+            $this->section_id()
         );
 
         // Field: Admin Notice toggle
@@ -81,7 +90,8 @@ final class LicenseSettingsSection implements SettingsSectionInterface
                 );
             },
             $page_slug,
-            'tmt_crm_settings_section_licenses'
+            $this->section_id(),
+            ['label_for' => 'tmt_crm_license_expiring_days']
         );
     }
 

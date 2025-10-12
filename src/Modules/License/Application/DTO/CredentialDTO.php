@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\DTO;
 
-final class CredentialDTO
+use TMT\CRM\Shared\Traits\AsArrayTrait;
+
+final class CredentialDTO implements \JsonSerializable
 {
+    use AsArrayTrait;
+
     public ?int $id = null;
     public string $number = '';
     public string $type = 'LICENSE_KEY';
@@ -57,27 +61,33 @@ final class CredentialDTO
 
         return $d;
     }
-
-    public function to_array(): array
+    /**
+     * Hỗ trợ json_encode($dto)
+     */
+    public function jsonSerialize(): array
     {
-        return [
-            'id' => $this->id,
-            'number' => $this->number,
-            'type' => $this->type,
-            'label' => $this->label,
-            'customer_id' => $this->customer_id,
-            'company_id' => $this->company_id,
-            'status' => $this->status,
-            'expires_at' => $this->expires_at,
-            'seats_total' => $this->seats_total,
-            'sharing_mode' => $this->sharing_mode,
-            'renewal_of_id' => $this->renewal_of_id,
-            'owner_id' => $this->owner_id,
-            'secret_primary' => $this->secret_primary,
-            'secret_secondary' => $this->secret_secondary,
-            'username' => $this->username,
-            'extra_json' => $this->extra_json,
-            'secret_mask' => $this->secret_mask,
-        ];
+        return $this->to_array();
     }
+    // public function to_array(): array
+    // {
+    //     return [
+    //         'id' => $this->id,
+    //         'number' => $this->number,
+    //         'type' => $this->type,
+    //         'label' => $this->label,
+    //         'customer_id' => $this->customer_id,
+    //         'company_id' => $this->company_id,
+    //         'status' => $this->status,
+    //         'expires_at' => $this->expires_at,
+    //         'seats_total' => $this->seats_total,
+    //         'sharing_mode' => $this->sharing_mode,
+    //         'renewal_of_id' => $this->renewal_of_id,
+    //         'owner_id' => $this->owner_id,
+    //         'secret_primary' => $this->secret_primary,
+    //         'secret_secondary' => $this->secret_secondary,
+    //         'username' => $this->username,
+    //         'extra_json' => $this->extra_json,
+    //         'secret_mask' => $this->secret_mask,
+    //     ];
+    // }
 }

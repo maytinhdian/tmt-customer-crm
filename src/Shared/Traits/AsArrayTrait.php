@@ -25,3 +25,8 @@ trait AsArrayTrait
         return $out;
     }
 }
+
+// Ví dụ:
+// $dto = new CustomerDTO(id: 10, fullName: 'Nguyễn A', email: 'a@example.com');
+// $payloadSnake = $dto->to_array();           // ['id'=>10,'full_name'=>'Nguyễn A','email'=>'a@example.com','phone'=>null]
+// $payloadCamel = $dto->to_array(false);      // ['id'=>10,'fullName'=>'Nguyễn A','email'=>'a@example.com','phone'=>null]

@@ -9,10 +9,9 @@ use TMT\CRM\Modules\License\Presentation\Admin\Menu\LicenseMenu;
 use TMT\CRM\Modules\License\Infrastructure\Providers\LicenseServiceProvider;
 use TMT\CRM\Modules\License\Infrastructure\Reminder\LicenseReminderScheduler;
 use TMT\CRM\Modules\License\Presentation\Admin\Notice\LicenseReminderAdminNotice;
-use TMT\CRM\Modules\License\Presentation\Admin\Screen\LicenseSettingsScreen;
 
 use TMT\CRM\Core\Settings\SettingsRegistry;
-use TMT\CRM\Modules\License\Presentation\Admin\Settings\LicenseSettingsSection;
+use TMT\CRM\Modules\License\Presentation\Admin\Settings\LicenseSettingsIntegration;
 
 /**
  * LicenseModule.php (file chính)
@@ -63,10 +62,10 @@ final class LicenseModule
         // LicenseAssets::register();
         // Settings API
         // LicenseSettingsScreen::register();
-
+        LicenseSettingsIntegration::register(); 
         // 1) Add section vào Registry
-        SettingsRegistry::add_section(new LicenseSettingsSection());
-        
+        SettingsRegistry::add_section(new LicenseSettingsIntegration());
+
         // Cron + Notices
         LicenseReminderScheduler::register();
         LicenseReminderAdminNotice::register();
