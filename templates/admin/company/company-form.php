@@ -15,6 +15,24 @@ $back_url  = add_query_arg(['page' => CompanyScreen::PAGE_SLUG], admin_url('admi
 $nonce_key = $is_edit ? ('tmt_crm_company_update_' . (int) $company->id) : 'tmt_crm_company_create';
 
 $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-crm');
+/** @var array $old */
+/** @var array $errors */
+/** @var \TMT\CRM\Modules\Company\Application\DTO\CompanyDTO|null $company */
+
+$val = function (string $field, $fallback = '') use ($old, $company) {
+    if (array_key_exists($field, $old)) return (string)$old[$field];
+    if ($company) {
+        // map field -> DTO property
+        return (string)($company->{$field} ?? $fallback);
+    }
+    return (string)$fallback;
+};
+
+$err = function (string $field) use ($errors) {
+    if (!empty($errors[$field])) {
+        printf('<p class="description tmt-field-error" style="color:#d63638;margin:4px 0 0;">%s</p>', esc_html($errors[$field]));
+    }
+};
 ?>
 <div class="wrap">
     <h1 class="wp-heading-inline"><?php echo esc_html($title); ?></h1>
@@ -35,7 +53,8 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                     <td>
                         <input name="name" type="text" id="tmt-company-name" class="regular-text" required
                             value="<?php echo isset($company->name) ? esc_attr($company->name) : ''; ?>">
-                        <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p>
+                        <?php $err('name'); ?>
+                        <!-- <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p> -->
                     </td>
                 </tr>
 
@@ -43,14 +62,16 @@ $title = $is_edit ? __('Sửa công ty', 'tmt-crm') : __('Thêm công ty', 'tmt-
                     <th scope="row"><label for="tmt-company-tax-code"><?php esc_html_e('Mã số thuế', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="tax_code" type="text" id="tmt-company-tax-code" class="regular-text"
-                            value="<?php echo isset($company->tax_code) ? esc_attr($company->tax_code) : ''; ?>">
-                        <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p>
+                            value="<?php echo isset($company->tax_code) ? esc_attr($company->tax_code) : esc_attr($val('tax_code')); ?>">
+
+                        <?php $err('tax_code'); ?>
+                        <!-- <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p> -->
                     </td>
 
                 </tr>
 
                 <tr>
-                    <th scope="row"><label for="tmt-company-email"><?php esc_html_e('Email', 'tmt-crm'); ?></label></th>
+                    <th scope="row"><label for="tmt-company-email"><?php esc_html_e('Email', 'tmt-crm'); ?><span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="email" type="email" id="tmt-company-email" class="regular-text"
                             value="<?php echo isset($company->email) ? esc_attr($company->email) : ''; ?>">

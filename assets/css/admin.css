@@ -48,3 +48,4 @@ tr.tmt-row-deleted td {
 .wp-list-table .tmt-soft-deleted .submitdelete {
   color: #b91c1c; /* đỏ đậm cho Delete permanently trong tab Deleted */
 }
+.nav-tab.nav-tab-disabled { pointer-events: none; opacity: .55; cursor: not-allowed; }

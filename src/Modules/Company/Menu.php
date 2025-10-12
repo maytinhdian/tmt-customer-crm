@@ -18,8 +18,6 @@ final class Menu
         // 1) Menu + Screen Options
         add_action('admin_menu', [self::class, 'register_admin_menu'], 20);
 
-        // 2) Controller: admin-post actions (đăng ký luôn tại đây)
-        CompanyController::register();
     }
 
     /** Tạo submenu & bàn giao hook_suffix cho Screen */

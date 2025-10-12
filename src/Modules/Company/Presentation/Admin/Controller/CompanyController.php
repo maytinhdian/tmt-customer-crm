@@ -8,6 +8,8 @@ use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Core\Capabilities\Domain\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen;
 use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
+use TMT\CRM\Shared\Presentation\Support\FormFlash;
+use TMT\CRM\Modules\Company\Application\Exceptions\ValidationException;
 
 final class CompanyController
 {
@@ -24,26 +26,27 @@ final class CompanyController
     /** Handler: Save (Create/Update) */
     public static function handle_save(): void
     {
+        // 1) Lấy ID
         $id = isset($_POST['id']) ? absint($_POST['id']) : 0;
 
-        // Phân quyền theo ngữ cảnh: tạo hay cập nhật
+        // 2) Phân quyền theo ngữ cảnh: tạo hay cập nhật
         if ($id > 0) {
             self::ensure_capability(Capability::COMPANY_UPDATE, __('Bạn không có quyền sửa công ty.', 'tmt-crm'));
         } else {
             self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
         }
 
-        // Kiểm nonce
+        // 3) Kiểm nonce
         $nonce_name = $id > 0 ? 'tmt_crm_company_update_' . $id : 'tmt_crm_company_create';
         if (!isset($_POST['_wpnonce']) || !wp_verify_nonce((string) $_POST['_wpnonce'], $nonce_name)) {
             wp_die(__('Nonce không hợp lệ.', 'tmt-crm'));
         }
 
-        // Sanitize input
+        // 4) Sanitize input
         $owner_id = isset($_POST['owner_id'])
             ? absint(wp_unslash($_POST['owner_id']))
             : 0;
-        $owner_id = $owner_id > 0 ? $owner_id : null;
+        $owner_id = $owner_id > 0 ? $owner_id : get_current_user_id();
 
         $representer = isset($_POST['representer'])
             ? sanitize_text_field(wp_unslash($_POST['representer']))
@@ -66,16 +69,46 @@ final class CompanyController
 
         try {
             if ($id > 0) {
+                // UPDATE
                 $svc->update($id, $data);
+                AdminNoticeService::success(__('Cập nhật công ty thành công.', 'tmt-crm'));
+                wp_safe_redirect(CompanyScreen::url([
+                    'tab' => 'overview',
+                ]));
+                exit;
             } else {
-                $svc->create($data);
+                $new_id = $svc->create($data); // <- cần lấy id trả về
+                AdminNoticeService::success(__('Tạo công ty thành công. ID:' . $new_id, 'tmt-crm'));
+                wp_safe_redirect(CompanyScreen::url([
+                    'action' => 'add',
+                ]));
+                exit;
             }
-            $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
-            wp_safe_redirect(CompanyScreen::url(['tab' => $tab]));
+        } catch (ValidationException  $e) {
+            // Lưu flash cho form
+            FormFlash::put(\TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen::screen_id(), [
+                'old'     => $data,
+                'errors'  => $e->fields(),
+                'message' => $e->getMessage(),
+            ]);
+
+            // Hiện 1 notice tổng quát (optional)
+            AdminNoticeService::error($e->getMessage());
+
+            // Redirect về đúng form
+            wp_safe_redirect(\TMT\CRM\Modules\Company\Presentation\Admin\Screen\CompanyScreen::url([
+                'action' => $id > 0 ? 'edit' : 'add',
+                'id'     => $id ?: null,
+            ]));
             exit;
         } catch (\Throwable $e) {
-
-            self::redirect(self::url(['error' => 1]));
+            // Lỗi khác
+            AdminNoticeService::error(__('Đã xảy ra lỗi khi lưu công ty.', 'tmt-crm'));
+            wp_safe_redirect(CompanyScreen::url([
+                'action' => $id > 0 ? 'edit' : 'add',
+                'id'     => $id ?: null,
+            ]));
+            exit;
         }
     }
 

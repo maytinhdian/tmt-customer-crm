@@ -12,6 +12,7 @@ use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
 use TMT\CRM\Core\Capabilities\Domain\Capability;
 use TMT\CRM\Modules\Company\Presentation\Admin\ListTable\CompanyListTable;
 
+
 defined('ABSPATH') || exit;
 
 final class CompanyScreen
@@ -22,23 +23,20 @@ final class CompanyScreen
     public const PAGE_SLUG = 'tmt-crm-companies';
 
     /** Tên action cho admin-post (giữ để form cũ không phải sửa) */
-    public const ACTION_SAVE        = 'tmt_crm_company_save';
+    public const ACTION_SAVE   = 'tmt_crm_company_save';
     public const ACTION_HARD_DELETE = 'tmt_crm_company_purge';
     public const ACTION_SOFT_DELETE = 'tmt_crm_company_soft_delete';
     public const ACTION_BULK_DELETE = 'tmt_crm_company_bulk_delete';
-    public const ACTION_RESTORE     = 'tmt_crm_company_restore';
+    public const ACTION_RESTORE = 'tmt_crm_company_restore';
 
-    /**
-     * Định nghĩa các tab + yêu cầu company_id hay không
-     * - title: nhãn hiển thị
-     * - requires_id: true nếu cần company_id > 0 mới truy cập
-     */
+
     private const TABS = [
-        'overview'    => ['title' => 'Danh sách công ty', 'requires_id' => false],
-        'contacts'    => ['title' => 'Liên hệ',           'requires_id' => true],
-        'notes-files' => ['title' => 'Ghi chú/Tài liệu',  'requires_id' => true],
+        'overview'    => 'Danh sách công ty',
+        'contacts'    => 'Liên hệ',
+        'notes-files' => 'Ghi chú/Tài liệu',
         // thêm các tab khác nếu cần...
     ];
+
 
     /** Tên option Screen Options: per-page */
     public const OPTION_PER_PAGE = 'tmt_crm_companies_per_page';
@@ -68,6 +66,8 @@ final class CompanyScreen
     {
         return self::$hook_suffix ?: ('crm_page_' . self::PAGE_SLUG);
     }
+
+
 
     /** Được gọi khi load trang Companies để in Screen Options (per-page) */
     public static function on_load_companies(): void
@@ -103,6 +103,7 @@ final class CompanyScreen
         }, 1);
     }
 
+
     public static function default_hidden_columns(array $hidden, \WP_Screen $screen): array
     {
         if ($screen->id === self::$hook_suffix) {
@@ -118,7 +119,7 @@ final class CompanyScreen
      * @param mixed  $value
      * @return mixed
      */
-    public static function save_screen_options($status, $option, $value)
+    public static function save_screen_option($status, $option, $value)
     {
         if ($option === self::OPTION_PER_PAGE) {
             $v = (int) $value;
@@ -142,11 +143,7 @@ final class CompanyScreen
         switch ($action) {
             case 'add':
                 self::ensure_capability(Capability::COMPANY_CREATE, __('Bạn không có quyền tạo công ty.', 'tmt-crm'));
-
-                // ✅ In thông báo (lỗi/ thành công) cho đúng screen
-                AdminNoticeService::print_for_screen(self::screen_id());
                 self::render_form();
-                echo '</div>';
                 break;
 
             case 'edit':
@@ -157,7 +154,7 @@ final class CompanyScreen
 
             case 'list':
             default:
-                // Điều hướng theo tab
+                // Kể từ đây chuyển qua render theo tab
                 $tab        = sanitize_key($_GET['tab'] ?? '');
                 $company_id = isset($_GET['company_id']) ? absint($_GET['company_id']) : 0;
 
@@ -167,23 +164,16 @@ final class CompanyScreen
                     exit;
                 }
 
-                // Guard: nếu tab yêu cầu ID mà thiếu -> báo & chuyển về overview
-                if (self::tab_requires_id($tab) && $company_id <= 0) {
-                    AdminNoticeService::warning(
-                        __('Bạn cần chọn / tạo một công ty trước khi truy cập tab này.', 'tmt-crm')
-                    );
-                    wp_safe_redirect(self::tab_url('overview'));
-                    exit;
-                }
-
                 echo '<div class="wrap">';
+                // echo '<h1 class="wp-heading-inline">' . esc_html__('Danh sách công ty', 'tmt-crm') . '</h1>';
+
                 self::render_tab_nav($company_id, $tab);
                 self::render_tab_content($company_id, $tab);
+
                 echo '</div>';
                 return;
         }
     }
-
     /** LIST VIEW: dùng CompanyListTable + bulk delete (giữ nguyên flow hiện tại) */
     public static function render_list(): void
     {
@@ -215,9 +205,6 @@ final class CompanyScreen
     /** FORM VIEW: Add/Edit */
     public static function render_form(int $id = 0): void
     {
-        // ✅ In dự phòng (nếu chưa in ở dispatch)
-        AdminNoticeService::print_for_screen(self::screen_id());
-
         $svc     = Container::get('company-service');
         $company = null;
 
@@ -229,61 +216,27 @@ final class CompanyScreen
                 return;
             }
         }
-        // Lấy flash old/errors
-        $flash = \TMT\CRM\Shared\Presentation\Support\FormFlash::pull(self::screen_id());
+
         View::render_admin_module('company', 'company-form', [
             'company'    => $company,
             'nonce_name' => $id > 0 ? ('tmt_crm_company_update_' . $id) : 'tmt_crm_company_create',
-            'old'        => $flash['old'],
-            'errors'     => $flash['errors'],
         ]);
     }
 
     /* ===================== Helpers ===================== */
 
-    /** Lấy nhãn tab */
-    private static function tab_title(string $slug): string
-    {
-        return isset(self::TABS[$slug]['title']) ? (string) self::TABS[$slug]['title'] : $slug;
-    }
-
-    /** Tab có yêu cầu company_id? */
-    private static function tab_requires_id(string $slug): bool
-    {
-        return !empty(self::TABS[$slug]['requires_id']);
-    }
-
-    /** Có thể truy cập tab với company_id hiện tại? */
-    private static function can_visit(string $slug, int $company_id): bool
-    {
-        return self::tab_requires_id($slug) ? $company_id > 0 : true;
-    }
-
-    /** Render thanh tab (tab cần ID sẽ bị disable nếu thiếu company_id) */
     private static function render_tab_nav(int $company_id, string $active_tab): void
     {
         echo '<h2 class="nav-tab-wrapper" style="margin-top:12px">';
-        foreach (self::TABS as $slug => $conf) {
-            $title   = self::tab_title($slug);
-            $enabled = self::can_visit($slug, $company_id);
-            $active  = ($slug === $active_tab) ? ' nav-tab-active' : '';
-            if ($enabled) {
-                $url = self::tab_url($slug, ['company_id' => $company_id]);
-                printf(
-                    '<a href="%s" class="%s">%s</a>',
-                    esc_url($url),
-                    esc_attr('nav-tab' . $active),
-                    esc_html($title)
-                );
-            } else {
-                // Tab bị disable: dùng <span> + aria-disabled để không click
-                printf(
-                    '<span class="%s" aria-disabled="true" title="%s">%s</span>',
-                    esc_attr('nav-tab nav-tab-disabled' . $active),
-                    esc_attr(__('Cần chọn công ty trước', 'tmt-crm')),
-                    esc_html($title)
-                );
-            }
+        foreach (self::TABS as $slug => $label) {
+            $class = ($slug === $active_tab) ? 'nav-tab nav-tab-active' : 'nav-tab';
+            $url   = self::tab_url($slug, ['company_id' => $company_id]);
+            printf(
+                '<a href="%s" class="%s">%s</a>',
+                esc_url($url),
+                esc_attr($class),
+                esc_html($label)
+            );
         }
         echo '</h2>';
     }
@@ -307,7 +260,6 @@ final class CompanyScreen
                 break;
         }
     }
-
     /** Chỉ in phần nội dung list (không bọc <div class="wrap">) */
     private static function render_list_inner(): void
     {
@@ -337,7 +289,6 @@ final class CompanyScreen
         </form>
 <?php
     }
-
     /** Lấy state hiện tại để giữ phân trang, sort, filter khi điều hướng */
     public static function current_state(): array
     {

@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\Company\Application\Services;
 
 use TMT\CRM\Modules\Company\Application\DTO\CompanyDTO;
+use TMT\CRM\Modules\Company\Application\Validation\CompanyValidator;
+use TMT\CRM\Modules\Company\Application\Exceptions\ValidationException;
 
 use TMT\CRM\Modules\Company\Domain\Repositories\CompanyRepositoryInterface;
 use TMT\CRM\Modules\Contact\Domain\Repositories\CompanyContactRepositoryInterface;
 use TMT\CRM\Domain\Repositories\UserRepositoryInterface;
 
-use TMT\CRM\Core\Events\Domain\Contracts\EventInterface;
 use TMT\CRM\Core\Events\Domain\Events\DefaultEvent;
 use TMT\CRM\Core\Events\Domain\ValueObjects\EventMetadata;
 use TMT\CRM\Core\Events\Domain\Contracts\EventBusInterface;
@@ -26,6 +27,7 @@ final class CompanyService
     public function __construct(
         private CompanyRepositoryInterface $company_repo,
         private CompanyContactRepositoryInterface $contact_repo,
+        private CompanyValidator $validator,
         private UserRepositoryInterface $user_repo
     ) {}
 
@@ -33,9 +35,13 @@ final class CompanyService
     /** Tạo mới công ty (validate + chống trùng MST) */
     public function create(array $data): int
     {
-        $dto = $this->build_dto_from_array($data);
-        $this->validate_required($dto);
-        $this->ensure_unique_tax_code($dto->tax_code, null);
+        $errors = $this->validator->validateForCreate($data);
+        if ($errors) {
+            throw new ValidationException($errors, __('Vui lòng kiểm tra lại thông tin công ty.', 'tmt-crm'));
+        }
+
+        $dto = CompanyDTO::from_array($data);
+
         $company_id = $this->company_repo->insert($dto);
 
         // (2) Tạo Default event 
@@ -62,9 +68,11 @@ final class CompanyService
     /** Cập nhật công ty */
     public function update(int $id, array $data): bool
     {
-        $dto = $this->build_dto_from_array($data, $id);
-        $this->validate_required($dto);
-        $this->ensure_unique_tax_code($dto->tax_code, $id);
+        $errors = $this->validator->validateForUpdate($id, $data);
+        if ($errors) {
+            throw new ValidationException($errors, __('Vui lòng kiểm tra lại thông tin công ty.', 'tmt-crm'));
+        }
+        $dto = CompanyDTO::from_array($data);
         return $this->company_repo->update($dto);
     }
 
@@ -162,56 +170,5 @@ final class CompanyService
     private function build_dto_from_array(array $data, ?int $id = null): CompanyDTO
     {
         return CompanyDTO::from_array($data);
-    }
-
-    private function validate_required(CompanyDTO $dto): void
-    {
-        $errors = [];
-        if ($dto->name === '')     $errors[] = 'Tên công ty là bắt buộc.';
-        if ($dto->tax_code === '') $errors[] = 'Mã số thuế là bắt buộc.';
-        if ($dto->address === '')  $errors[] = 'Địa chỉ là bắt buộc.';
-
-
-        // ✅ Kiểm tra MST Việt Nam
-        if ($dto->tax_code !== '' && !$this->is_valid_vn_tax_code($dto->tax_code)) {
-            $errors[] = 'Mã số thuế không hợp lệ (định dạng đúng: 10 số hoặc 10 số + "-XXX").';
-        }
-
-        if ($errors) {
-            throw new \InvalidArgumentException(implode(' ', $errors));
-        }
-    }
-
-    /**
-     * Kiểm tra MST Việt Nam:
-     * - 10 chữ số (tổ chức), hoặc
-     * - 10 chữ số + "-" + 3 chữ số (đơn vị phụ thuộc), hoặc (tuỳ chọn)
-     * - 13 chữ số liền (nếu muốn hỗ trợ nhập không có "-")
-     */
-    private function is_valid_vn_tax_code(string $tax_code): bool
-    {
-        $tax_code = trim($tax_code);
-
-        // Nếu muốn CHỈ chấp nhận dạng có gạch: dùng pattern 1
-        // $pattern = '/^\d{10}(-\d{3})?$/';
-
-        // Nếu muốn cho phép cả 13 số liền: dùng pattern 2
-        $pattern = '/^(?:\d{10}(?:-\d{3})?|\d{13})$/';
-
-        return (bool) preg_match($pattern, $tax_code);
-    }
-
-    private function ensure_unique_tax_code(string $tax_code, ?int $exclude_id): void
-    {
-        $exists = $this->company_repo->find_by_tax_code($tax_code, $exclude_id);
-        if ($exists) {
-            throw new \RuntimeException('Mã số thuế đã tồn tại cho công ty khác.');
-        }
-    }
-
-    private function nn(?string $v): ?string
-    {
-        $t = trim((string)$v);
-        return $t !== '' ? $t : null;
     }
 }
