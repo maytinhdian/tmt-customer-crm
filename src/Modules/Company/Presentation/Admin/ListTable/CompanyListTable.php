@@ -239,8 +239,8 @@ final class CompanyListTable extends \WP_List_Table
 
             $manage_url = add_query_arg([
                 'page' => CompanyScreen::PAGE_SLUG,
-                'view' => 'overview',
-                'id'   => $id,
+                'tab' => 'overview',
+                'company_id'   => $id,
             ], admin_url('admin.php'));
 
             $actions['edit'] = sprintf('<a href="%s">Sửa</a>', esc_url($edit_url));

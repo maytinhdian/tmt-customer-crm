@@ -2,7 +2,7 @@
 
 ## Cấu trúc thư mục
 
-```
+```Folder
 src/
     Shared/
         Logging/

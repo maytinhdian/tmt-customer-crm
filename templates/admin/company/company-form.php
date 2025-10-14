@@ -52,7 +52,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-name"><?php esc_html_e('Tên công ty', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="name" type="text" id="tmt-company-name" class="regular-text" required
-                            value="<?php echo isset($company->name) ? esc_attr($company->name) : ''; ?>">
+                            value="<?php echo esc_attr($val('name')); ?>">
                         <?php $err('name'); ?>
                         <!-- <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p> -->
                     </td>
@@ -62,8 +62,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-tax-code"><?php esc_html_e('Mã số thuế', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="tax_code" type="text" id="tmt-company-tax-code" class="regular-text"
-                            value="<?php echo isset($company->tax_code) ? esc_attr($company->tax_code) : esc_attr($val('tax_code')); ?>">
-
+                            value="<?php echo esc_attr($val('tax_code')); ?>">
                         <?php $err('tax_code'); ?>
                         <!-- <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p> -->
                     </td>
@@ -74,7 +73,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-email"><?php esc_html_e('Email', 'tmt-crm'); ?><span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="email" type="email" id="tmt-company-email" class="regular-text"
-                            value="<?php echo isset($company->email) ? esc_attr($company->email) : ''; ?>">
+                            value="<?php echo esc_attr($val('email')); ?>">
                     </td>
                 </tr>
 
@@ -82,7 +81,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-phone"><?php esc_html_e('Điện thoại', 'tmt-crm'); ?></label></th>
                     <td>
                         <input name="phone" type="text" id="tmt-company-phone" class="regular-text"
-                            value="<?php echo isset($company->phone) ? esc_attr($company->phone) : ''; ?>">
+                            value="<?php echo esc_attr($val('phone')); ?>">
                     </td>
                 </tr>
 
@@ -90,8 +89,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-address"><?php esc_html_e('Địa chỉ', 'tmt-crm'); ?> <span class="description" style="color: red;">*</span></label></th>
                     <td>
                         <input name="address" type="text" id="tmt-company-address" class="regular-text"
-                            value="<?php echo isset($company->address) ? esc_attr($company->address) : ''; ?>">
-                        <p class="description"><?php esc_html_e('Bắt buộc.', 'tmt-crm'); ?></p>
+                            value="<?php echo esc_attr($val('address')); ?>">
                     </td>
                 </tr>
 
@@ -99,7 +97,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-representer"><?php esc_html_e('Người đại diện', 'tmt-crm'); ?></label></th>
                     <td>
                         <input name="representer" type="text" id="tmt-company-representer" class="regular-text"
-                            value="<?php echo isset($company->representer) ? esc_attr($company->representer) : ''; ?>">
+                            value="<?php echo esc_attr($val('representer')); ?>">
                     </td>
                 </tr>
 
@@ -107,7 +105,7 @@ $err = function (string $field) use ($errors) {
                     <th scope="row"><label for="tmt-company-website"><?php esc_html_e('Website', 'tmt-crm'); ?></label></th>
                     <td>
                         <input name="website" type="url" id="tmt-company-website" class="regular-text"
-                            value="<?php echo isset($company->website) ? esc_attr($company->website) : ''; ?>">
+                            value="<?php echo esc_attr($val('website')); ?>">
                     </td>
                 </tr>
 
@@ -116,7 +114,7 @@ $err = function (string $field) use ($errors) {
                     <td>
                         <textarea name="note" id="tmt-company-note" class="large-text code" rows="4">
                             <?php
-                            echo isset($company->note) ? esc_textarea($company->note) : '';
+                            echo esc_textarea($val('note'));
                             ?>
                         </textarea>
                     </td>
@@ -124,7 +122,7 @@ $err = function (string $field) use ($errors) {
                 <?php
                 $owner_id_selected = isset($owner_id_selected)
                     ? (int)$owner_id_selected
-                    : (isset($customer) ? (int)($customer->owner_id ?? 0) : 0);
+                    : (isset($company) ? (int)($company->owner_id ?? 0) : 0);
                 ?>
                 <tr>
                     <th scope="row"><label for="owner_id"><?php _e('Người phụ trách', 'tmt-crm'); ?></label></th>

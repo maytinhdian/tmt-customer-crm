@@ -64,7 +64,7 @@ final class CompanyScreen
      */
     public static function screen_id(): string
     {
-        return self::$hook_suffix ?: ('crm_page_' . self::PAGE_SLUG);
+        return self::$hook_suffix ?: ('tmt_crm_page_' . self::PAGE_SLUG);
     }
 
 

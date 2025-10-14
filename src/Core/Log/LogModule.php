@@ -6,6 +6,7 @@
  * - Gắn hooks admin/menu nếu có
  * - Đăng ký Settings Section (nếu cần)
  */
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Core\Log;
@@ -50,9 +51,7 @@ final class LogModule
             // 1. Bind repository DB cho log
             Container::set(
                 LogRepositoryInterface::class,
-                static function () use ($wpdb) {
-                    return new WpdbLogRepository($wpdb);
-                }
+                fn() => new WpdbLogRepository($GLOBALS['wpdb'])
             );
 
             // 2. Bind Logger mặc định + multi-channel
