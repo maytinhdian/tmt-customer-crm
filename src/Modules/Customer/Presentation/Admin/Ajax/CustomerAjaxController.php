@@ -84,7 +84,7 @@ final class CustomerAjaxController
 
         /** @var CustomerRepositoryInterface $repo */
         $repo  = Container::get('customer-repo');
-        $label = $repo->get_label($id);
+        $label = $repo->find_name_by_id($id);
 
         wp_send_json_success([
             'id'   => $id,

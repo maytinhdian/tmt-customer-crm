@@ -23,6 +23,29 @@ final class FileService
     ) {}
 
     /**
+     * Chuẩn bị tải xuống: policy + mở stream + trả kèm metadata.
+     * @return array{stream:mixed,dto:FileDto}|\WP_Error
+     */
+    public function prepareDownload(int $fileId, int $currentUserId)
+    {
+        $file = $this->repo->findById($fileId);
+        if (!$file) {
+            return new \WP_Error('not_found', 'File not found', ['status' => 404]);
+        }
+        if (!PolicyService::canRead($currentUserId, $file)) {
+            $this->logger->warning('files.download_denied', ['file_id' => $fileId, 'user_id' => $currentUserId]);
+            return new \WP_Error('forbidden', 'Not allowed', ['status' => 403]);
+        }
+
+        $stream = $this->storage->read($file->path);
+        if (is_wp_error($stream)) {
+            return $stream;
+        }
+
+        return ['stream' => $stream, 'dto' => $file];
+    }
+
+    /**
      * @param array{tmp_name:string,name:string,type:string,size:int} $upload
      */
     public function storeFromUpload(array $upload, string $entityType, int $entityId, int $currentUserId, array $meta = []): FileDto
@@ -80,19 +103,24 @@ final class FileService
     }
 
     /** Returns stream or WP_Error; controller will handle headers/echo */
+    // public function download(int $fileId, int $currentUserId)
+    // {
+    //     $file = $this->repo->findById($fileId);
+    //     if (!$file) {
+    //         return new \WP_Error('not_found', 'File not found', ['status' => 404]);
+    //     }
+    //     if (!PolicyService::canRead($currentUserId, $file)) {
+    //         $this->logger->warning('files.download_denied', ['file_id' => $fileId, 'user_id' => $currentUserId]);
+    //         return new \WP_Error('forbidden', 'Not allowed', ['status' => 403]);
+    //     }
+    //     return $this->storage->read($file->path);
+    // }
+    /** Tiện ích nếu bạn vẫn muốn gọi trực tiếp stream (giữ tương thích) */
     public function download(int $fileId, int $currentUserId)
     {
-        $file = $this->repo->findById($fileId);
-        if (!$file) {
-            return new \WP_Error('not_found', 'File not found', ['status' => 404]);
-        }
-        if (!PolicyService::canRead($currentUserId, $file)) {
-            $this->logger->warning('files.download_denied', ['file_id' => $fileId, 'user_id' => $currentUserId]);
-            return new \WP_Error('forbidden', 'Not allowed', ['status' => 403]);
-        }
-        return $this->storage->read($file->path);
+        $res = $this->prepareDownload($fileId, $currentUserId);
+        return is_wp_error($res) ? $res : $res['stream'];
     }
-
     public function softDelete(int $fileId, int $currentUserId): bool
     {
         $file = $this->repo->findById($fileId);

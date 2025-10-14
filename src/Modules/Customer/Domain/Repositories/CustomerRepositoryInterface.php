@@ -33,6 +33,12 @@ interface CustomerRepositoryInterface
      * @return array<int, CustomerDTO>
      */
     public function find_by_ids(array $ids): array;
+    /**
+     * Trả về map [id => CustomerDTO]
+     * @param int[] $ids
+     * @return array<int, CustomerDTO>
+     */
+    public function find_name_by_id(int $id): ?string;
 
     /***Soft delete handle */
     public function soft_delete(int $id, int $actor_id, string $reason = ''): bool;

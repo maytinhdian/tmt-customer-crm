@@ -50,30 +50,79 @@ final class WpUploadsStorage implements StorageInterface
         );
     }
     /** @return resource|\WP_Error */
+    // public function read(string $path)
+    // {
+    //     $uploads  = wp_get_upload_dir();
+    //     $fullPath = $uploads['basedir'] . $path;
+
+    //     if (!is_readable($fullPath)) {
+    //         return new \WP_Error('not_found', 'File not found', ['status' => 404]);
+    //     }
+
+    //     $fh = @fopen($fullPath, 'rb');
+    //     if ($fh === false) {
+    //         return new \WP_Error('open_failed', 'Cannot open file', ['status' => 500]);
+    //     }
+    //     return $fh;
+    // }
+
+    // public function delete(string $path): bool
+    // {
+    //     $uploads = wp_get_upload_dir();
+    //     $basedir = rtrim($uploads['basedir'], '/');
+    //     $file = $basedir . '/' . ltrim($path, '/');
+    //     if (file_exists($file)) {
+    //         return @unlink($file);
+    //     }
+    //     return true;
+    // }
     public function read(string $path)
     {
-        $uploads  = wp_get_upload_dir();
-        $fullPath = $uploads['basedir'] . $path;
+        // 1) Chuẩn hoá base và relative (Windows/Linux)
+        $uploads = wp_get_upload_dir();
+        $basedir = rtrim(str_replace('\\', '/', (string)$uploads['basedir']), '/');
+        $rel     = ltrim(str_replace('\\', '/', (string)$path), '/');
 
-        if (!is_readable($fullPath)) {
-            return new \WP_Error('not_found', 'File not found', ['status' => 404]);
+        // 2) Join an toàn
+        $full = $basedir . '/' . $rel;
+
+        // 3) Fallback nếu $rel vô tình đã chứa 'wp-content/uploads'
+        if (str_contains($rel, 'wp-content/uploads/')) {
+            $full = ABSPATH . ltrim($rel, '/');
         }
 
-        $fh = @fopen($fullPath, 'rb');
-        if ($fh === false) {
-            return new \WP_Error('open_failed', 'Cannot open file', ['status' => 500]);
+        // 4) Nếu chưa tồn tại, thử lại với biến thể có/không dấu '/' đầu
+        if (!file_exists($full)) {
+            $alt = $basedir . '/' . ltrim($rel, '/');
+            if (file_exists($alt)) {
+                $full = $alt;
+            }
         }
+
+        // 5) Windows fallback cho tên Unicode/đường dẫn dài
+        $fh = null;
+        if (file_exists($full) && is_readable($full)) {
+            $fh = @fopen($full, 'rb');
+        } elseif (PHP_OS_FAMILY === 'Windows') {
+            $winFull = '\\\\?\\' . str_replace('/', '\\', $full);
+            if (file_exists($winFull) && is_readable($winFull)) {
+                $fh = @fopen($winFull, 'rb');
+                if ($fh === false) {
+                    // thử lần nữa nếu stream fail dù exists
+                    $fh = @fopen($full, 'rb');
+                }
+            }
+        }
+
+        if (!is_resource($fh)) {
+            error_log('[TMT Files] read(): blob_missing full=' . $full . ' rel=' . $rel);
+            return new \WP_Error('blob_missing', 'File blob not found on disk', ['status' => 404, 'path' => $rel, 'full' => $full]);
+        }
+
         return $fh;
     }
-    
     public function delete(string $path): bool
     {
-        $uploads = wp_get_upload_dir();
-        $basedir = rtrim($uploads['basedir'], '/');
-        $file = $basedir . '/' . ltrim($path, '/');
-        if (file_exists($file)) {
-            return @unlink($file);
-        }
         return true;
     }
 }
