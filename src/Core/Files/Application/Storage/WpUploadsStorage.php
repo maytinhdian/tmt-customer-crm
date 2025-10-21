@@ -50,32 +50,6 @@ final class WpUploadsStorage implements StorageInterface
         );
     }
     /** @return resource|\WP_Error */
-    // public function read(string $path)
-    // {
-    //     $uploads  = wp_get_upload_dir();
-    //     $fullPath = $uploads['basedir'] . $path;
-
-    //     if (!is_readable($fullPath)) {
-    //         return new \WP_Error('not_found', 'File not found', ['status' => 404]);
-    //     }
-
-    //     $fh = @fopen($fullPath, 'rb');
-    //     if ($fh === false) {
-    //         return new \WP_Error('open_failed', 'Cannot open file', ['status' => 500]);
-    //     }
-    //     return $fh;
-    // }
-
-    // public function delete(string $path): bool
-    // {
-    //     $uploads = wp_get_upload_dir();
-    //     $basedir = rtrim($uploads['basedir'], '/');
-    //     $file = $basedir . '/' . ltrim($path, '/');
-    //     if (file_exists($file)) {
-    //         return @unlink($file);
-    //     }
-    //     return true;
-    // }
     public function read(string $path)
     {
         // 1) Chuẩn hoá base và relative (Windows/Linux)
