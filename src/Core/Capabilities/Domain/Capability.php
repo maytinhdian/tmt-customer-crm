@@ -56,6 +56,7 @@ final class Capability
     public const FILE_READ   = 'tmt_crm_file_read';
     public const FILE_ATTACH = 'tmt_crm_file_attach';
     public const FILE_DELETE = 'tmt_crm_file_delete';
+    public const FILE_CREATE = 'tmt_crm_file_create';
 
     // Quotes / Orders / Invoices / Payments
     public const QUOTE_READ   = 'tmt_crm_quote_read';
@@ -83,7 +84,7 @@ final class Capability
     public const SETTINGS_MANAGE      = 'tmt_crm_settings_manage';     // vào trang cài đặt CRM
     public const CAPABILITIES_MANAGE  = 'tmt_crm_capabilities_manage'; // quản trị ma trận quyền
 
-   
+
 
     /** Trả về tất cả capabilities (mảng phẳng). */
     public static function all(): array
@@ -110,6 +111,7 @@ final class Capability
             self::NOTE_UPDATE,
             self::NOTE_DELETE,
             // Files
+            self::FILE_CREATE,
             self::FILE_READ,
             self::FILE_ATTACH,
             self::FILE_DELETE,
@@ -159,7 +161,7 @@ final class Capability
             'Customer' => [self::CUSTOMER_READ, self::CUSTOMER_CREATE, self::CUSTOMER_UPDATE, self::CUSTOMER_DELETE],
             'Company Contact' => [self::COMPANY_CONTACT_READ, self::COMPANY_CONTACT_CREATE, self::COMPANY_CONTACT_UPDATE, self::COMPANY_CONTACT_DELETE],
             'Notes' => [self::NOTE_READ, self::NOTE_CREATE, self::NOTE_UPDATE, self::NOTE_DELETE],
-            'Files' => [self::FILE_READ, self::FILE_ATTACH, self::FILE_DELETE],
+            'Files' => [self::FILE_CREATE, self::FILE_READ, self::FILE_ATTACH, self::FILE_DELETE],
             'Quote' => [self::QUOTE_READ, self::QUOTE_CREATE, self::QUOTE_UPDATE, self::QUOTE_DELETE],
             'Order' => [self::ORDER_READ, self::ORDER_CREATE, self::ORDER_UPDATE, self::ORDER_DELETE],
             'Invoice' => [self::INVOICE_READ, self::INVOICE_CREATE, self::INVOICE_UPDATE, self::INVOICE_DELETE],
@@ -169,5 +171,4 @@ final class Capability
             'License' => [self::LICENSE_READ, self::LICENSE_CREATE, self::LICENSE_UPDATE, self::LICENSE_DELETE, self::LICENSE_PURGE, self::LICENSE_RESTORE, self::LICENSE_REVEAL,]
         ];
     }
-    
 }

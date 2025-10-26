@@ -141,5 +141,17 @@ final class LicenseScreen
             'list_url'  => $list_url,
             'general'   => $data_general,
         ]);
+
+        if ($id <= 0) {
+            echo '<p class="notice notice-warning"><em>Lưu license trước khi tải tệp.</em></p>';
+            return;
+        }
+        View::render_admin_partial('core/files', 'attachments-panel', [
+            'entity_type'  => 'license',
+            'entity_id'    => (int)$id,
+            'meta'         => ['tag' => 'license-card', 'license_code' => $dto->label ?? ''],
+            'allow_delete' => true, // nếu muốn hiện nút Xoá
+            // 'files'      => $files, // optional: bạn có thể truyền sẵn để khỏi query lại
+        ]);
     }
 }

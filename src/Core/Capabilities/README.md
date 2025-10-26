@@ -6,11 +6,13 @@
 - Khi lưu ma trận, hệ thống sẽ **đồng bộ** capability vào các WP roles.
 
 ## Container keys
+
 - `core.capabilities.repo` → WpOptionsCapabilitiesRepository
 - `core.capabilities.policy_service` → PolicyService
 - `core.capabilities.role_sync` → RoleSynchronizer
 
 ## Sử dụng nhanh
+
 ```php
 use TMT\CRM\Modules\Core\Capabilities\CoreCapabilitiesModule;
 add_action('plugins_loaded', fn() => CoreCapabilitiesModule::register(), 1);
