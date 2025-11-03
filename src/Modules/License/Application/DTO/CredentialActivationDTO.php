@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\DTO;
 
+use TMT\CRM\Shared\Traits\AsArrayTrait;
+
 final class CredentialActivationDTO
 {
+    use AsArrayTrait;
+
     public ?int $id = null;
     public int $credential_id = 0;
     public ?int $allocation_id = null;
@@ -58,26 +62,11 @@ final class CredentialActivationDTO
         return $d;
     }
 
-    public function to_array(): array
+    /**
+     * Hỗ trợ json_encode($dto)
+     */
+    public function jsonSerialize(): array
     {
-        return [
-            'id' => $this->id,
-            'credential_id' => $this->credential_id,
-            'allocation_id' => $this->allocation_id,
-            'device_fingerprint_hash' => $this->device_fingerprint_hash,
-            'hostname' => $this->hostname,
-            'os_info_json' => $this->os_info_json,
-            'location_hint' => $this->location_hint,
-            'user_display' => $this->user_display,
-            'user_email' => $this->user_email,
-            'status' => $this->status,
-            'activated_at' => $this->activated_at,
-            'deactivated_at' => $this->deactivated_at,
-            'last_seen_at' => $this->last_seen_at,
-            'source' => $this->source,
-            'note' => $this->note,
-            'created_by' => $this->created_by,
-            'updated_by' => $this->updated_by,
-        ];
+        return $this->to_array();
     }
 }

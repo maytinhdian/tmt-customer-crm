@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Infrastructure\Persistence;
@@ -40,7 +41,8 @@ final class WpdbCredentialRepository implements CredentialRepositoryInterface
         if (!empty($filter['q'])) {
             $where[] = "(label LIKE %s OR number LIKE %s)";
             $like = '%' . $this->db->esc_like((string)$filter['q']) . '%';
-            $args[] = $like; $args[] = $like;
+            $args[] = $like;
+            $args[] = $like;
         }
         if (!empty($filter['type'])) {
             $where[] = "type = %s";
@@ -89,7 +91,7 @@ final class WpdbCredentialRepository implements CredentialRepositoryInterface
         $ok = $this->db->update($this->table, [
             'deleted_at'   => current_time('mysql'),
             'deleted_by'   => $deleted_by,
-            'delete_reason'=> $reason,
+            'delete_reason' => $reason,
         ], ['id' => $id]);
         return $ok !== false;
     }
@@ -116,6 +118,24 @@ final class WpdbCredentialRepository implements CredentialRepositoryInterface
             'expires_at' => $expires_at ? $this->to_mysql_datetime($expires_at) : null
         ], ['id' => $id]);
         return $ok !== false;
+    }
+
+    /**Kiểm tra xem có trùng license number */
+    public function existsNumber(string $number, ?int $excludeId = null): bool
+    {
+        $sql = $excludeId
+            ? $this->db->prepare("SELECT 1 FROM {$this->table} WHERE number = %s AND id <> %d LIMIT 1", $number, $excludeId)
+            : $this->db->prepare("SELECT 1 FROM {$this->table} WHERE number = %s LIMIT 1", $number);
+        return (bool) $this->db->get_var($sql);
+    }
+    /**Kiểm tra trùng license key  */
+    public function existsSecretHmac(string $hmac, ?int $excludeId = null, string $which = 'primary'): bool
+    {
+        $col = ($which === 'secondary') ? 'secret_secondary_hmac' : 'secret_primary_hmac';
+        $sql = $excludeId
+            ? $this->db->prepare("SELECT 1 FROM {$this->table} WHERE {$col} = %s AND id <> %d LIMIT 1", $hmac, $excludeId)
+            : $this->db->prepare("SELECT 1 FROM {$this->table} WHERE {$col} = %s LIMIT 1", $hmac);
+        return (bool) $this->db->get_var($sql);
     }
 
     /** ---------- Inline mapping helpers ---------- */
@@ -159,7 +179,7 @@ final class WpdbCredentialRepository implements CredentialRepositoryInterface
             'renewal_of_id'             => $dto->renewal_of_id,
             'owner_id'                  => $dto->owner_id,
             'secret_primary_encrypted'  => $dto->secret_primary,
-            'secret_secondary_encrypted'=> $dto->secret_secondary,
+            'secret_secondary_encrypted' => $dto->secret_secondary,
             'username'                  => $dto->username,
             'extra_json_encrypted'      => $dto->extra_json,
             'secret_mask'               => $dto->secret_mask,

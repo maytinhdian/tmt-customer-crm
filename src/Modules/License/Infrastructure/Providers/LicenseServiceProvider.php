@@ -24,6 +24,9 @@ use TMT\CRM\Modules\License\Application\Services\ActivationService;
 use TMT\CRM\Modules\License\Application\Services\DeliveryService;
 use TMT\CRM\Modules\License\Application\Services\ReminderService;
 
+// Validator
+use TMT\CRM\Modules\License\Application\Validation\LicenseValidator;
+
 /**
  * LicenseServiceProvider
  * - Cố gắng set vào nhiều kiểu Container thường gặp trong dự án WP/CRM.
@@ -66,5 +69,13 @@ final class LicenseServiceProvider
         Container::set(ReminderService::class, fn() => new ReminderService(
             Container::get(CredentialRepositoryInterface::class),
         ));
+
+        // 3) Validator
+        Container::set(LicenseValidator::class, function () {
+            return new LicenseValidator(
+                Container::get(CredentialRepositoryInterface::class),
+                Container::get(CryptoService::class)
+            );
+        });
     }
 }

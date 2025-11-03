@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TMT\CRM\Modules\License\Presentation\Admin\Controller;
 
 use TMT\CRM\Shared\Container\Container;
+use TMT\CRM\Modules\License\Application\Validation\LicenseValidator;
+
 use TMT\CRM\Modules\License\Application\Services\CryptoService;
 use TMT\CRM\Modules\License\Application\Services\PolicyService;
 use TMT\CRM\Modules\License\Application\Services\CredentialService;
@@ -29,6 +31,7 @@ final class LicenseController
     private const NONCE_SAVE        = 'tmt_crm_license_save_';
     private const NONCE_SOFT_DELETE = 'tmt_crm_license_soft_delete_';
     private const NONCE_RESTORE     = 'tmt_crm_license_restore_';
+
 
     public static function register(): void
     {
@@ -86,6 +89,18 @@ final class LicenseController
             wp_die(__('Not allowed', 'tmt-crm'));
         }
         check_admin_referer(self::NONCE_SAVE, '_wpnonce');
+
+        $validator = Container::get(LicenseValidator::class);
+        $result    = $validator->validate($_POST);
+
+        if ($result->failed()) {
+            foreach ($result->errors() as $field => $messages) {
+                foreach ($messages as $msg) {
+                    add_settings_error('tmt_crm_license', $field, $msg, 'error');
+                }
+            }
+            return; // render lại form hoặc redirect back
+        }
 
         $number = isset($_POST['number']) ? trim((string) $_POST['number']) : '';
         if ($number === '') {

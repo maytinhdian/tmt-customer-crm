@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\DTO;
 
-final class CredentialDeliveryDTO
+use TMT\CRM\Shared\Traits\AsArrayTrait;
+
+final class CredentialDeliveryDTO implements \JsonSerializable
 {
+    use AsArrayTrait;
+
     public ?int $id = null;
     public int $credential_id = 0;
 
@@ -36,18 +40,11 @@ final class CredentialDeliveryDTO
         return $d;
     }
 
-    public function to_array(): array
+    /**
+     * Hỗ trợ json_encode($dto)
+     */
+    public function jsonSerialize(): array
     {
-        return [
-            'id' => $this->id,
-            'credential_id' => $this->credential_id,
-            'delivered_to_customer_id' => $this->delivered_to_customer_id,
-            'delivered_to_company_id' => $this->delivered_to_company_id,
-            'delivered_to_contact_id' => $this->delivered_to_contact_id,
-            'delivered_to_email' => $this->delivered_to_email,
-            'delivered_at' => $this->delivered_at,
-            'channel' => $this->channel,
-            'delivery_note' => $this->delivery_note,
-        ];
+        return $this->to_array();
     }
 }

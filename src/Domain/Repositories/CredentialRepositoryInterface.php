@@ -37,4 +37,10 @@ interface CredentialRepositoryInterface
 
     /** Cập nhật ngày hết hạn */
     public function update_expires_at(int $id, ?string $expires_at): bool;
+
+    /** Xác nhận License Number có tồn tại hay chưa  */
+    public function existsNumber(string $number, ?int $excludeId = null): bool;
+
+    /** Xác nhận License Key có nhập trùng không */
+    public function existsSecretHmac(string $hmac, ?int $excludeId = null, string $which = 'primary'): bool;
 }

@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Application\DTO;
+use TMT\CRM\Shared\Traits\AsArrayTrait;
 
-final class CredentialSeatAllocationDTO
+final class CredentialSeatAllocationDTO implements \JsonSerializable
 {
+    use AsArrayTrait;
+
     public ?int $id = null;
     public int $credential_id = 0;
 
@@ -42,21 +45,11 @@ final class CredentialSeatAllocationDTO
         return $d;
     }
 
-    public function to_array(): array
+     /**
+     * Hỗ trợ json_encode($dto)
+     */
+    public function jsonSerialize(): array
     {
-        return [
-            'id' => $this->id,
-            'credential_id' => $this->credential_id,
-            'beneficiary_type' => $this->beneficiary_type,
-            'beneficiary_id' => $this->beneficiary_id,
-            'beneficiary_email' => $this->beneficiary_email,
-            'seat_quota' => $this->seat_quota,
-            'seat_used' => $this->seat_used,
-            'status' => $this->status,
-            'invited_at' => $this->invited_at,
-            'accepted_at' => $this->accepted_at,
-            'revoked_at' => $this->revoked_at,
-            'note' => $this->note,
-        ];
+        return $this->to_array();
     }
 }

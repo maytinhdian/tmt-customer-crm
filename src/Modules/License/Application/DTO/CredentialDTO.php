@@ -68,26 +68,5 @@ final class CredentialDTO implements \JsonSerializable
     {
         return $this->to_array();
     }
-    // public function to_array(): array
-    // {
-    //     return [
-    //         'id' => $this->id,
-    //         'number' => $this->number,
-    //         'type' => $this->type,
-    //         'label' => $this->label,
-    //         'customer_id' => $this->customer_id,
-    //         'company_id' => $this->company_id,
-    //         'status' => $this->status,
-    //         'expires_at' => $this->expires_at,
-    //         'seats_total' => $this->seats_total,
-    //         'sharing_mode' => $this->sharing_mode,
-    //         'renewal_of_id' => $this->renewal_of_id,
-    //         'owner_id' => $this->owner_id,
-    //         'secret_primary' => $this->secret_primary,
-    //         'secret_secondary' => $this->secret_secondary,
-    //         'username' => $this->username,
-    //         'extra_json' => $this->extra_json,
-    //         'secret_mask' => $this->secret_mask,
-    //     ];
-    // }
+   
 }

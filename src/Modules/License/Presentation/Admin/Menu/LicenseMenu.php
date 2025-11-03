@@ -23,15 +23,6 @@ final class LicenseMenu
             [LicenseScreen::class, 'route']
         );
 
-
-        // add_submenu_page(
-        //     parent_slug: 'tmt-crm',
-        //     page_title: __('License', 'tmt-crm'),
-        //     menu_title: __('License', 'tmt-crm'),
-        //     capability: 'manage_options',
-        //     menu_slug: 'tmt-crm-licenses',
-        //     callback: [LicenseScreen::class, 'render_list']
-        // );
         add_submenu_page(
             parent_slug: 'tmt-crm',
             page_title: __('Add / Edit License', 'tmt-crm'),
