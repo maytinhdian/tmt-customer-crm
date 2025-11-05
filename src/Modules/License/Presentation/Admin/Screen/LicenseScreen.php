@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TMT\CRM\Modules\License\Presentation\Admin\Screen;
 
+use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 use TMT\CRM\Domain\Repositories\{CredentialRepositoryInterface, CredentialSeatAllocationRepositoryInterface};
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Shared\Presentation\Support\AdminPostHelper;
@@ -12,6 +13,8 @@ use TMT\CRM\Shared\Presentation\Support\View;
 final class LicenseScreen
 {
     public const PAGE_SLUG = 'tmt-crm-licenses';
+
+
 
     public static function route(): void
     {
@@ -93,6 +96,9 @@ final class LicenseScreen
     /** Form tạo/sửa + các tab con */
     public static function render_form(): void
     {
+        $screen_id = 'toplevel_page_tmt-crm-license'; // đặt đúng ID
+        $errors = AdminNoticeService::take_errors($screen_id); // [] nếu không có
+
         if (!current_user_can('manage_options')) {
             wp_die(__('Not allowed', 'tmt-crm'));
         }
@@ -140,8 +146,7 @@ final class LicenseScreen
             'action'    => $action,
             'list_url'  => $list_url,
             'general'   => $data_general,
+            'errors'    => $errors,
         ]);
-
-        
     }
 }

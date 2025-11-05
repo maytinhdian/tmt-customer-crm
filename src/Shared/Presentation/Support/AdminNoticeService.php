@@ -106,6 +106,26 @@ final class AdminNoticeService
         }
     }
 
+    /** Lưu ErrorBag (mảng lỗi theo field) dành cho screen */
+    public static function put_errors(string $screen_id, array $errors): void
+    {
+        $key = self::get_key() . ':errs:' . md5($screen_id);
+        set_transient($key, $errors, self::TTL_SECONDS);
+    }
+
+    /** Lấy ErrorBag rồi xoá (dùng tại thời điểm render màn hình) */
+    public static function take_errors(string $screen_id): array
+    {
+        $key = self::get_key() . ':errs:' . md5($screen_id);
+        $errs = get_transient($key);
+        if (!is_array($errs)) {
+            $errs = [];
+        }
+        delete_transient($key);
+        return $errs;
+    }
+
+
     /** Lưu notice vào transient theo user */
     private static function flash(string $type, string $message, ?string $screen_id): void
     {

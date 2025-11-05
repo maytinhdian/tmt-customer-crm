@@ -6,6 +6,7 @@ namespace TMT\CRM\Modules\License\Presentation\Admin\Controller;
 
 use TMT\CRM\Shared\Container\Container;
 use TMT\CRM\Modules\License\Application\Validation\LicenseValidator;
+use TMT\CRM\Shared\Presentation\Support\AdminNoticeService;
 
 use TMT\CRM\Modules\License\Application\Services\CryptoService;
 use TMT\CRM\Modules\License\Application\Services\PolicyService;
@@ -94,12 +95,13 @@ final class LicenseController
         $result    = $validator->validate($_POST);
 
         if ($result->failed()) {
-            foreach ($result->errors() as $field => $messages) {
-                foreach ($messages as $msg) {
-                    add_settings_error('tmt_crm_license', $field, $msg, 'error');
-                }
-            }
-            return; // render lại form hoặc redirect back
+            $screen_id = 'toplevel_page_tmt-crm-license'; // hoặc đúng screen id của bạn
+            AdminNoticeService::error_for_screen($screen_id, __('Có lỗi. Vui lòng kiểm tra các trường được tô đỏ.', 'tmt-crm'));
+            AdminNoticeService::put_errors($screen_id, $result->errors());
+
+            // Redirect về form (chuẩn admin-post)
+            wp_safe_redirect(add_query_arg(['updated' => 'false'], wp_get_referer() ?: admin_url('admin.php?page=tmt-crm-license')));
+            exit;
         }
 
         $number = isset($_POST['number']) ? trim((string) $_POST['number']) : '';

@@ -31,6 +31,11 @@ final class CredentialService
         if ($dto->secret_secondary !== null) {
             $dto->secret_secondary = $this->crypto->encrypt_secret($dto->secret_secondary);
         }
+        if (empty($dto->expires_at)) {
+            $dto->expires_at = (new \DateTimeImmutable('now', wp_timezone()))
+                ->modify('+1 year')
+                ->format('Y-m-d 00:00:00');
+        }
         return $this->credential_repo->create($dto);
     }
 

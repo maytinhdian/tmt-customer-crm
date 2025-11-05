@@ -22,6 +22,8 @@ $renewal_of_id = (string)($general['renewal_of_id'] ?? '');
 $owner_id      = (string)($general['owner_id'] ?? '');
 $username      = (string)($general['username'] ?? '');
 $extra_json    = (string)($general['extra_json'] ?? '');
+
+$errors = $errors ?? [];
 ?>
 <form method="post" action="<?php echo esc_url($action); ?>">
     <?php wp_nonce_field('tmt_crm_license_save_'); ?>
@@ -41,12 +43,16 @@ $extra_json    = (string)($general['extra_json'] ?? '');
                     <p class="description">
                         <?php _e('Để trống để hệ thống tự sinh số theo Core/Numbering.', 'tmt-crm'); ?>
                     </p>
+                    <?php if (!empty($errors['label'])): ?>
+                        <p id="err-label" class="tmt-error"><?php echo esc_html($errors['label'][0]); ?></p>
+                    <?php endif; ?>
                 </td>
             </tr>
             <tr>
                 <th><label for="label"><?php _e('Label', 'tmt-crm'); ?></label></th>
                 <td><input name="label" id="label" type="text" class="regular-text"
                         value="<?php echo esc_attr($label); ?>" required /></td>
+
             </tr>
             <tr>
                 <th><label for="type"><?php _e('Type', 'tmt-crm'); ?></label></th>
