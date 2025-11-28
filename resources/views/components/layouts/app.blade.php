@@ -21,6 +21,10 @@
                     <a href="{{ route('employees.index') }}" class="hover:underline font-semibold">
                         Nhân viên
                     </a>
+                    <a href="{{ route('attendance.logs.index') }}" class="hover:underline">Log chấm công</a>
+                    <a href="{{ route('shifts.index') }}" class="hover:underline">Ca làm việc</a>
+                    <a href="{{ route('shifts.overrides') }}" class="hover:underline">Gán ca tạm</a>
+
                 </nav>
             </div>
         </header>
